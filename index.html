@@ -1657,6 +1657,9 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           <button class="btn" style="font-size:11px;padding:6px 10px;background:#7f1d1d;color:#fca5a5;width:100%" onclick="resetAuth()">
             🔄 Réinitialiser comptes (données conservées)
           </button>
+          <button class="btn" style="font-size:11px;padding:6px 10px;background:#1e1b4b;color:#a5b4fc;width:100%" onclick="forceFullReset()">
+            🛠️ Réparation d'urgence (tout réinitialiser)
+          </button>
         </div>
       </details>
     </div>
@@ -1751,6 +1754,14 @@ function initDefaultAdmin(){
       const idx = users.indexOf(adminExists);
       users[idx].role = 'admin';
       users[idx].permissions = ALL_TABS;
+      // AUTO-REPAIR: si le hash stocké ne correspond à aucun mot de passe valide connu,
+      // recalculer avec le mot de passe par défaut (résout le problème de hash corrompu)
+      const knownDefaults = ['marjane2026'];
+      const hashMatches = knownDefaults.some(p => fnv1a(p) === users[idx].pwHash);
+      // On ne touche au hash que si c'est le compte admin ET que la longueur du hash est anormale
+      if(users[idx].pwHash.length < 6 || users[idx].pwHash.length > 12){
+        users[idx].pwHash = fnv1a('marjane2026');
+      }
     }
     saveUsers(users);
   } catch(e){ console.error('initDefaultAdmin error:', e); }
@@ -1786,15 +1797,14 @@ function doLogin(){
     // Nettoyer les données corrompues avant de chercher
     users = users.filter(u => u && typeof u.username === 'string' && typeof u.pwHash === 'string');
     const hash = fnv1a(pass);
-    // Chercher l'utilisateur (insensible à la casse)
     const userFound = users.find(u => u.username.toLowerCase() === username);
     if(!userFound){
-      $('#loginErr').textContent = 'Identifiant introuvable.';
+      $('#loginErr').textContent = '❌ Identifiant introuvable. Vérifiez l\'orthographe.';
       return;
     }
     const user = userFound.pwHash === hash ? userFound : null;
     if(!user){
-      $('#loginErr').textContent = 'Mot de passe incorrect. Vérifiez les majuscules.';
+      $('#loginErr').textContent = '❌ Mot de passe incorrect. Attention aux majuscules.';
       return;
     }
     const sessionData = {
@@ -1861,6 +1871,23 @@ function resetAuth(){
   const users = [{username:'admin', pwHash:fnv1a('marjane2026'), role:'admin', permissions:ALL_TABS}];
   localStorage.setItem('a7_users', JSON.stringify(users));
   alert('✅ Comptes réinitialisés.\nIdentifiant : admin\nMot de passe : marjane2026');
+  location.reload();
+}
+
+function forceFullReset(){
+  if(!confirm('⚠️ RÉPARATION D\'URGENCE\n\nCette action va :\n• Effacer TOUS les comptes\n• Effacer la session en cours\n• Recréer uniquement le compte admin\n\n⚠️ Vos articles, templates et historique sont CONSERVÉS.\n\nConfirmer ?')) return;
+  // Supprimer uniquement les clés d'auth, pas les données métier
+  const keysToKeep = ['a7_products','a7_db','a7_queue','a7_history','a7_templates','a7_config','a7_a4templates','a7_a4queue','a7_mapping','a7_textcolors'];
+  const saved = {};
+  keysToKeep.forEach(k => { try{ const v = localStorage.getItem(k); if(v) saved[k]=v; }catch(e){} });
+  // Tout effacer
+  localStorage.clear();
+  // Restaurer les données métier
+  Object.entries(saved).forEach(([k,v]) => { try{ localStorage.setItem(k,v); }catch(e){} });
+  // Recréer admin
+  const users = [{username:'admin', pwHash:fnv1a('marjane2026'), role:'admin', permissions:ALL_TABS}];
+  localStorage.setItem('a7_users', JSON.stringify(users));
+  alert('✅ Réparation terminée !\n\nConnectez-vous avec :\n  Identifiant : admin\n  Mot de passe : marjane2026\n\nVos données sont conservées.');
   location.reload();
 }
 
