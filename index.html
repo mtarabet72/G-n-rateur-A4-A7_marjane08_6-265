@@ -578,9 +578,7 @@ tr:hover td{background:var(--surf3)}
 .toast-info{background:#1c1400cc;border-color:var(--amber3);color:var(--amber)}
 @keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
 /* History items */
-.hist-badge{padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.3px;display:inline-block}
-.hist-a7{background:rgba(245,158,11,.18);color:#f59e0b;border:1px solid rgba(245,158,11,.35)}
-.hist-a4{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.3)}
+.hist-badge{padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;background:var(--amber3);color:var(--amber)}
 /* Queue count badge */
 .q-badge{background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px}
 /* Allergen preview in table */
@@ -894,186 +892,27 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     </div>
   </div>
 
-  <!-- ===== HISTORIQUE + DASHBOARD ===== -->
+  <!-- ===== HISTORIQUE ===== -->
   <div id="tab-historique" class="tab">
-
-    <!-- ── Sous-onglets ── -->
-    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-      <button id="hstab-dashboard" class="btn btn-amber" style="font-size:12px;padding:7px 14px" onclick="switchHistTab('dashboard')">
-        <i class="ri-bar-chart-2-line"></i> Dashboard
-      </button>
-      <button id="hstab-a7" class="btn btn-ghost" style="font-size:12px;padding:7px 14px" onclick="switchHistTab('a7')">
-        <i class="ri-price-tag-3-line"></i> Étiquettes A7 <span id="histA7Count" class="count" style="background:var(--surf3)">0</span>
-      </button>
-      <button id="hstab-a4" class="btn btn-ghost" style="font-size:12px;padding:7px 14px" onclick="switchHistTab('a4')">
-        <i class="ri-file-paper-2-line"></i> Affichettes A4 <span id="histA4Count" class="count" style="background:var(--surf3)">0</span>
-      </button>
-      <button id="hstab-all" class="btn btn-ghost" style="font-size:12px;padding:7px 14px" onclick="switchHistTab('all')">
-        <i class="ri-list-check-2"></i> Tout
-      </button>
-      <div style="margin-left:auto;display:flex;gap:6px">
-        <input id="histSearch" placeholder="Rechercher…" style="width:160px;font-size:12px;padding:6px 10px" oninput="renderHistTable()">
-        <button class="btn btn-red btn-sm" onclick="clearHistConfirm()"><i class="ri-delete-bin-line"></i></button>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="card-title" style="margin:0"><i class="ri-history-line"></i> Historique (DataStorage)</div>
+        <button class="btn btn-red btn-sm" onclick="clearHistory()"><i class="ri-delete-bin-line"></i> Effacer</button>
       </div>
-    </div>
-
-    <!-- ── DASHBOARD ── -->
-    <div id="histpanel-dashboard">
-
-      <!-- KPI row -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px">
-        <div class="card" style="padding:14px;text-align:center;background:linear-gradient(135deg,var(--surf2),var(--surf3))">
-          <div style="font-size:28px;font-weight:900;color:var(--amber)" id="kpiTodayAll">0</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">Aujourd'hui (total)</div>
-        </div>
-        <div class="card" style="padding:14px;text-align:center;background:linear-gradient(135deg,var(--surf2),var(--surf3))">
-          <div style="font-size:28px;font-weight:900;color:#60a5fa" id="kpiWeekAll">0</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">7 derniers jours</div>
-        </div>
-        <div class="card" style="padding:14px;text-align:center;background:linear-gradient(135deg,var(--surf2),var(--surf3))">
-          <div style="font-size:28px;font-weight:900;color:#f59e0b" id="kpiTotalA7">0</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">Total A7 générés</div>
-        </div>
-        <div class="card" style="padding:14px;text-align:center;background:linear-gradient(135deg,var(--surf2),var(--surf3))">
-          <div style="font-size:28px;font-weight:900;color:#34d399" id="kpiTotalA4">0</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">Total A4 générés</div>
-        </div>
-        <div class="card" style="padding:14px;text-align:center;background:linear-gradient(135deg,var(--surf2),var(--surf3))">
-          <div style="font-size:16px;font-weight:800;color:#c084fc" id="kpiUser">—</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">Opérateur connecté</div>
-          <div style="font-size:10px;color:var(--text4)" id="kpiUserCount"></div>
-        </div>
-      </div>
-
-      <!-- Graphiques row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-
-        <!-- Graphique 7 jours A7+A4 -->
-        <div class="card" style="padding:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">
-            <i class="ri-bar-chart-2-line" style="color:var(--amber)"></i> Activité 7 jours (A7 + A4)
-          </div>
-          <canvas id="dashChartWeek" style="width:100%;height:140px;display:block"></canvas>
-          <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3)">
-            <span><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px;margin-right:4px"></span>A7</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:#34d399;border-radius:2px;margin-right:4px"></span>A4</span>
-          </div>
-        </div>
-
-        <!-- Donut A7 vs A4 -->
-        <div class="card" style="padding:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">
-            <i class="ri-pie-chart-line" style="color:#34d399"></i> Répartition A7 / A4
-          </div>
-          <canvas id="dashChartDonut" style="width:100%;height:140px;display:block"></canvas>
-          <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3);justify-content:center">
-            <span><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:50%;margin-right:4px"></span>A7 Étiquettes</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:#34d399;border-radius:50%;margin-right:4px"></span>A4 Affichettes</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Top templates row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-
-        <!-- Top templates A7 -->
-        <div class="card" style="padding:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">
-            <i class="ri-price-tag-3-line" style="color:#f59e0b"></i> Top templates A7
-          </div>
-          <div id="dashTopA7" style="display:flex;flex-direction:column;gap:7px"></div>
-        </div>
-
-        <!-- Top templates A4 -->
-        <div class="card" style="padding:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">
-            <i class="ri-file-paper-2-line" style="color:#34d399"></i> Top templates A4
-          </div>
-          <div id="dashTopA4" style="display:flex;flex-direction:column;gap:7px"></div>
-        </div>
-      </div>
-
-      <!-- Activité récente unifiée -->
-      <div class="card" style="padding:14px">
-        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">
-          <i class="ri-time-line" style="color:var(--amber)"></i> Activité récente (20 dernières)
-        </div>
-        <div class="tbl-wrap" style="max-height:280px">
-          <table>
-            <thead><tr>
-              <th style="font-size:10px">Heure</th>
-              <th style="font-size:10px">Type</th>
-              <th style="font-size:10px">Code</th>
-              <th style="font-size:10px">Désignation</th>
-              <th style="font-size:10px">Template</th>
-              <th style="font-size:10px">Prix</th>
-            </tr></thead>
-            <tbody id="dashRecent"></tbody>
-          </table>
+      <div class="tbl-wrap" style="max-height:500px">
+        <table>
+          <thead><tr>
+            <th>Date / Heure</th><th>Code</th><th>Désignation</th>
+            <th>Template</th><th>Prix</th><th>Unité</th>
+          </tr></thead>
+          <tbody id="histBody"></tbody>
+        </table>
+        <div id="histEmpty" style="padding:32px;text-align:center;color:var(--text4)">
+          <i class="ri-history-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
+          Aucun historique enregistré
         </div>
       </div>
     </div>
-
-    <!-- ── TABLE A7 ── -->
-    <div id="histpanel-a7" style="display:none">
-      <div class="card" style="padding:0">
-        <div class="tbl-wrap" style="max-height:520px">
-          <table>
-            <thead><tr>
-              <th>Date / Heure</th><th>Code</th><th>Désignation</th>
-              <th>Template</th><th>Prix</th><th>Unité</th><th>Opérateur</th>
-            </tr></thead>
-            <tbody id="histBodyA7"></tbody>
-          </table>
-          <div id="histEmptyA7" style="padding:32px;text-align:center;color:var(--text4);display:none">
-            <i class="ri-price-tag-3-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
-            Aucun historique A7
-          </div>
-        </div>
-      </div>
-      <div id="histPagerA7" style="padding:6px 0;font-size:11px;color:var(--text3)"></div>
-    </div>
-
-    <!-- ── TABLE A4 ── -->
-    <div id="histpanel-a4" style="display:none">
-      <div class="card" style="padding:0">
-        <div class="tbl-wrap" style="max-height:520px">
-          <table>
-            <thead><tr>
-              <th>Date / Heure</th><th>Code</th><th>Désignation</th>
-              <th>Template A4</th><th>Prix barré</th><th>Prix promo</th><th>Fidélité</th><th>Opérateur</th>
-            </tr></thead>
-            <tbody id="histBodyA4"></tbody>
-          </table>
-          <div id="histEmptyA4" style="padding:32px;text-align:center;color:var(--text4);display:none">
-            <i class="ri-file-paper-2-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
-            Aucun historique A4
-          </div>
-        </div>
-      </div>
-      <div id="histPagerA4" style="padding:6px 0;font-size:11px;color:var(--text3)"></div>
-    </div>
-
-    <!-- ── TABLE TOUT ── -->
-    <div id="histpanel-all" style="display:none">
-      <div class="card" style="padding:0">
-        <div class="tbl-wrap" style="max-height:520px">
-          <table>
-            <thead><tr>
-              <th>Date / Heure</th><th>Type</th><th>Code</th><th>Désignation</th>
-              <th>Template</th><th>Prix</th><th>Opérateur</th>
-            </tr></thead>
-            <tbody id="histBodyAll"></tbody>
-          </table>
-          <div id="histEmptyAll" style="padding:32px;text-align:center;color:var(--text4);display:none">
-            <i class="ri-list-check-2" style="font-size:36px;display:block;margin-bottom:8px"></i>
-            Aucun historique
-          </div>
-        </div>
-      </div>
-      <div id="histPagerAll" style="padding:6px 0;font-size:11px;color:var(--text3)"></div>
-    </div>
-
   </div>
 
   <!-- ===== TEMPLATES ===== -->
@@ -1657,9 +1496,6 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           <button class="btn" style="font-size:11px;padding:6px 10px;background:#7f1d1d;color:#fca5a5;width:100%" onclick="resetAuth()">
             🔄 Réinitialiser comptes (données conservées)
           </button>
-          <button class="btn" style="font-size:11px;padding:6px 10px;background:#1e1b4b;color:#a5b4fc;width:100%;margin-top:2px" onclick="forceFullReset()">
-            🛠️ Réparation d'urgence (tout effacer)
-          </button>
         </div>
       </details>
     </div>
@@ -1780,7 +1616,7 @@ function doLogin(){
   try {
     $('#loginErr').textContent = '';
     const username = ($('#loginUser').value||'').trim().toLowerCase();
-    const pass = ($('#loginPass').value||'').trim();
+    const pass = $('#loginPass').value;
     if(!username || !pass){
       $('#loginErr').textContent = 'Identifiant et mot de passe requis.';
       return;
@@ -1789,14 +1625,9 @@ function doLogin(){
     // Nettoyer les données corrompues avant de chercher
     users = users.filter(u => u && typeof u.username === 'string' && typeof u.pwHash === 'string');
     const hash = fnv1a(pass);
-    const userFound = users.find(u => u.username.toLowerCase() === username);
-    if(!userFound){
-      $('#loginErr').textContent = '❌ Identifiant introuvable.';
-      return;
-    }
-    const user = userFound.pwHash === hash ? userFound : null;
+    const user = users.find(u => u.username.toLowerCase() === username && u.pwHash === hash);
     if(!user){
-      $('#loginErr').textContent = '❌ Mot de passe incorrect. Vérifiez les majuscules.';
+      $('#loginErr').textContent = 'Identifiant ou mot de passe incorrect.';
       return;
     }
     const sessionData = {
@@ -1823,7 +1654,7 @@ function logout(){
 function debugLogin(){
   try {
     const username = ($('#loginUser').value||'').trim().toLowerCase();
-    const pass = ($('#loginPass').value||'').trim();
+    const pass = $('#loginPass').value;
     const users = getUsers();
     let msg = '';
 
@@ -1863,19 +1694,6 @@ function resetAuth(){
   const users = [{username:'admin', pwHash:fnv1a('marjane2026'), role:'admin', permissions:ALL_TABS}];
   localStorage.setItem('a7_users', JSON.stringify(users));
   alert('✅ Comptes réinitialisés.\nIdentifiant : admin\nMot de passe : marjane2026');
-  location.reload();
-}
-
-function forceFullReset(){
-  if(!confirm('⚠️ RÉPARATION D\'URGENCE\n\nEfface les comptes corrompus et recrée admin.\nVos articles, templates et historique sont CONSERVÉS.\n\nConfirmer ?')) return;
-  const keysToKeep = ['a7_base','a7_queue','a7_templates','a7_mapping','a7_product_tpl','a7_history','a7_tplLayout','a7_tpl_layout','a7_a4templates','a7_a4queue','a7_textcolors','a7_config'];
-  const saved = {};
-  keysToKeep.forEach(k => { try{ const v = localStorage.getItem(k); if(v) saved[k]=v; }catch(e){} });
-  localStorage.clear();
-  Object.entries(saved).forEach(([k,v]) => { try{ localStorage.setItem(k,v); }catch(e){} });
-  const users = [{username:'admin', pwHash:fnv1a('marjane2026'), role:'admin', permissions:ALL_TABS}];
-  localStorage.setItem('a7_users', JSON.stringify(users));
-  alert('✅ Réparation terminée !\n\nIdentifiant : admin\nMot de passe : marjane2026');
   location.reload();
 }
 
@@ -3641,160 +3459,27 @@ function exportBaseExcel(){
 // ═══════════════════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
-// HISTORIQUE UNIFIÉ A7 + A4 + DASHBOARD
-// ═══════════════════════════════════════════════════════════════
-
-let _histTab = 'dashboard';
-let _histPageA7 = 0, _histPageA4 = 0, _histPageAll = 0;
-const _HIST_PG = 100;
-
-function switchHistTab(tab) {
-  _histTab = tab;
-  ['dashboard','a7','a4','all'].forEach(t => {
-    const panel = document.getElementById('histpanel-' + t);
-    const btn   = document.getElementById('hstab-' + t);
-    if (panel) panel.style.display = t === tab ? '' : 'none';
-    if (btn)   btn.className = t === tab ? 'btn btn-amber' : 'btn btn-ghost';
-    if (btn)   btn.style.fontSize = '12px';
-    if (btn)   btn.style.padding  = '7px 14px';
+function renderHistory(){
+  const body=$('#histBody');
+  body.innerHTML='';
+  $('#histEmpty').style.display=state.history.length?'none':'';
+  state.history.slice(0,500).forEach(it=>{
+    const tr=document.createElement('tr');
+    const d=new Date(it.savedAt);
+    tr.innerHTML=`
+      <td style="font-size:11px;white-space:nowrap">${d.toLocaleString('fr-FR')}</td>
+      <td class="mono" style="font-size:12px">${it.code}</td>
+      <td style="font-size:13px">${it.designation_fr||'—'}</td>
+      <td><span style="background:var(--surf3);border:1px solid var(--border2);border-radius:5px;padding:2px 7px;font-size:11px">${it.template}</span></td>
+      <td style="color:var(--amber);font-family:'IBM Plex Mono'">${it.prix||'—'} DH</td>
+      <td style="font-size:12px">/${it.unite||'—'}</td>`;
+    body.appendChild(tr);
   });
-  if (tab === 'dashboard') updateDashboard();
-  else renderHistTable();
 }
-
-function renderHistory() {
-  // Mise à jour compteurs sous-onglets
-  const a7c = document.getElementById('histA7Count');
-  const a4c = document.getElementById('histA4Count');
-  if (a7c) a7c.textContent = state.history.length;
-  if (a4c) a4c.textContent = a4St.history.length;
-  // Rafraîchir le panel actif
-  if (_histTab === 'dashboard') updateDashboard();
-  else renderHistTable();
+function clearHistory(){
+  if(!confirm('Effacer tout l\'historique ?')) return;
+  state.history=[]; save('history'); renderHistory(); toast('Historique effacé');
 }
-
-function renderHistTable() {
-  const q = (document.getElementById('histSearch')?.value || '').toLowerCase().trim();
-
-  if (_histTab === 'a7' || _histTab === 'all') _renderHistA7(q);
-  if (_histTab === 'a4' || _histTab === 'all') _renderHistA4(q);
-  if (_histTab === 'all') _renderHistAll(q);
-}
-
-function _renderHistA7(q) {
-  const body = document.getElementById('histBodyA7');
-  const empty = document.getElementById('histEmptyA7');
-  if (!body) return;
-  const rows = state.history.filter(h =>
-    !q || (h.code||'').includes(q) || (h.designation_fr||'').toLowerCase().includes(q) || (h.template||'').toLowerCase().includes(q)
-  );
-  const totalPg = Math.max(1, Math.ceil(rows.length / _HIST_PG));
-  if (_histPageA7 >= totalPg) _histPageA7 = 0;
-  const page = rows.slice(_histPageA7 * _HIST_PG, (_histPageA7 + 1) * _HIST_PG);
-  body.innerHTML = page.map(h => {
-    const d = new Date(h.savedAt);
-    return `<tr>
-      <td style="font-size:11px;white-space:nowrap">${d.toLocaleString('fr-FR')}</td>
-      <td class="mono" style="font-size:12px">${h.code||'—'}</td>
-      <td style="font-size:12px">${(h.designation_fr||'—').substring(0,35)}</td>
-      <td><span class="hist-badge hist-a7">${h.template||'Auto'}</span></td>
-      <td style="color:var(--amber);font-family:'IBM Plex Mono';font-size:12px">${h.prix||'—'} DH</td>
-      <td style="font-size:11px;color:var(--text3)">${h.unite||'—'}</td>
-      <td style="font-size:11px;color:var(--text3)">${h.user||'—'}</td>
-    </tr>`;
-  }).join('');
-  if (empty) empty.style.display = rows.length ? 'none' : '';
-  _renderPager('histPagerA7', _histPageA7, totalPg, rows.length, n => { _histPageA7=n; _renderHistA7(q); });
-}
-
-function _renderHistA4(q) {
-  const body = document.getElementById('histBodyA4');
-  const empty = document.getElementById('histEmptyA4');
-  if (!body) return;
-  const rows = a4St.history.filter(h =>
-    !q || (h.code||'').includes(q) || (h.desFR||'').toLowerCase().includes(q) || (h.tplName||h.tplId||'').toLowerCase().includes(q)
-  );
-  const totalPg = Math.max(1, Math.ceil(rows.length / _HIST_PG));
-  if (_histPageA4 >= totalPg) _histPageA4 = 0;
-  const page = rows.slice(_histPageA4 * _HIST_PG, (_histPageA4 + 1) * _HIST_PG);
-  body.innerHTML = page.map(h => {
-    const d = new Date(h.addedAt || h.savedAt);
-    const eco = h.barre > 0 && h.promo > 0 ? '-' + Math.round((1 - h.promo/h.barre)*100) + '%' : '';
-    return `<tr>
-      <td style="font-size:11px;white-space:nowrap">${d.toLocaleString('fr-FR')}</td>
-      <td class="mono" style="font-size:12px">${h.code||'—'}</td>
-      <td style="font-size:12px">${(h.desFR||'—').substring(0,30)}</td>
-      <td><span class="hist-badge hist-a4">${h.tplName||h.tplId||'—'}</span></td>
-      <td style="font-size:12px;text-decoration:line-through;color:var(--text3)">${h.barre||'—'} DH</td>
-      <td style="font-size:13px;font-weight:700;color:#f87171">${h.promo||'—'} DH${eco ? ' <span style="font-size:10px;color:#34d399">'+eco+'</span>' : ''}</td>
-      <td style="font-size:12px;color:#34d399">${h.fidelite ? h.fidelite+'%' : '—'}</td>
-      <td style="font-size:11px;color:var(--text3)">${h.user||'—'}</td>
-    </tr>`;
-  }).join('');
-  if (empty) empty.style.display = rows.length ? 'none' : '';
-  _renderPager('histPagerA4', _histPageA4, totalPg, rows.length, n => { _histPageA4=n; _renderHistA4(q); });
-}
-
-function _renderHistAll(q) {
-  const body = document.getElementById('histBodyAll');
-  const empty = document.getElementById('histEmptyAll');
-  if (!body) return;
-  const a7rows = state.history.map(h => ({...h, _type:'A7', _date: new Date(h.savedAt), _tpl: h.template||'Auto', _prix: (h.prix||'—')+' DH', _des: h.designation_fr||'—'}));
-  const a4rows = a4St.history.map(h => ({...h, _type:'A4', _date: new Date(h.addedAt||h.savedAt), _tpl: h.tplName||h.tplId||'—', _prix: (h.promo||'—')+' DH', _des: h.desFR||'—'}));
-  const all = [...a7rows, ...a4rows]
-    .filter(h => !q || (h.code||'').includes(q) || h._des.toLowerCase().includes(q) || h._tpl.toLowerCase().includes(q))
-    .sort((a, b) => b._date - a._date);
-  const totalPg = Math.max(1, Math.ceil(all.length / _HIST_PG));
-  if (_histPageAll >= totalPg) _histPageAll = 0;
-  const page = all.slice(_histPageAll * _HIST_PG, (_histPageAll + 1) * _HIST_PG);
-  body.innerHTML = page.map(h => `<tr>
-    <td style="font-size:11px;white-space:nowrap">${h._date.toLocaleString('fr-FR')}</td>
-    <td><span class="hist-badge ${h._type==='A7'?'hist-a7':'hist-a4'}">${h._type}</span></td>
-    <td class="mono" style="font-size:12px">${h.code||'—'}</td>
-    <td style="font-size:12px">${h._des.substring(0,30)}</td>
-    <td style="font-size:11px">${h._tpl}</td>
-    <td style="color:var(--amber);font-size:12px">${h._prix}</td>
-    <td style="font-size:11px;color:var(--text3)">${h.user||h._user||'—'}</td>
-  </tr>`).join('');
-  if (empty) empty.style.display = all.length ? 'none' : '';
-  _renderPager('histPagerAll', _histPageAll, totalPg, all.length, n => { _histPageAll=n; _renderHistAll(q); });
-}
-
-function _renderPager(id, page, totalPg, total, cb) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (totalPg <= 1) { el.innerHTML = total ? `<span style="color:var(--text3)">${total} entrée(s)</span>` : ''; return; }
-  const from = page * _HIST_PG + 1, to = Math.min(from + _HIST_PG - 1, total);
-  el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text3);padding:4px 0">
-    <span style="color:var(--amber);font-weight:700">${total} entrées</span> · Affichage ${from}–${to}
-    <div style="margin-left:auto;display:flex;gap:4px">
-      <button class="btn btn-ghost btn-sm" onclick="(${cb.toString()})(0)" ${page===0?'disabled':''}>⏮</button>
-      <button class="btn btn-ghost btn-sm" onclick="(${cb.toString()})(${page-1})" ${page===0?'disabled':''}>‹</button>
-      <span style="padding:3px 8px;background:var(--surf3);border-radius:5px;font-weight:700">${page+1}/${totalPg}</span>
-      <button class="btn btn-ghost btn-sm" onclick="(${cb.toString()})(${page+1})" ${page>=totalPg-1?'disabled':''}>›</button>
-      <button class="btn btn-ghost btn-sm" onclick="(${cb.toString()})(${totalPg-1})" ${page>=totalPg-1?'disabled':''}>⏭</button>
-    </div>
-  </div>`;
-}
-
-function clearHistConfirm() {
-  const opts = [];
-  if (state.history.length) opts.push('A7 ('+state.history.length+')');
-  if (a4St.history.length) opts.push('A4 ('+a4St.history.length+')');
-  if (!opts.length) { toast('Historique déjà vide', 'ok'); return; }
-  const msg = 'Effacer quel historique ?
-
-OK = Tout ('+opts.join(' + ')+')
-Annuler = Ne rien effacer';
-  if (!confirm(msg)) return;
-  state.history = []; save('history');
-  a4St.history = []; a4Save();
-  renderHistory(); toast('Historique effacé ✓', 'ok');
-}
-
-// Compatibilité legacy
-function clearHistory() { clearHistConfirm(); }
 
 // ═══════════════════════════════════════════════════════════════
 // TEMPLATES
@@ -4392,235 +4077,76 @@ async function startBarcodeScanNative(input, onScanned){
 }
 
 // ═══════════════════════════════════════════════════════════════
+// DASHBOARD
 // ═══════════════════════════════════════════════════════════════
-// DASHBOARD — graphiques A7 + A4 canvas
-// ═══════════════════════════════════════════════════════════════
-function updateDashboard() {
+function updateDashboard(){
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const weekStart  = todayStart - 6 * 24 * 60 * 60 * 1000;
-
-  const a7All = state.history;
-  const a4All = a4St.history;
-
-  // ── KPIs ──────────────────────────────────────────────────────
-  const kpiTA  = document.getElementById('kpiTodayAll');
-  const kpiWA  = document.getElementById('kpiWeekAll');
-  const kpiT7  = document.getElementById('kpiTotalA7');
-  const kpiT4  = document.getElementById('kpiTotalA4');
-  const kpiU   = document.getElementById('kpiUser');
-  const kpiUC  = document.getElementById('kpiUserCount');
-
-  const todayA7 = a7All.filter(h => new Date(h.savedAt).getTime() >= todayStart).length;
-  const todayA4 = a4All.filter(h => (h.addedAt||h.savedAt||0) >= todayStart).length;
-  const weekA7  = a7All.filter(h => new Date(h.savedAt).getTime() >= weekStart).length;
-  const weekA4  = a4All.filter(h => (h.addedAt||h.savedAt||0) >= weekStart).length;
-
-  if (kpiTA) kpiTA.textContent = todayA7 + todayA4;
-  if (kpiWA) kpiWA.textContent = weekA7  + weekA4;
-  if (kpiT7) kpiT7.textContent = a7All.length;
-  if (kpiT4) kpiT4.textContent = a4All.length;
-
-  const session = typeof getCurrentSession === 'function' ? getCurrentSession() : null;
-  const user = session?.user || '—';
-  if (kpiU)  kpiU.textContent  = user;
-  if (kpiUC) kpiUC.textContent = a7All.filter(h=>h.user===user).length + a4All.filter(h=>h.user===user).length + ' génération(s)';
-
-  // Compteurs sous-onglets
-  const a7c = document.getElementById('histA7Count');
-  const a4c = document.getElementById('histA4Count');
-  if (a7c) a7c.textContent = a7All.length;
-  if (a4c) a4c.textContent = a4All.length;
-
-  // ── Graphique barres 7 jours (A7 + A4) ───────────────────────
-  _drawWeekChart(a7All, a4All, todayStart);
-
-  // ── Graphique donut A7 vs A4 ──────────────────────────────────
-  _drawDonutChart(a7All.length, a4All.length);
-
-  // ── Top templates A7 ──────────────────────────────────────────
-  _drawTopTemplates('dashTopA7', a7All.map(h => h.template||'Auto'), '#f59e0b');
-
-  // ── Top templates A4 ──────────────────────────────────────────
-  _drawTopTemplates('dashTopA4', a4All.map(h => h.tplName||h.tplId||'—'), '#34d399');
-
-  // ── Activité récente ──────────────────────────────────────────
-  const a7r = a7All.slice(0,20).map(h=>({...h,_type:'A7',_date:new Date(h.savedAt),_tpl:h.template||'Auto',_prix:(h.prix||'—')+' DH',_des:h.designation_fr||'—'}));
-  const a4r = a4All.slice(0,20).map(h=>({...h,_type:'A4',_date:new Date(h.addedAt||h.savedAt),_tpl:h.tplName||h.tplId||'—',_prix:(h.promo||'—')+' DH',_des:h.desFR||'—'}));
-  const recent = [...a7r, ...a4r].sort((a,b)=>b._date-a._date).slice(0,20);
-
-  const dashRecent = document.getElementById('dashRecent');
-  if (dashRecent) {
-    dashRecent.innerHTML = recent.map(h => `<tr>
-      <td style="font-size:11px;white-space:nowrap">${h._date.toLocaleString('fr-FR')}</td>
-      <td><span class="hist-badge ${h._type==='A7'?'hist-a7':'hist-a4'}">${h._type}</span></td>
-      <td class="mono" style="font-size:12px">${h.code||'—'}</td>
-      <td style="font-size:12px">${h._des.substring(0,28)}</td>
-      <td style="font-size:11px;color:var(--text3)">${h._tpl}</td>
-      <td style="color:var(--amber);font-size:12px">${h._prix}</td>
-    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text4);padding:20px">Aucune activité récente</td></tr>';
-  }
-}
-
-function _drawWeekChart(a7All, a4All, todayStart) {
-  const canvas = document.getElementById('dashChartWeek');
-  if (!canvas) return;
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.offsetWidth * dpr || 400;
-  const H = 140 * dpr;
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const ds = todayStart - i * 86400000;
-    const de = ds + 86400000;
-    const d  = new Date(ds);
-    const c7 = a7All.filter(h => { const t=new Date(h.savedAt).getTime(); return t>=ds && t<de; }).length;
-    const c4 = a4All.filter(h => { const t=(h.addedAt||h.savedAt||0); return t>=ds && t<de; }).length;
-    days.push({ label: d.toLocaleDateString('fr-FR',{weekday:'short'}), c7, c4 });
-  }
-  const maxVal = Math.max(1, ...days.map(d => d.c7 + d.c4));
-  const pad = 36 * dpr, padB = 26 * dpr;
-  const gW = W - pad * 2, gH = H - padB - 10 * dpr;
-  const bW = gW / days.length * 0.32;
-
-  // Grille horizontale
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = dpr;
-  for (let g = 0; g <= 4; g++) {
-    const y = 8*dpr + gH * (1 - g/4);
-    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W-pad, y); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = (9*dpr) + 'px sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(Math.round(maxVal*g/4), pad-4*dpr, y+3*dpr);
-  }
-
-  days.forEach((d, i) => {
-    const x = pad + (i + 0.5) * gW / days.length;
-    const h7 = (d.c7 / maxVal) * gH;
-    const h4 = (d.c4 / maxVal) * gH;
-    const baseY = 8*dpr + gH;
-
-    // Barre A7
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    const rx = x - bW - 2*dpr;
-    _roundRect(ctx, rx, baseY - h7, bW, h7, 3*dpr);
-    ctx.fill();
-
-    // Barre A4
-    ctx.fillStyle = '#34d399';
-    ctx.beginPath();
-    _roundRect(ctx, x + 2*dpr, baseY - h4, bW, h4, 3*dpr);
-    ctx.fill();
-
-    // Valeur total si > 0
-    const total = d.c7 + d.c4;
-    if (total > 0) {
-      ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = 'bold '+(9*dpr)+'px sans-serif'; ctx.textAlign='center';
-      ctx.fillText(total, x, baseY - Math.max(h7,h4) - 4*dpr);
+  const weekStart = todayStart - 6*24*60*60*1000;
+  
+  const today = state.history.filter(h=>h.savedAt>=todayStart).length;
+  const week = state.history.filter(h=>h.savedAt>=weekStart).length;
+  const total = state.history.length;
+  
+  $('#dashToday').textContent = today;
+  $('#dashWeek').textContent = week;
+  $('#dashTotal').textContent = total;
+  
+  const session = getCurrentSession();
+  const user = session?.user||'—';
+  $('#dashUser').textContent = user;
+  const userCount = state.history.filter(h=>h.user===user).length;
+  $('#dashUserCount').textContent = userCount + ' générations';
+  
+  // Top templates
+  const tplCount = {};
+  state.history.forEach(h=>{ const t=h.template||'Auto'; tplCount[t]=(tplCount[t]||0)+1; });
+  const topTpl = Object.entries(tplCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const tplDiv = $('#dashTemplates');
+  tplDiv.innerHTML = topTpl.map(([t,c])=>{
+    const pct = total? Math.round(c/total*100):0;
+    return `<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>${t}</span><span style="color:var(--text3)">${c}</span></div><div style="height:6px;background:var(--surf3);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--amber)"></div></div></div>`;
+  }).join('') || '<div style="color:var(--text4);font-size:12px">Aucune donnée</div>';
+  
+  // 7 days chart (simple canvas)
+  const canvas = $('#dashChart');
+  if(canvas){
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width = canvas.offsetWidth*2;
+    const h = canvas.height = 160*2;
+    ctx.clearRect(0,0,w,h);
+    const days = [];
+    for(let i=6;i>=0;i--){
+      const d = new Date(todayStart - i*24*60*60*1000);
+      const cnt = state.history.filter(x=>{ const dt=new Date(x.savedAt); return dt.getFullYear()===d.getFullYear()&&dt.getMonth()===d.getMonth()&&dt.getDate()===d.getDate(); }).length;
+      days.push({label:d.toLocaleDateString('fr-FR',{weekday:'short'}),cnt});
     }
-
-    // Label jour
-    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = (9*dpr)+'px sans-serif'; ctx.textAlign='center';
-    ctx.fillText(d.label, x, H - 4*dpr);
-  });
-}
-
-function _drawDonutChart(a7, a4) {
-  const canvas = document.getElementById('dashChartDonut');
-  if (!canvas) return;
-  const dpr = window.devicePixelRatio || 1;
-  const size = Math.min(canvas.offsetWidth, 140) * dpr;
-  canvas.width = canvas.offsetWidth * dpr; canvas.height = 140 * dpr;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const cx = canvas.width / 2, cy = canvas.height / 2;
-  const r = Math.min(cx, cy) - 10 * dpr, rIn = r * 0.55;
-  const total = a7 + a4;
-
-  if (total === 0) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = (r - rIn);
-    ctx.beginPath(); ctx.arc(cx, cy, (r+rIn)/2, 0, Math.PI*2); ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='bold '+(11*dpr)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('Aucune donnée', cx, cy); return;
+    const max = Math.max(1, ...days.map(d=>d.cnt));
+    const pad=40; const gw=w-pad*2; const gh=h-60;
+    ctx.strokeStyle='#3d3528'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(pad, h-30); ctx.lineTo(w-pad, h-30); ctx.stroke();
+    days.forEach((d,i)=>{
+      const x = pad + (i+0.5)*gw/7;
+      const barH = (d.cnt/max)*gh;
+      ctx.fillStyle='#f59e0b'; ctx.fillRect(x-20, h-30-barH, 40, barH);
+      ctx.fillStyle='#9a7a50'; ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.fillText(d.label, x, h-8);
+      if(d.cnt>0){ ctx.fillStyle='#fef3c7'; ctx.fillText(d.cnt, x, h-35-barH); }
+    });
   }
-
-  const slices = [
-    { val: a7, color: '#f59e0b', label: 'A7' },
-    { val: a4, color: '#34d399', label: 'A4' },
-  ];
-  let angle = -Math.PI / 2;
-  slices.forEach(s => {
-    const sweep = (s.val / total) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, angle, angle + sweep);
-    ctx.arc(cx, cy, rIn, angle + sweep, angle, true);
-    ctx.closePath();
-    ctx.fillStyle = s.color; ctx.fill();
-    // Valeur dans la tranche si assez grande
-    if (sweep > 0.4) {
-      const mid = angle + sweep / 2, lr = (r + rIn) / 2;
-      ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.font = 'bold '+(10*dpr)+'px sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(s.val, cx + Math.cos(mid)*lr, cy + Math.sin(mid)*lr);
-    }
-    angle += sweep;
-  });
-
-  // Centre
-  ctx.fillStyle = 'var(--surf2,#12100c)';
-  ctx.beginPath(); ctx.arc(cx, cy, rIn - dpr, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font='bold '+(12*dpr)+'px sans-serif';
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(total, cx, cy - 6*dpr);
-  ctx.font=(9*dpr)+'px sans-serif'; ctx.fillStyle='rgba(255,255,255,0.35)';
-  ctx.fillText('total', cx, cy + 8*dpr);
-}
-
-function _drawTopTemplates(containerId, tplList, color) {
-  const div = document.getElementById(containerId);
-  if (!div) return;
-  const count = {};
-  tplList.forEach(t => { count[t] = (count[t]||0) + 1; });
-  const top = Object.entries(count).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const max = top[0]?.[1] || 1;
-  if (!top.length) { div.innerHTML='<div style="color:var(--text4);font-size:12px">Aucune donnée</div>'; return; }
-  div.innerHTML = top.map(([t,c]) => {
-    const pct = Math.round(c/max*100);
-    return `<div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
-        <span style="color:var(--text2);font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t}">${t}</span>
-        <span style="color:var(--text3);font-family:'IBM Plex Mono'">${c}</span>
-      </div>
-      <div style="height:5px;background:var(--surf3);border-radius:3px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:${color};border-radius:3px;transition:width .4s"></div>
-      </div>
-    </div>`;
+  
+  // Recent activity
+  const recent = $('#dashRecent');
+  recent.innerHTML = state.history.slice(0,20).map(h=>{
+    const d=new Date(h.savedAt); const time=d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    return `<tr><td style="font-size:11px">${time}</td><td class="mono">${h.code}</td><td>${(h.designation_fr||'').substring(0,30)}</td><td style="font-size:11px">${h.template||'—'}</td><td style="font-size:11px">${h.prix||''}</td></tr>`;
   }).join('');
 }
 
-function _roundRect(ctx, x, y, w, h, r) {
-  if (h <= 0) return;
-  r = Math.min(r, h/2, w/2);
-  ctx.moveTo(x+r, y);
-  ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
-  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
-  ctx.closePath();
-}
-// Hook into tab switch — rafraîchir dashboard/historique
+// Hook into tab switch
 const _origSwitchTab = window.switchTab;
 window.switchTab = function(tab){
   _origSwitchTab(tab);
-  if(tab==='historique') {
-    setTimeout(() => {
-      renderHistory();
-      if (_histTab === 'dashboard') updateDashboard();
-    }, 50);
-  }
+  if(tab==='dashboard') setTimeout(updateDashboard, 50);
 };
 
 // Sauvegarde automatique avant de quitter
@@ -4657,7 +4183,6 @@ const a4St = {
   secteur:'food', picto:'aucun', tplId:'',
   diff:0, showDiff:false,
   file: JSON.parse(localStorage.getItem('a4_file') || '[]'),
-  history: JSON.parse(localStorage.getItem('a4_history') || '[]'),
 };
 
 let a4Tpls    = JSON.parse(localStorage.getItem('a4_tpls') || 'null') || buildDefaultA4Tpls();
@@ -4694,9 +4219,8 @@ function a4SaveForm() {
 }
 
 function a4Save() {
-  localStorage.setItem('a4_file',    JSON.stringify(a4St.file));
-  localStorage.setItem('a4_tpls',    JSON.stringify(a4Tpls));
-  localStorage.setItem('a4_history', JSON.stringify(a4St.history.slice(0, 2000)));
+  localStorage.setItem('a4_file',   JSON.stringify(a4St.file));
+  localStorage.setItem('a4_tpls',   JSON.stringify(a4Tpls));
   a4SaveForm();
 }
 
@@ -5456,15 +4980,6 @@ function a4AddToFile() {
     savedAt: Date.now()
   };
   a4St.file.push(item);
-  // Enregistrer dans l'historique A4
-  const histEntry = {
-    ...item,
-    tplName: (a4Tpls.find(t => t.id === item.tplId)||{}).name || item.tplId || '—',
-    addedAt: Date.now(),
-    user: (typeof getCurrentSession === 'function' && getCurrentSession()) ? getCurrentSession().user : '—'
-  };
-  a4St.history.unshift(histEntry);
-  if (a4St.history.length > 2000) a4St.history = a4St.history.slice(0, 2000);
   a4Save();
   renderA4File();
   const cnt = document.getElementById('a4FileCount');
