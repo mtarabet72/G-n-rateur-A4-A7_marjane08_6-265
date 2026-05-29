@@ -862,7 +862,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <div style="display:flex;flex-direction:column;gap:14px">
       <!-- Actions bar -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <input id="baseSearch" placeholder="Rechercher code ou désignation…" style="flex:1;min-width:180px;max-width:340px" oninput="renderBase()">
+        <input id="baseSearch" placeholder="Rechercher code ou désignation…" style="flex:1;min-width:180px;max-width:340px" oninput="_basePage=0;renderBase()">
         <button class="btn btn-amber btn-sm" onclick="openArticleModal()"><i class="ri-add-line"></i> Nouvel article</button>
         <button class="btn btn-blue btn-sm" onclick="exportBaseExcel()"><i class="ri-download-2-line"></i> Exporter Excel</button>
         <label class="btn btn-ghost btn-sm" style="cursor:pointer">
@@ -885,6 +885,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           </div>
         </div>
       </div>
+      <div id="basePager" style="display:none"></div>
       <div style="font-size:11px;color:var(--text4)">
         Format import Excel: Colonne A=Code · B=Désig.FR · C=Désig.AR · D=Ingrédients FR · E=Ingrédients AR · F=Origine · G=ColJ · H=ColK
       </div>
@@ -2204,7 +2205,7 @@ async function autoRestore(){
       state.base = data.base; state.queue=data.queue||[]; state.templates=data.templates||{};
       state.mapping=data.mapping||state.mapping; state.productTpl=data.productTpl||{};
       state.history=data.history||[]; state.tplLayout=data.tplLayout||{}; state.textColors=data.textColors||state.textColors;
-      ['base','queue','templates','mapping','productTpl','history','tplLayout','textColors'].forEach(k=>save(k));
+      saveBaseSafe(); ['queue','templates','mapping','productTpl','history','tplLayout','textColors'].forEach(k=>save(k));
       toast('Restauration automatique réussie ✓ — Rechargez si nécessaire','ok');
       // Ne pas recharger automatiquement pour éviter les boucles
     }
@@ -2251,7 +2252,7 @@ function importAllData(input){
         state.tplLayout = data.tplLayout||{};
         state.textColors = data.textColors||state.textColors;
         // Sauvegarder tout
-        ['base','queue','templates','mapping','productTpl','history','tplLayout','textColors'].forEach(k=>save(k));
+        saveBaseSafe(); ['queue','templates','mapping','productTpl','history','tplLayout','textColors'].forEach(k=>save(k));
         toast('Données restaurées ✓ Rechargez la page','ok');
         setTimeout(()=>location.reload(), 1200);
       }
@@ -3224,16 +3225,60 @@ function importExcelToQueue(input){
 // ═══════════════════════════════════════════════════════════════
 let editingCode = null;
 
-function renderBase(){
-  const q = ($('#baseSearch').value||'').toLowerCase();
+// Pagination base — page courante
+let _basePage = 0;
+const _basePageSize = 100;
+
+function renderBase(page){
+  if(page !== undefined) _basePage = page;
+  const q = ($('#baseSearch').value||'').toLowerCase().trim();
   const body = $('#baseBody');
-  body.innerHTML='';
-  const filtered = state.base.filter(p=>!q||p.code.includes(q)||p.designation_fr.toLowerCase().includes(q));
-  $('#baseEmpty').style.display = filtered.length?'none':'';
-  filtered.slice(0,200).forEach(p=>{
+  body.innerHTML = '';
+
+  const filtered = state.base.filter(p =>
+    !q ||
+    p.code.includes(q) ||
+    (p.designation_fr||'').toLowerCase().includes(q) ||
+    (p.designation_ar||'').includes(q)
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / _basePageSize));
+  if(_basePage >= totalPages) _basePage = totalPages - 1;
+  if(_basePage < 0) _basePage = 0;
+
+  $('#baseEmpty').style.display = filtered.length ? 'none' : '';
+
+  // Pagination controls
+  const pager = document.getElementById('basePager');
+  if(pager){
+    if(filtered.length > _basePageSize){
+      const from = _basePage * _basePageSize + 1;
+      const to   = Math.min(from + _basePageSize - 1, filtered.length);
+      pager.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--text3);padding:6px 0">
+          <span style="color:var(--amber);font-weight:700">${filtered.length} articles</span>
+          <span>· Affichage ${from}–${to}</span>
+          <div style="display:flex;gap:4px;margin-left:auto">
+            <button class="btn btn-ghost btn-sm" onclick="renderBase(0)" ${_basePage===0?'disabled':''} title="Première">⏮</button>
+            <button class="btn btn-ghost btn-sm" onclick="renderBase(${_basePage-1})" ${_basePage===0?'disabled':''} title="Précédente">‹</button>
+            <span style="padding:4px 8px;background:var(--surf3);border-radius:6px;font-weight:700">${_basePage+1} / ${totalPages}</span>
+            <button class="btn btn-ghost btn-sm" onclick="renderBase(${_basePage+1})" ${_basePage>=totalPages-1?'disabled':''} title="Suivante">›</button>
+            <button class="btn btn-ghost btn-sm" onclick="renderBase(${totalPages-1})" ${_basePage>=totalPages-1?'disabled':''} title="Dernière">⏭</button>
+          </div>
+        </div>`;
+      pager.style.display = 'block';
+    } else {
+      pager.innerHTML = filtered.length ? `<div style="font-size:11px;color:var(--text3);padding:4px 0">${filtered.length} article(s)</div>` : '';
+      pager.style.display = filtered.length ? 'block' : 'none';
+    }
+  }
+
+  // Afficher la page courante
+  const page_items = filtered.slice(_basePage * _basePageSize, (_basePage + 1) * _basePageSize);
+  const frag = document.createDocumentFragment();
+  page_items.forEach(p=>{
     const tr = document.createElement('tr');
-    // Show ingredients with allergens highlighted
-    const ingHtml = renderIngHtml(p.ingredients_fr||'',48);
+    const ingHtml = renderIngHtml(p.ingredients_fr||'', 48);
     tr.innerHTML=`
       <td class="mono" style="font-size:12px">${p.code}</td>
       <td style="font-weight:600">${p.designation_fr}</td>
@@ -3247,8 +3292,9 @@ function renderBase(){
         <button class="btn btn-ghost btn-sm" style="margin-right:4px" onclick="openArticleModal('${p.code}')"><i class="ri-edit-line"></i></button>
         <button class="btn btn-red btn-sm" onclick="deleteArticle('${p.code}')"><i class="ri-delete-bin-line"></i></button>
       </td>`;
-    body.appendChild(tr);
+    frag.appendChild(tr);
   });
+  body.appendChild(frag);
   updateCounters();
 }
 
@@ -3303,44 +3349,99 @@ function saveArticle(){
     if(state.base.find(x=>x.code===code)){ toast('Code déjà existant','err'); return; }
     state.base.push(art);
   }
-  save('base'); renderBase(); closeArticleModal();
+  saveBaseSafe(); renderBase(); closeArticleModal();
   toast(editingCode?'Article modifié':'Article ajouté','ok');
 }
 
 function deleteArticle(code){
   if(!confirm(`Supprimer l'article ${code} ?`)) return;
   state.base = state.base.filter(p=>p.code!==code);
-  save('base'); renderBase(); toast('Article supprimé');
+  saveBaseSafe(); renderBase(); toast('Article supprimé');
 }
 
 // Import Base from Excel
 function importBaseExcel(input){
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
+  const file = input.files[0]; if(!file) return;
+  toast('⏳ Lecture du fichier Excel…', 'ok');
+
+  const reader = new FileReader();
+  reader.onload = e => {
     try{
-      const wb=XLSX.read(e.target.result,{type:'binary'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      let added=0,updated=0;
-      for(let i=1;i<rows.length;i++){
-        const r=rows[i];
-        const code=String(r[0]||'').trim(); if(!code) continue;
-        const art={
-          code, designation_fr:String(r[1]||''), designation_ar:String(r[2]||''),
-          ingredients_fr:String(r[3]||''), ingredients_ar:String(r[4]||''), origine:String(r[5]||''),
-          col_j:String(r[6]||''), col_k:String(r[7]||'')
+      // arraybuffer : plus fiable pour les gros fichiers (pas de limite binaire)
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
+
+      let added=0, updated=0, skipped=0;
+
+      for(let i=1; i<rows.length; i++){
+        const r = rows[i];
+        const code = String(r[0]||'').trim();
+        if(!code){ skipped++; continue; }
+        const art = {
+          code,
+          designation_fr:  String(r[1]||'').trim(),
+          designation_ar:  String(r[2]||'').trim(),
+          ingredients_fr:  String(r[3]||'').trim(),
+          ingredients_ar:  String(r[4]||'').trim(),
+          origine:         String(r[5]||'').trim(),
+          col_j:           String(r[6]||'').trim(),
+          col_k:           String(r[7]||'').trim()
         };
-        const idx=state.base.findIndex(x=>x.code===code);
-        if(idx>=0){ state.base[idx]=art; updated++; }
+        const idx = state.base.findIndex(x => x.code === code);
+        if(idx >= 0){ state.base[idx] = art; updated++; }
         else { state.base.push(art); added++; }
       }
-      save('base'); renderBase();
-      toast(`Import: ${added} ajoutés, ${updated} mis à jour`,'ok');
-    }catch(err){ toast('Erreur: '+err.message,'err'); }
-    input.value='';
+
+      saveBaseSafe();
+      renderBase();
+      const msg = `✅ Import : ${added} ajoutés, ${updated} mis à jour${skipped ? ', '+skipped+' ignorés' : ''} — Base totale : ${state.base.length} articles`;
+      toast(msg, 'ok');
+    }catch(err){
+      console.error('[importBaseExcel]', err);
+      toast('❌ Erreur Excel : '+err.message, 'err');
+    }
+    input.value = '';
   };
-  reader.readAsBinaryString(file);
+  reader.readAsArrayBuffer(file);
+}
+
+// Sauvegarde base avec gestion quota localStorage
+function saveBaseSafe(){
+  const json = JSON.stringify(state.base);
+  const sizeKB = Math.round(json.length / 1024);
+  try{
+    localStorage.setItem('a7_base', json);
+    console.log('[Base] Sauvegardée : '+state.base.length+' articles, ~'+sizeKB+' KB');
+  }catch(e){
+    console.warn('[Base] Quota dépassé — purge historique…', e);
+    try{
+      // Purger l'historique pour libérer de la place
+      state.history = state.history.slice(0, 100);
+      localStorage.setItem('a7_history', JSON.stringify(state.history));
+      localStorage.setItem('a7_base', json);
+      console.log('[Base] Sauvegardée après purge historique');
+    }catch(e2){
+      // Sauvegarder uniquement les champs essentiels (sans ingrédients)
+      console.warn('[Base] Toujours plein — sauvegarde allégée…', e2);
+      try{
+        const light = state.base.map(a=>({
+          code: a.code,
+          designation_fr: a.designation_fr,
+          designation_ar: a.designation_ar||'',
+          ingredients_fr: (a.ingredients_fr||'').substring(0,100),
+          ingredients_ar: (a.ingredients_ar||'').substring(0,60),
+          origine: a.origine||'', col_j: a.col_j||'', col_k: a.col_k||''
+        }));
+        localStorage.setItem('a7_base', JSON.stringify(light));
+        toast('⚠️ Base enregistrée mais stockage presque plein. Activez l\'auto-save fichier !', 'warn');
+      }catch(e3){
+        toast('❌ Stockage plein ! Exportez la base et activez l\'auto-save.', 'err');
+        console.error('[Base] Impossible localStorage', e3);
+      }
+    }
+  }
+  setTimeout(autoSaveNow, 300);
 }
 
 // Export Base to Excel
@@ -5341,11 +5442,15 @@ function a4RenderEls(ctx, W, H, data, els) {
   // ── Gencode ─────────────────────────────────────────────────────
   if (data.code && els.gencode) {
     const e = els.gencode;
-    ctx.fillStyle = e.color || '#FFF';
-    ctx.font = '900 ' + (e.fs * sc) + 'px "BFMarjane","IBM Plex Mono",monospace';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    a4DrawBarcode(ctx, e.x * W, e.y * H - 18 * sc, data.code, W * 0.38, 16 * sc, e.color || '#FFF');
-    ctx.fillText(data.code, e.x * W, e.y * H + 5 * sc);
+    const gx = e.x * W;
+    const gy = e.y * H;
+    const color = e.color || '#FFF';
+    // Dessiner uniquement le texte du gencode (propre, sans barres parasites)
+    ctx.fillStyle = color;
+    ctx.font = 'bold ' + (e.fs * sc) + 'px "IBM Plex Mono",monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(data.code, gx, gy);
   }
 
   // ── Picto (image uploadée 5×3 cm) ───────────────────────────────
@@ -5383,16 +5488,7 @@ function a4WrapText(ctx, text, x, y, maxW, lineH, maxLines) {
   lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
 }
 
-function a4DrawBarcode(ctx, cx, cy, code, maxW, h, color) {
-  if (!code) return;
-  const bW = maxW / (code.length * 2 + 4); let x = cx - maxW / 2;
-  ctx.fillStyle = color;
-  for (let i = 0; i < code.length; i++) {
-    const w = (parseInt(code[i]) + 1) * bW;
-    if (i % 2 === 0) ctx.fillRect(x, cy - h / 2, w, h);
-    x += w + bW * 0.6;
-  }
-}
+// a4DrawBarcode supprimée — rendu gencode simplifié (texte seul, sans barres parasites)
 
 function a4DarkenHex(hex, amt) {
   try {
@@ -5583,7 +5679,7 @@ function saveA4Tpl() {
 
 window.addEventListener('beforeunload', (e)=>{
   try{
-    save('base'); save('queue'); save('templates'); save('mapping'); save('productTpl'); save('history'); save('tplLayout'); save('textColors');
+    saveBaseSafe(); ['queue','templates','mapping','productTpl','history','tplLayout','textColors'].forEach(k=>save(k));
     if(window.playablesSDK){ window.playablesSDK.sendEvent('app_exit', {ts:Date.now()}); }
   }catch(err){}
 });
