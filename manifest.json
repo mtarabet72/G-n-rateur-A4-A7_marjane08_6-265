@@ -1,0 +1,66 @@
+{
+  "name": "Marjane Étiquettes — Génération A7/A4",
+  "short_name": "Marjane Étiq.",
+  "description": "Système professionnel de génération d'affichettes A7 et A4 pour hypermarché Marjane – bilingue FR/AR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "theme_color": "#1a4da0",
+  "background_color": "#0b0f14",
+  "lang": "fr-MA",
+  "dir": "ltr",
+  "categories": ["productivity", "business", "utilities"],
+  "iarc_rating_id": "",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Saisie A7",
+      "short_name": "A7",
+      "description": "Créer une étiquette A7 rapidement",
+      "url": "./index.html#saisie",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Affichette A4",
+      "short_name": "A4",
+      "description": "Créer une affichette A4 promo",
+      "url": "./index.html#a4",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "./index.html",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "edge_side_panel": {
+    "preferred_width": 480
+  }
+}
