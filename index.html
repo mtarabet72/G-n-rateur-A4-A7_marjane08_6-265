@@ -1777,7 +1777,7 @@ function doLogin(){
   try {
     $('#loginErr').textContent = '';
     const username = ($('#loginUser').value||'').trim().toLowerCase();
-    const pass = $('#loginPass').value;
+    const pass = ($('#loginPass').value||'').trim();
     if(!username || !pass){
       $('#loginErr').textContent = 'Identifiant et mot de passe requis.';
       return;
@@ -1786,9 +1786,15 @@ function doLogin(){
     // Nettoyer les données corrompues avant de chercher
     users = users.filter(u => u && typeof u.username === 'string' && typeof u.pwHash === 'string');
     const hash = fnv1a(pass);
-    const user = users.find(u => u.username.toLowerCase() === username && u.pwHash === hash);
+    // Chercher l'utilisateur (insensible à la casse)
+    const userFound = users.find(u => u.username.toLowerCase() === username);
+    if(!userFound){
+      $('#loginErr').textContent = 'Identifiant introuvable.';
+      return;
+    }
+    const user = userFound.pwHash === hash ? userFound : null;
     if(!user){
-      $('#loginErr').textContent = 'Identifiant ou mot de passe incorrect.';
+      $('#loginErr').textContent = 'Mot de passe incorrect. Vérifiez les majuscules.';
       return;
     }
     const sessionData = {
@@ -1815,7 +1821,7 @@ function logout(){
 function debugLogin(){
   try {
     const username = ($('#loginUser').value||'').trim().toLowerCase();
-    const pass = $('#loginPass').value;
+    const pass = ($('#loginPass').value||'').trim();
     const users = getUsers();
     let msg = '';
 
