@@ -3043,7 +3043,7 @@ async function generatePDF(){
     (function drawSignature(ctx, cw, ch){
       ctx.save();
       // Fond pill
-      const sig = 'MTARABET';
+      const sig = 'Marjane08';
       const fz = Math.round(cw * 0.042);
       ctx.font = '600 ' + fz + 'px IBM Plex Mono, monospace';
       const tw = ctx.measureText(sig).width;
@@ -3076,7 +3076,7 @@ async function generatePDF(){
     pdf.setPage(p);
     pdf.setFontSize(6);
     pdf.setTextColor(160,160,160);
-    pdf.text('A7 v2.1 · MTARABET · Marjane Tanger 08 · ' + new Date().toLocaleDateString('fr-FR'), 5, 293);
+    pdf.text('A7 v2.1 · Marjane08 · Marjane Tanger 08 · ' + new Date().toLocaleDateString('fr-FR'), 5, 293);
     pdf.text('Page ' + p + '/' + totalPages, 200, 293, {align:'right'});
   }
 
