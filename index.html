@@ -695,6 +695,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <button id="logoutBtn" onclick="logout()" title="Déconnexion"><i class="ri-logout-box-r-line"></i> Déconnexion</button>
       <span id="hdrQueue" class="badge badge-amber">File: 0</span>
       <span id="hdrBase" class="badge badge-red">Base: 0</span>
+      <span id="hdrStorage" class="badge" style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);cursor:pointer" onclick="switchTab('dashboard')" title="Santé du stockage — cliquer pour détails">💾 OK</span>
       <button id="installBtn" onclick="installPWA()" title="Installer l'application sur cet appareil" style="display:none;background:var(--amber);color:#000;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700"><i class="ri-download-cloud-2-line"></i> Installer</button>
     </div>
   </header>
@@ -731,6 +732,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <button class="nav-btn" data-tab="file" onclick="switchTab('file')"><i class="ri-printer-line"></i> FILE <span id="navFileCount" class="count">0</span></button>
     <button class="nav-btn" data-tab="base" onclick="switchTab('base')"><i class="ri-database-2-line"></i> BASE</button>
     <button class="nav-btn" data-tab="historique" onclick="switchTab('historique')"><i class="ri-history-line"></i> HISTORIQUE</button>
+    <button class="nav-btn" data-tab="dashboard" onclick="switchTab('dashboard')"><i class="ri-bar-chart-box-line"></i> DASHBOARD</button>
     <button class="nav-btn" data-tab="templates" onclick="switchTab('templates')"><i class="ri-image-edit-line"></i> TEMPLATES</button>
     <button class="nav-btn" data-tab="config" onclick="switchTab('config')"><i class="ri-settings-3-line"></i> CONFIG</button>
     <button class="nav-btn" onclick="openHelp()" style="margin-left:auto;color:var(--amber)"><i class="ri-question-line"></i> AIDE</button>
@@ -902,14 +904,78 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <div class="tbl-wrap" style="max-height:500px">
         <table>
           <thead><tr>
-            <th>Date / Heure</th><th>Code</th><th>Désignation</th>
-            <th>Template</th><th>Prix</th><th>Unité</th>
+            <th>Format</th><th>Date / Heure</th><th>Code</th><th>Désignation</th>
+            <th>Template</th><th>Prix</th><th>Unité</th><th>Fidélité</th>
           </tr></thead>
           <tbody id="histBody"></tbody>
         </table>
         <div id="histEmpty" style="padding:32px;text-align:center;color:var(--text4)">
           <i class="ri-history-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
           Aucun historique enregistré
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="tab-dashboard" class="tab">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- KPIs row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div class="card" style="text-align:center;padding:14px 8px">
+          <div id="dashToday" style="font-size:32px;font-weight:900;color:var(--amber)">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">AUJOURD'HUI</div>
+        </div>
+        <div class="card" style="text-align:center;padding:14px 8px">
+          <div id="dashWeek" style="font-size:32px;font-weight:900;color:var(--amber)">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">CETTE SEMAINE</div>
+        </div>
+        <div class="card" style="text-align:center;padding:14px 8px">
+          <div id="dashTotal" style="font-size:32px;font-weight:900;color:var(--amber)">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">TOTAL GÉNÉRATIONS</div>
+        </div>
+        <div class="card" style="text-align:center;padding:14px 8px">
+          <div id="dashUser" style="font-size:16px;font-weight:800;color:#60a5fa;margin-top:4px">—</div>
+          <div id="dashUserCount" style="font-size:11px;color:var(--amber);margin-top:2px">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">OPÉRATEUR ACTUEL</div>
+        </div>
+      </div>
+      <!-- Chart + Templates row -->
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:14px">
+        <div class="card" id="dashBox">
+          <div class="card-title"><i class="ri-bar-chart-2-line"></i> Activité 7 jours — A7 <span style="color:#ef4444">■</span>A4</div>
+          <canvas id="dashChart" style="width:100%;height:160px;border-radius:8px"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ri-pie-chart-2-line"></i> Top Templates A7</div>
+          <div id="dashTemplates" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+      <!-- Storage bar (will be injected by JS) -->
+      <div class="card" id="dashStorageCard">
+        <div class="card-title"><i class="ri-database-2-line"></i> Santé du Stockage</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--text3)">LocalStorage navigateur (~10 MB max)</span>
+          <span id="dashStorageLabel" style="font-size:11px;font-weight:700;color:var(--amber)"></span>
+        </div>
+        <div style="background:var(--surf3);border-radius:6px;height:12px;overflow:hidden">
+          <div id="dashStorageBar" style="height:100%;border-radius:6px;transition:width .6s ease;background:var(--amber);width:0%"></div>
+        </div>
+        <div id="dashStorageTip" style="font-size:11px;color:var(--text4);margin-top:8px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-ghost btn-sm" onclick="_cleanStorage()"><i class="ri-delete-bin-3-line"></i> Nettoyer historique</button>
+          <button class="btn btn-ghost btn-sm" onclick="_purgeTemplateImages()"><i class="ri-image-2-line"></i> Purger images</button>
+          <button class="btn btn-amber btn-sm" onclick="exportAllData()"><i class="ri-save-3-line"></i> Sauvegarder tout</button>
+        </div>
+      </div>
+      <!-- Recent activity -->
+      <div class="card">
+        <div class="card-title"><i class="ri-time-line"></i> Activité Récente — 20 dernières générations (A7 + A4)</div>
+        <div class="tbl-wrap" style="max-height:400px">
+          <table>
+            <thead><tr><th>Format</th><th>Heure</th><th>Code</th><th>Désignation</th><th>Template</th><th>Prix</th></tr></thead>
+            <tbody id="dashRecent"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -2089,7 +2155,17 @@ let state = {
   },
 };
 
-function save(key){ localStorage.setItem('a7_'+key, JSON.stringify(state[key])); setTimeout(autoSaveNow, 300); }
+function save(key){
+  try {
+    localStorage.setItem('a7_'+key, JSON.stringify(state[key]));
+  } catch(e) {
+    console.warn('[save] Quota dépassé pour',key,e);
+    toast('⚠️ Stockage presque plein ! Exportez ou nettoyez l\'historique.','err');
+  }
+  setTimeout(autoSaveNow, 300);
+  // Mettre à jour le monitor si visible
+  if(typeof _updateStorageMonitor==='function') setTimeout(_updateStorageMonitor, 200);
+}
 
 function applyTextColors(){
   const C = state.textColors;
@@ -3457,28 +3533,124 @@ function exportBaseExcel(){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// HISTORY
+// HISTORY — UNIFIÉ A7 + A4 avec filtres et pagination
 // ═══════════════════════════════════════════════════════════════
+let _histPage = 0;
+const _histPageSize = 100;
+let _histFilter = 'all'; // 'all' | 'a7' | 'a4'
+let _histSearch = '';
+
+function getA4History(){
+  try { return JSON.parse(localStorage.getItem('a4_history')||'[]'); } catch(e){ return []; }
+}
+
+function getAllHistory(){
+  const a7 = (state.history||[]).map(h=>({...h, _type:'A7'}));
+  const a4 = getA4History().map(h=>({...h, _type:'A4'}));
+  return [...a7, ...a4].sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
+}
+
 function renderHistory(){
   const body=$('#histBody');
+  if(!body) return;
   body.innerHTML='';
-  $('#histEmpty').style.display=state.history.length?'none':'';
-  state.history.slice(0,500).forEach(it=>{
+  
+  let all = getAllHistory();
+  
+  // Filtre type
+  if(_histFilter==='a7') all = all.filter(h=>h._type==='A7');
+  if(_histFilter==='a4') all = all.filter(h=>h._type==='A4');
+  
+  // Filtre recherche
+  if(_histSearch){
+    const q=_histSearch.toLowerCase();
+    all = all.filter(h=>(h.code||'').includes(q)||(h.designation_fr||h.desFR||'').toLowerCase().includes(q)||(h.template||h.tplId||'').toLowerCase().includes(q));
+  }
+  
+  const totalPages = Math.max(1, Math.ceil(all.length/_histPageSize));
+  if(_histPage>=totalPages) _histPage=totalPages-1;
+  if(_histPage<0) _histPage=0;
+  
+  $('#histEmpty').style.display = all.length?'none':'';
+  
+  // Barre d'outils de l'historique
+  let toolbar = document.getElementById('histToolbar');
+  if(!toolbar){
+    toolbar = document.createElement('div');
+    toolbar.id='histToolbar';
+    toolbar.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px';
+    body.parentNode.parentNode.insertBefore(toolbar, body.parentNode);
+  }
+  toolbar.innerHTML=`
+    <div style="display:flex;gap:4px;background:rgba(255,255,255,.04);border-radius:20px;padding:3px">
+      <button onclick="_histFilter='all';_histPage=0;renderHistory()" style="border-radius:16px;padding:4px 12px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${_histFilter==='all'?'var(--amber)':'transparent'};color:${_histFilter==='all'?'#000':'var(--text3)'}">📋 Tout (${getAllHistory().length})</button>
+      <button onclick="_histFilter='a7';_histPage=0;renderHistory()" style="border-radius:16px;padding:4px 12px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${_histFilter==='a7'?'#1d4ed8':'transparent'};color:${_histFilter==='a7'?'#fff':'var(--text3)'}">🏷 A7 (${(state.history||[]).length})</button>
+      <button onclick="_histFilter='a4';_histPage=0;renderHistory()" style="border-radius:16px;padding:4px 12px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${_histFilter==='a4'?'#991b1b':'transparent'};color:${_histFilter==='a4'?'#fff':'var(--text3)'}">🖨 A4 (${getA4History().length})</button>
+    </div>
+    <input placeholder="Rechercher code, désig., template…" value="${_histSearch}" oninput="_histSearch=this.value;_histPage=0;renderHistory()" style="flex:1;min-width:160px;max-width:280px;font-size:12px;padding:6px 10px">
+    <span style="font-size:11px;color:var(--text3);margin-left:auto">${all.length} entrée(s)</span>
+    ${totalPages>1?`<div style="display:flex;gap:4px">
+      <button class="btn btn-ghost btn-sm" onclick="_histPage=Math.max(0,_histPage-1);renderHistory()" ${_histPage===0?'disabled':''}>‹</button>
+      <span style="padding:3px 8px;background:var(--surf3);border-radius:6px;font-size:11px;font-weight:700">${_histPage+1}/${totalPages}</span>
+      <button class="btn btn-ghost btn-sm" onclick="_histPage=Math.min(${totalPages-1},_histPage+1);renderHistory()" ${_histPage>=totalPages-1?'disabled':''}>›</button>
+    </div>`:''}
+  `;
+  
+  const page = all.slice(_histPage*_histPageSize, (_histPage+1)*_histPageSize);
+  
+  // Mettre à jour l'entête du tableau selon le filtre
+  const thead = body.previousElementSibling;
+  if(thead && thead.tagName==='THEAD'){
+    if(_histFilter==='a4'){
+      thead.innerHTML='<tr><th>Format</th><th>Date / Heure</th><th>Code</th><th>Désignation</th><th>Template</th><th>Prix barré</th><th>Prix promo</th><th>Fidélité</th></tr>';
+    } else {
+      thead.innerHTML='<tr><th>Format</th><th>Date / Heure</th><th>Code</th><th>Désignation</th><th>Template</th><th>Prix</th><th>Unité</th><th>Fidélité</th></tr>';
+    }
+  }
+  
+  const frag = document.createDocumentFragment();
+  page.forEach(it=>{
     const tr=document.createElement('tr');
     const d=new Date(it.savedAt);
-    tr.innerHTML=`
-      <td style="font-size:11px;white-space:nowrap">${d.toLocaleString('fr-FR')}</td>
-      <td class="mono" style="font-size:12px">${it.code}</td>
-      <td style="font-size:13px">${it.designation_fr||'—'}</td>
-      <td><span style="background:var(--surf3);border:1px solid var(--border2);border-radius:5px;padding:2px 7px;font-size:11px">${it.template}</span></td>
-      <td style="color:var(--amber);font-family:'IBM Plex Mono'">${it.prix||'—'} DH</td>
-      <td style="font-size:12px">/${it.unite||'—'}</td>`;
-    body.appendChild(tr);
+    const dStr=d.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const isA4=it._type==='A4';
+    const badge=isA4?
+      '<span style="background:#7f1d1d;color:#fca5a5;font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px">A4</span>':
+      '<span style="background:#1e3a8a;color:#93c5fd;font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px">A7</span>';
+    const tpl=it.template||it.tplId||'—';
+    if(isA4){
+      tr.innerHTML=`
+        <td>${badge}</td>
+        <td style="font-size:11px;white-space:nowrap">${dStr}</td>
+        <td class="mono" style="font-size:11px">${it.code||'—'}</td>
+        <td style="font-size:12px">${(it.desFR||it.designation_fr||'—').substring(0,28)}</td>
+        <td><span style="background:var(--surf3);border:1px solid #7f1d1d;border-radius:5px;padding:2px 7px;font-size:10px">${tpl}</span></td>
+        <td style="color:#ef4444;font-size:11px;text-decoration:line-through">${it.barre?it.barre.toFixed(2)+' DH':'—'}</td>
+        <td style="color:#22c55e;font-weight:700;font-size:12px">${it.promo?it.promo.toFixed(2)+' DH':'—'}</td>
+        <td style="color:var(--amber);font-size:11px">${it.fidelite?it.fidelite+'%':'—'}</td>`;
+    } else {
+      tr.innerHTML=`
+        <td>${badge}</td>
+        <td style="font-size:11px;white-space:nowrap">${dStr}</td>
+        <td class="mono" style="font-size:11px">${it.code}</td>
+        <td style="font-size:12px">${(it.designation_fr||'—').substring(0,28)}</td>
+        <td><span style="background:var(--surf3);border:1px solid var(--border2);border-radius:5px;padding:2px 7px;font-size:10px">${tpl}</span></td>
+        <td style="color:var(--amber);font-size:12px">${it.prix||'—'} DH</td>
+        <td style="font-size:12px">/${it.unite||'—'}</td>
+        <td style="color:var(--amber);font-size:11px">${it.fidelite?it.fidelite+'%':'—'}</td>`;
+    }
+    frag.appendChild(tr);
   });
+  body.appendChild(frag);
 }
+
 function clearHistory(){
-  if(!confirm('Effacer tout l\'historique ?')) return;
-  state.history=[]; save('history'); renderHistory(); toast('Historique effacé');
+  const what = _histFilter;
+  const msg = what==='a4'?'Effacer l\'historique A4 ?':what==='a7'?'Effacer l\'historique A7 ?':'Effacer TOUT l\'historique (A7 + A4) ?';
+  if(!confirm(msg)) return;
+  if(what==='all'||what==='a7'){ state.history=[]; save('history'); }
+  if(what==='all'||what==='a4'){ localStorage.setItem('a4_history','[]'); }
+  renderHistory(); toast('Historique effacé');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3669,8 +3841,10 @@ function saveTplOverrides(){ save('product_tpl'); toast('Assignations enregistr�
 function switchTab(name){
   $$('#a7-mode .tab').forEach(t=>t.classList.remove('active'));
   $$('#a7-mode .nav-btn').forEach(b=>b.classList.remove('active'));
-  $('#tab-'+name).classList.add('active');
-  document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+  const tabEl = document.getElementById('tab-'+name);
+  const btnEl = document.querySelector(`[data-tab="${name}"]`);
+  if(tabEl) tabEl.classList.add('active');
+  if(btnEl) btnEl.classList.add('active');
   if(name==='file') renderQueue();
   if(name==='base') renderBase();
   if(name==='historique') renderHistory();
@@ -3783,6 +3957,9 @@ async function loadCanvasFonts(){
     clearPreview($('#previewCanvas'));
     updateCounters();
   } catch(e) { console.warn('init UI error:', e); }
+
+  // Vérifier le stockage au démarrage
+  setTimeout(()=>{ try{ if(typeof _updateStorageMonitor==='function') _updateStorageMonitor(); }catch(e){} }, 1500);
 
   const lu=localStorage.getItem('a7_last_unite');
   if(lu) try{ $('#uniteInput').value=lu; }catch(e){}
@@ -4077,69 +4254,248 @@ async function startBarcodeScanNative(input, onScanned){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DASHBOARD
+// DASHBOARD DÉTAILLÉ — A7 + A4 + STOCKAGE
 // ═══════════════════════════════════════════════════════════════
 function updateDashboard(){
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const weekStart = todayStart - 6*24*60*60*1000;
-  
-  const today = state.history.filter(h=>h.savedAt>=todayStart).length;
-  const week = state.history.filter(h=>h.savedAt>=weekStart).length;
-  const total = state.history.length;
-  
-  $('#dashToday').textContent = today;
-  $('#dashWeek').textContent = week;
-  $('#dashTotal').textContent = total;
-  
-  const session = getCurrentSession();
+
+  const a7hist = state.history||[];
+  const a4hist = getA4History ? getA4History() : (JSON.parse(localStorage.getItem('a4_history')||'[]'));
+
+  const todayA7 = a7hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
+  const todayA4 = a4hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
+  const weekA7  = a7hist.filter(h=>new Date(h.savedAt)>=weekStart).length;
+  const weekA4  = a4hist.filter(h=>new Date(h.savedAt)>=weekStart).length;
+  const totalA7 = a7hist.length;
+  const totalA4 = a4hist.length;
+  const total   = totalA7 + totalA4;
+
+  if($('#dashToday'))    $('#dashToday').textContent = todayA7+todayA4;
+  if($('#dashWeek'))     $('#dashWeek').textContent  = weekA7+weekA4;
+  if($('#dashTotal'))    $('#dashTotal').textContent  = total;
+
+  const session = typeof getCurrentSession==='function' ? getCurrentSession() : null;
   const user = session?.user||'—';
-  $('#dashUser').textContent = user;
-  const userCount = state.history.filter(h=>h.user===user).length;
-  $('#dashUserCount').textContent = userCount + ' générations';
-  
-  // Top templates
+  if($('#dashUser'))      $('#dashUser').textContent = user;
+  const userCount = [...a7hist,...a4hist].filter(h=>h.user===user).length;
+  if($('#dashUserCount')) $('#dashUserCount').textContent = userCount + ' générations';
+
+  // Top templates A7
   const tplCount = {};
-  state.history.forEach(h=>{ const t=h.template||'Auto'; tplCount[t]=(tplCount[t]||0)+1; });
+  a7hist.forEach(h=>{ const t=h.template||'Auto'; tplCount[t]=(tplCount[t]||0)+1; });
   const topTpl = Object.entries(tplCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const tplDiv = $('#dashTemplates');
-  tplDiv.innerHTML = topTpl.map(([t,c])=>{
-    const pct = total? Math.round(c/total*100):0;
-    return `<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>${t}</span><span style="color:var(--text3)">${c}</span></div><div style="height:6px;background:var(--surf3);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--amber)"></div></div></div>`;
-  }).join('') || '<div style="color:var(--text4);font-size:12px">Aucune donnée</div>';
-  
-  // 7 days chart (simple canvas)
+  if(tplDiv){
+    tplDiv.innerHTML = topTpl.map(([t,c])=>{
+      const pct = totalA7? Math.round(c/totalA7*100):0;
+      return `<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>${t}</span><span style="color:var(--text3)">${c}</span></div><div style="height:6px;background:var(--surf3);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--amber)"></div></div></div>`;
+    }).join('') || '<div style="color:var(--text4);font-size:12px">Aucune donnée A7</div>';
+  }
+
+  // ── Panneau A4 stats ──────────────────────────────────────────
+  let a4StatsEl = document.getElementById('dashA4Stats');
+  if(!a4StatsEl){
+    const dbox = document.getElementById('dashBox') || ($('#dashTemplates')?.closest('.card'));
+    if(dbox){
+      a4StatsEl = document.createElement('div');
+      a4StatsEl.id='dashA4Stats';
+      a4StatsEl.style.cssText='margin-top:16px;border-top:1px solid var(--border);padding-top:14px';
+      dbox.appendChild(a4StatsEl);
+    }
+  }
+  if(a4StatsEl){
+    const tplA4 = {};
+    a4hist.forEach(h=>{ const t=h.tplId||'—'; tplA4[t]=(tplA4[t]||0)+1; });
+    const topA4 = Object.entries(tplA4).sort((a,b)=>b[1]-a[1]).slice(0,4);
+    a4StatsEl.innerHTML=`
+      <div style="font-size:11px;font-weight:700;color:#f87171;letter-spacing:1px;margin-bottom:10px">🖨 FORMAT A4 — ${totalA4} affichettes générées</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:rgba(153,27,27,.15);border:1px solid #7f1d1d;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:#f87171">${todayA4}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">AUJOURD'HUI</div>
+        </div>
+        <div style="background:rgba(153,27,27,.15);border:1px solid #7f1d1d;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:#f87171">${weekA4}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">CETTE SEMAINE</div>
+        </div>
+      </div>
+      ${topA4.length?`<div style="font-size:10px;color:var(--text3);font-weight:700;margin-bottom:6px">TOP TEMPLATES A4</div>`+
+      topA4.map(([t,c])=>{
+        const pct=totalA4?Math.round(c/totalA4*100):0;
+        return `<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--text2)">${t}</span><span style="color:#f87171">${c}</span></div><div style="height:5px;background:var(--surf3);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:#ef4444"></div></div></div>`;
+      }).join(''):'<div style="font-size:11px;color:var(--text4)">Aucune affichette A4 générée</div>'}`;
+  }
+
+  // ── Graphique 7 jours (A7 + A4 empilés) ────────────────────
   const canvas = $('#dashChart');
   if(canvas){
     const ctx = canvas.getContext('2d');
-    const w = canvas.width = canvas.offsetWidth*2;
+    const w = canvas.width = canvas.offsetWidth*2||600;
     const h = canvas.height = 160*2;
     ctx.clearRect(0,0,w,h);
     const days = [];
     for(let i=6;i>=0;i--){
       const d = new Date(todayStart - i*24*60*60*1000);
-      const cnt = state.history.filter(x=>{ const dt=new Date(x.savedAt); return dt.getFullYear()===d.getFullYear()&&dt.getMonth()===d.getMonth()&&dt.getDate()===d.getDate(); }).length;
-      days.push({label:d.toLocaleDateString('fr-FR',{weekday:'short'}),cnt});
+      const cntA7 = a7hist.filter(x=>{ const dt=new Date(x.savedAt); return dt.getFullYear()===d.getFullYear()&&dt.getMonth()===d.getMonth()&&dt.getDate()===d.getDate(); }).length;
+      const cntA4 = a4hist.filter(x=>{ const dt=new Date(x.savedAt); return dt.getFullYear()===d.getFullYear()&&dt.getMonth()===d.getMonth()&&dt.getDate()===d.getDate(); }).length;
+      days.push({label:d.toLocaleDateString('fr-FR',{weekday:'short'}),cntA7,cntA4,total:cntA7+cntA4});
     }
-    const max = Math.max(1, ...days.map(d=>d.cnt));
+    const max = Math.max(1, ...days.map(d=>d.total));
     const pad=40; const gw=w-pad*2; const gh=h-60;
     ctx.strokeStyle='#3d3528'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(pad, h-30); ctx.lineTo(w-pad, h-30); ctx.stroke();
     days.forEach((d,i)=>{
       const x = pad + (i+0.5)*gw/7;
-      const barH = (d.cnt/max)*gh;
-      ctx.fillStyle='#f59e0b'; ctx.fillRect(x-20, h-30-barH, 40, barH);
+      const bW=36;
+      const hA7 = (d.cntA7/max)*gh;
+      const hA4 = (d.cntA4/max)*gh;
+      // A4 (rouge, dessus)
+      if(hA4>0){ ctx.fillStyle='#ef4444'; ctx.fillRect(x-bW/2, h-30-hA7-hA4, bW, hA4); }
+      // A7 (amber, dessous)
+      if(hA7>0){ ctx.fillStyle='#f59e0b'; ctx.fillRect(x-bW/2, h-30-hA7, bW, hA7); }
+      // Label jour
       ctx.fillStyle='#9a7a50'; ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.fillText(d.label, x, h-8);
-      if(d.cnt>0){ ctx.fillStyle='#fef3c7'; ctx.fillText(d.cnt, x, h-35-barH); }
+      if(d.total>0){ ctx.fillStyle='#fef3c7'; ctx.fillText(d.total, x, h-37-d.total/max*gh); }
     });
+    // Légende
+    ctx.fillStyle='#f59e0b'; ctx.fillRect(pad,12,24,14);
+    ctx.fillStyle='#fef3c7'; ctx.font='20px sans-serif'; ctx.textAlign='left'; ctx.fillText('A7',pad+28,24);
+    ctx.fillStyle='#ef4444'; ctx.fillRect(pad+70,12,24,14);
+    ctx.fillStyle='#fef3c7'; ctx.fillText('A4',pad+98,24);
   }
-  
-  // Recent activity
+
+  // ── Activité récente (A7 + A4) ──────────────────────────────
   const recent = $('#dashRecent');
-  recent.innerHTML = state.history.slice(0,20).map(h=>{
-    const d=new Date(h.savedAt); const time=d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    return `<tr><td style="font-size:11px">${time}</td><td class="mono">${h.code}</td><td>${(h.designation_fr||'').substring(0,30)}</td><td style="font-size:11px">${h.template||'—'}</td><td style="font-size:11px">${h.prix||''}</td></tr>`;
-  }).join('');
+  if(recent){
+    const all = [...a7hist.map(h=>({...h,_type:'A7'})),...a4hist.map(h=>({...h,_type:'A4'}))]
+      .sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt)).slice(0,20);
+    recent.innerHTML = all.map(h=>{
+      const d=new Date(h.savedAt);
+      const time=d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      const badge=h._type==='A4'?'<span style="background:#7f1d1d;color:#fca5a5;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px">A4</span>':'<span style="background:#1e3a8a;color:#93c5fd;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px">A7</span>';
+      const des=(h.designation_fr||h.desFR||'').substring(0,22);
+      const tpl=h.template||h.tplId||'—';
+      const prix=h._type==='A4'?(h.promo?h.promo.toFixed(2)+' DH':'—'):(h.prix||'')+(h.prix?' DH':'—');
+      return `<tr><td>${badge}</td><td style="font-size:11px">${time}</td><td class="mono">${h.code||'—'}</td><td style="font-size:11px">${des}</td><td style="font-size:11px">${tpl}</td><td style="font-size:11px;color:var(--amber)">${prix}</td></tr>`;
+    }).join('');
+  }
+
+  // ── Monitoring stockage ──────────────────────────────────────
+  _updateStorageMonitor();
+}
+
+// ─── MONITORING STOCKAGE ────────────────────────────────────────
+function _getLocalStorageUsed(){
+  let total=0;
+  for(const k in localStorage){ if(localStorage.hasOwnProperty(k)) total += ((localStorage.getItem(k)||'').length + k.length)*2; }
+  return total;
+}
+function _updateStorageMonitor(){
+  const used = _getLocalStorageUsed();
+  const maxBytes = 10*1024*1024; // ~10 MB estimé
+  const pct = Math.min(100, Math.round(used/maxBytes*100));
+  const usedMB = (used/1024/1024).toFixed(2);
+  let storEl = document.getElementById('dashStorageBar');
+  if(!storEl){
+    // Injecter la barre de stockage dans le dashboard
+    const dashCard = $('#dashTemplates')?.closest('.card') || document.querySelector('#tab-saisie .card');
+    const wrap = document.getElementById('dashWrapper') || document.createElement('div');
+    wrap.id='dashStorageWrap';
+    wrap.style.cssText='margin-top:14px;padding:12px;border-radius:10px;border:1px solid var(--border)';
+    wrap.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--amber)">💾 STOCKAGE NAVIGATEUR</div>
+        <div id="dashStorageLabel" style="font-size:11px;color:var(--text3)"></div>
+      </div>
+      <div style="background:var(--surf3);border-radius:6px;height:10px;overflow:hidden;position:relative">
+        <div id="dashStorageBar" style="height:100%;border-radius:6px;transition:width .5s ease;background:var(--amber);width:0%"></div>
+      </div>
+      <div id="dashStorageTip" style="font-size:10px;color:var(--text4);margin-top:6px"></div>`;
+    if(dashCard) dashCard.appendChild(wrap);
+    else document.querySelector('#tab-saisie')?.appendChild(wrap);
+    storEl = document.getElementById('dashStorageBar');
+  }
+  if(!storEl) return;
+  const color = pct<60?'var(--amber)':pct<80?'#f59e0b':'#ef4444';
+  storEl.style.width = pct+'%';
+  storEl.style.background = color;
+  const lbl = document.getElementById('dashStorageLabel');
+  if(lbl) lbl.textContent = `${usedMB} MB / ~10 MB (${pct}%)`;
+  const tip = document.getElementById('dashStorageTip');
+  if(tip){
+    if(pct>=80) tip.innerHTML='⚠️ <strong style="color:#ef4444">Stockage critique !</strong> Exportez la base et activez l\'auto-save. Les templates (images) consomment le plus d\'espace.';
+    else if(pct>=60) tip.innerHTML='⚡ Stockage à surveiller. Pensez à exporter la sauvegarde régulièrement.';
+    else tip.innerHTML='✅ Stockage en bonne santé. ' + (Object.keys(state.templates||{}).filter(k=>state.templates[k]).length) + ' template(s) image chargé(s).';
+  }
+  // Badge header
+  const hdrS = document.getElementById('hdrStorage');
+  if(hdrS){
+    if(pct>=80){ hdrS.textContent='💾 '+pct+'%'; hdrS.style.color='#f87171'; hdrS.style.borderColor='rgba(248,113,113,.4)'; hdrS.style.background='rgba(248,113,113,.12)'; }
+    else if(pct>=60){ hdrS.textContent='💾 '+pct+'%'; hdrS.style.color='#fbbf24'; hdrS.style.borderColor='rgba(251,191,36,.4)'; hdrS.style.background='rgba(251,191,36,.12)'; }
+    else { hdrS.textContent='💾 OK'; hdrS.style.color='#4ade80'; hdrS.style.borderColor='rgba(74,222,128,.3)'; hdrS.style.background='rgba(74,222,128,.12)'; }
+  }
+}
+
+// Afficher la barre de stockage aussi dans l'onglet CONFIG
+function _injectStorageInConfig(){
+  const cfgTab = document.getElementById('tab-config');
+  if(!cfgTab || document.getElementById('cfgStorageWrap')) return;
+  const wrap = document.createElement('div');
+  wrap.id='cfgStorageWrap';
+  wrap.className='card';
+  wrap.style.marginTop='14px';
+  wrap.innerHTML=`
+    <div class="card-title"><i class="ri-database-2-line"></i> Santé du stockage localStorage</div>
+    <div id="cfgStorageDetails" style="font-size:12px;color:var(--text3)">Calcul en cours…</div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="_cleanStorage()"><i class="ri-delete-bin-3-line"></i> Nettoyer historique ancien</button>
+      <button class="btn btn-ghost btn-sm" onclick="_purgeTemplateImages()"><i class="ri-image-2-line"></i> Purger images templates</button>
+      <button class="btn btn-amber btn-sm" onclick="exportAllData()"><i class="ri-save-3-line"></i> Sauvegarder tout maintenant</button>
+    </div>`;
+  cfgTab.appendChild(wrap);
+  _refreshConfigStorage();
+}
+
+function _refreshConfigStorage(){
+  const el = document.getElementById('cfgStorageDetails');
+  if(!el) return;
+  const keys = [
+    ['a7_base','Base articles'],['a7_history','Historique A7'],['a4_history','Historique A4'],
+    ['a7_templates','Templates A7 (images)'],['a4_tpls','Templates A4'],['a4_file','File A4'],
+    ['a7_queue','File A7'],['a4_pictos','Pictos A4'],
+  ];
+  const rows = keys.map(([k,label])=>{
+    const v=localStorage.getItem('a7_'+k.replace('a7_',''))||localStorage.getItem(k)||'';
+    const kb=Math.round(v.length*2/1024);
+    const color=kb>500?'#ef4444':kb>100?'#f59e0b':'#4ade80';
+    return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span>${label}</span><span style="color:${color};font-family:monospace;font-weight:700">${kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB'}</span></div>`;
+  });
+  const total=Math.round(_getLocalStorageUsed()/1024);
+  el.innerHTML=rows.join('')+`<div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:700;color:var(--amber)"><span>TOTAL</span><span>${total>1024?(total/1024).toFixed(1)+' MB':total+' KB'} / ~10 MB</span></div>`;
+}
+
+function _cleanStorage(){
+  const keep=confirm('Garder seulement les 500 derniers historiques A7 et 500 derniers A4 ?');
+  if(!keep) return;
+  state.history=(state.history||[]).slice(0,500); save('history');
+  try{
+    const a4h=JSON.parse(localStorage.getItem('a4_history')||'[]').slice(0,500);
+    localStorage.setItem('a4_history',JSON.stringify(a4h));
+  }catch(e){}
+  toast('Nettoyage effectué ✓','ok');
+  _refreshConfigStorage();
+}
+
+function _purgeTemplateImages(){
+  if(!confirm('Supprimer toutes les images de templates A7 ? (les noms restent, il faudra re-uploader)')) return;
+  Object.keys(state.templates||{}).forEach(k=>delete state.templates[k]);
+  save('templates');
+  try{ const t=JSON.parse(localStorage.getItem('a4_tpls')||'[]'); t.forEach(x=>delete x.bgImg); localStorage.setItem('a4_tpls',JSON.stringify(t)); }catch(e){}
+  toast('Images templates supprimées — stockage libéré','ok');
+  _refreshConfigStorage();
+  if(typeof renderTemplates==='function') renderTemplates();
 }
 
 // Hook into tab switch
@@ -4147,6 +4503,8 @@ const _origSwitchTab = window.switchTab;
 window.switchTab = function(tab){
   _origSwitchTab(tab);
   if(tab==='dashboard') setTimeout(updateDashboard, 50);
+  if(tab==='config') setTimeout(()=>{ _injectStorageInConfig(); _refreshConfigStorage(); }, 100);
+  if(tab==='historique') setTimeout(renderHistory, 50);
 };
 
 // Sauvegarde automatique avant de quitter
@@ -4980,6 +5338,13 @@ function a4AddToFile() {
     savedAt: Date.now()
   };
   a4St.file.push(item);
+  // Sauvegarder dans l'historique A4
+  try{
+    const a4hist = JSON.parse(localStorage.getItem('a4_history')||'[]');
+    a4hist.unshift({...item, savedAt: new Date().toISOString(), user: (typeof getCurrentSession==='function'&&getCurrentSession())?getCurrentSession().user:'—'});
+    if(a4hist.length>3000) a4hist.length=3000;
+    localStorage.setItem('a4_history', JSON.stringify(a4hist));
+  }catch(e){ console.warn('[A4 hist] save error',e); }
   a4Save();
   renderA4File();
   const cnt = document.getElementById('a4FileCount');
@@ -5123,6 +5488,15 @@ function importExcelToA4File(input) {
       if (bar)  bar.style.width  = '100%';
 
       a4Save();
+      // Sauvegarder dans l'historique A4
+      try{
+        const a4hist = JSON.parse(localStorage.getItem('a4_history')||'[]');
+        a4St.file.slice(-added).forEach(item=>{
+          a4hist.unshift({...item, savedAt: new Date().toISOString(), user: (typeof getCurrentSession==='function'&&getCurrentSession())?getCurrentSession().user:'—'});
+        });
+        if(a4hist.length>3000) a4hist.length=3000;
+        localStorage.setItem('a4_history', JSON.stringify(a4hist));
+      }catch(e){ console.warn('[A4 hist] save error',e); }
       renderA4File();
 
       // Résumé
@@ -5887,6 +6261,19 @@ window.__exportPDF = async function(){
 };
 // Dark mode default
 document.documentElement.classList.add('dark');
+
+// Vérification périodique du stockage (toutes les 2 minutes)
+setInterval(()=>{
+  try{
+    const used = _getLocalStorageUsed ? _getLocalStorageUsed() : 0;
+    const pct = Math.min(100, Math.round(used/(10*1024*1024)*100));
+    if(pct >= 85 && typeof toast==='function'){
+      toast('⚠️ Stockage presque plein ('+pct+'%) ! Exportez la sauvegarde ou nettoyez l\'historique.','err');
+    }
+    // Mettre à jour les barres si elles existent
+    if(typeof _updateStorageMonitor==='function') _updateStorageMonitor();
+  }catch(e){}
+}, 120000); // 2 minutes
 </script>
 
 
