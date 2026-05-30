@@ -1031,7 +1031,18 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <div class="field"><label class="lbl">Code Article *</label><input id="m_code" placeholder="Ex: 2658179"></div>
     <div class="g2">
       <div class="field"><label class="lbl">Désignation FR *</label><input id="m_desFR" placeholder="Nom français"></div>
-      <div class="field"><label class="lbl">Désignation AR</label><input id="m_desAR" class="ar" placeholder="الاسم بالعربية"></div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label class="lbl" style="margin:0">Désignation AR</label>
+          <button type="button" id="btnTransA7" onclick="translateToArabic('m_desFR','m_desAR','btnTransA7')"
+            style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                   border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s"
+            title="Traduire la désignation FR en arabe commercial (IA)">
+            <i class="ri-translate-2" style="font-size:14px"></i> Traduire IA
+          </button>
+        </div>
+        <input id="m_desAR" class="ar" placeholder="الاسم بالعربية">
+      </div>
     </div>
     <div class="field"><label class="lbl">Ingrédients (FR)</label><textarea id="m_ing" placeholder="Lait, sucre, farine… (allergènes en majuscules)"></textarea></div>
     <div class="field"><label class="lbl">Ingrédients (AR)</label><textarea id="m_ing_ar" class="ar" placeholder="المكونات بالعربية…" style="direction:rtl;text-align:right"></textarea></div>
@@ -1083,8 +1094,18 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
             <h3><i class="ri-text"></i> Désignation</h3>
             <div class="field"><label class="lbl">Désignation FR</label>
               <input id="a4DesFR" placeholder="Nom du produit en français" oninput="this.dataset.manual=this.value?'1':'';a4Sync()"></div>
-            <div class="field"><label class="lbl">الاسم بالعربية</label>
-              <input id="a4DesAR" placeholder="الاسم بالعربية" class="ar" style="direction:rtl;text-align:right" oninput="this.dataset.manual=this.value?'1':'';a4Sync()"></div>
+            <div class="field">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <label class="lbl" style="margin:0">الاسم بالعربية</label>
+                <button type="button" id="btnTransA4" onclick="translateToArabic('a4DesFR','a4DesAR','btnTransA4',true)"
+                  style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                         border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s"
+                  title="Traduire la désignation FR en arabe commercial (IA)">
+                  <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
+                </button>
+              </div>
+              <input id="a4DesAR" placeholder="الاسم بالعربية" class="ar" style="direction:rtl;text-align:right" oninput="this.dataset.manual=this.value?'1':'';a4Sync()">
+            </div>
           </div>
           <div class="a4-form-section">
             <h3><i class="ri-price-tag-3-line"></i> Prix &amp; Secteur</h3>
@@ -2575,6 +2596,231 @@ function importAllData(input){
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
+// ═══════════════════════════════════════════════════════════════
+// TRADUCTEUR FR → AR COMMERCIAL (IA — Anthropic API)
+// ═══════════════════════════════════════════════════════════════
+async function translateToArabic(srcId, dstId, btnId, isA4 = false){
+  const srcEl = document.getElementById(srcId);
+  const dstEl = document.getElementById(dstId);
+  const btnEl = document.getElementById(btnId);
+  if(!srcEl || !dstEl){ toast('Champs introuvables', 'err'); return; }
+
+  const textFR = srcEl.value.trim();
+  if(!textFR){ toast('Saisissez d\'abord la désignation française', 'err'); return; }
+
+  // État chargement
+  const origHTML = btnEl ? btnEl.innerHTML : '';
+  if(btnEl){
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i class="ri-loader-4-line" style="animation:spin .7s linear infinite;display:inline-block"></i> ...';
+  }
+
+  try{
+    const prompt = `Tu es un expert en traduction commerciale pour la grande distribution au Maroc (hypermarché Marjane).
+Ta mission : traduire la désignation de produit française suivante en arabe marocain commercial (darija écrite en arabe standard).
+
+Règles strictes :
+- Utilise la terminologie commerciale standard des étiquettes de supermarché marocain
+- Si un terme technique/marque n'a pas d'équivalent arabe, conserve-le tel quel (translittération ou terme français)
+- Résultat court, adapté pour une étiquette produit (max 60 caractères)
+- Retourne UNIQUEMENT la traduction arabe, sans explication, sans ponctuation superflue
+- Exemple : "BEURRE DE CUISINE 250G" → "زبدة الطهي 250غ"
+- Exemple : "JUS D'ORANGE 1L" → "عصير البرتقال 1ل"
+- Exemple : "FROMAGE FONDU 8 PORTIONS" → "جبن مذاب 8 قطع"
+
+Désignation à traduire : "${textFR.substring(0, 120)}"`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 120,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if(!response.ok){
+      const err = await response.json().catch(()=>({}));
+      throw new Error(err.error?.message || 'Erreur API ' + response.status);
+    }
+
+    const data = await response.json();
+    const translation = (data.content?.[0]?.text || '').trim();
+
+    if(!translation){ throw new Error('Réponse vide de l\'IA'); }
+
+    // Injecter la traduction dans le champ cible
+    dstEl.value = translation;
+
+    // Déclencher les événements nécessaires pour la mise à jour de l'aperçu
+    if(isA4){
+      dstEl.dataset.manual = '1';
+      dstEl.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    toast('✅ Traduction arabe générée par IA', 'ok');
+
+  }catch(e){
+    console.error('[Traducteur IA]', e);
+    // Message d'erreur adapté
+    if(e.message && e.message.includes('401')){
+      toast('🔑 Clé API manquante — l\'app doit être servie via claude.ai', 'err');
+    } else if(e.message && e.message.includes('network')){
+      toast('📡 Réseau indisponible — vérifiez votre connexion', 'err');
+    } else {
+      toast('❌ Erreur traduction : ' + (e.message || 'inconnue'), 'err');
+    }
+  } finally {
+    if(btnEl){
+      btnEl.disabled = false;
+      btnEl.innerHTML = origHTML;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TRADUCTEUR EN LOT — pour import Excel (Base / File A7 / File A4)
+// ═══════════════════════════════════════════════════════════════
+
+// Traduit un seul terme FR → AR via l'API Anthropic
+async function _translateOneTerm(textFR){
+  if(!textFR || !textFR.trim()) return '';
+  const prompt = `Tu es un expert en traduction commerciale pour la grande distribution au Maroc (hypermarché Marjane).
+Traduis la désignation produit française en arabe marocain commercial (arabe standard adapté étiquette).
+Règles : terminologie supermarché, max 60 caractères, conserve les marques/chiffres/unités, retourne UNIQUEMENT la traduction arabe.
+Désignation : "${textFR.substring(0, 120).trim()}"`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 80,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if(!response.ok) throw new Error('API ' + response.status);
+  const data = await response.json();
+  return (data.content?.[0]?.text || '').trim();
+}
+
+// Affiche une modale de progression pour la traduction en lot
+// Retourne { close, setProgress, setStatus }
+function _createTranslationModal(total){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;
+    display:flex;align-items:center;justify-content:center;padding:16px`;
+  overlay.innerHTML = `
+    <div style="background:#0d1f3c;border:1px solid rgba(255,222,0,.3);border-radius:16px;
+                padding:28px 32px;width:100%;max-width:420px;text-align:center">
+      <div style="font-size:22px;margin-bottom:6px">🌐</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;
+                  color:#ffde00;letter-spacing:1px;margin-bottom:4px">TRADUCTION EN LOT</div>
+      <div id="_tlStatus" style="font-size:12px;color:#94a3b8;margin-bottom:18px">Initialisation…</div>
+      <div style="background:#1e3a5f;border-radius:8px;height:12px;overflow:hidden;margin-bottom:10px">
+        <div id="_tlBar" style="height:100%;background:linear-gradient(90deg,#ffde00,#f59e0b);
+             border-radius:8px;width:0%;transition:width .3s ease"></div>
+      </div>
+      <div id="_tlCount" style="font-size:11px;color:#64748b;margin-bottom:20px">0 / ${total}</div>
+      <div id="_tlLog" style="max-height:120px;overflow-y:auto;text-align:left;font-size:11px;
+           color:#94a3b8;background:#071428;border-radius:8px;padding:8px;margin-bottom:16px;
+           font-family:'IBM Plex Mono',monospace;line-height:1.6"></div>
+      <button id="_tlSkipBtn" onclick="window._tlSkip=true;this.textContent='Arrêt demandé…';this.disabled=true"
+        style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;
+               border-radius:8px;padding:6px 18px;font-size:12px;cursor:pointer">
+        ⏹ Ignorer la traduction
+      </button>
+    </div>`;
+  document.body.appendChild(overlay);
+  window._tlSkip = false;
+
+  const barEl    = overlay.querySelector('#_tlBar');
+  const countEl  = overlay.querySelector('#_tlCount');
+  const statusEl = overlay.querySelector('#_tlStatus');
+  const logEl    = overlay.querySelector('#_tlLog');
+
+  return {
+    setProgress(done, tot, label){
+      const pct = tot > 0 ? Math.round(done / tot * 100) : 0;
+      barEl.style.width    = pct + '%';
+      countEl.textContent  = done + ' / ' + tot;
+      statusEl.textContent = label || '';
+    },
+    addLog(msg){
+      const line = document.createElement('div');
+      line.textContent = msg;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    },
+    close(){
+      window._tlSkip = false;
+      overlay.remove();
+    }
+  };
+}
+
+// ─── Traduction en lot pour un tableau d'articles ────────────────
+// articles : [{designation_fr, designation_ar, ...}]
+// onUpdate(i, arText) : callback appelé après chaque traduction
+// Retourne le nb de termes traduits
+async function translateBatch(articles, onUpdate, delayMs = 300){
+  // Ne traduire que les articles sans désignation arabe
+  const toTranslate = articles
+    .map((a, i) => ({ i, fr: a.designation_fr }))
+    .filter(x => x.fr && !articles[x.i].designation_ar);
+
+  if(toTranslate.length === 0) return 0;
+
+  const modal = _createTranslationModal(toTranslate.length);
+  let done = 0, translated = 0;
+
+  modal.setProgress(0, toTranslate.length, 'Démarrage…');
+
+  for(const { i, fr } of toTranslate){
+    if(window._tlSkip) break;
+
+    modal.setProgress(done, toTranslate.length, `Traduction : ${fr.substring(0,40)}…`);
+
+    try{
+      const ar = await _translateOneTerm(fr);
+      if(ar){
+        onUpdate(i, ar);
+        translated++;
+        modal.addLog('✅ ' + fr.substring(0,30) + ' → ' + ar);
+      } else {
+        modal.addLog('⚠️ Vide : ' + fr.substring(0,30));
+      }
+    }catch(e){
+      modal.addLog('❌ Erreur : ' + fr.substring(0,25) + ' (' + e.message + ')');
+    }
+
+    done++;
+    modal.setProgress(done, toTranslate.length,
+      done < toTranslate.length ? 'Traduction en cours…' : '✅ Terminé !');
+
+    // Délai anti-rate-limit entre chaque appel
+    if(done < toTranslate.length && !window._tlSkip){
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+
+  modal.setProgress(done, toTranslate.length,
+    window._tlSkip ? '⏹ Traduction interrompue' : '✅ Traduction terminée !');
+  await new Promise(r => setTimeout(r, 1800));
+  modal.close();
+  return translated;
+}
+
+// Animation spinner pour le bouton traduction
+(function injectSpinCSS(){
+  if(document.getElementById('spinStyle')) return;
+  const s = document.createElement('style');
+  s.id = 'spinStyle';
+  s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(s);
+})();
+
 function toast(msg, type='ok'){
   const el = document.createElement('div');
   el.className = `toast-item toast-${type}`;
@@ -3524,6 +3770,23 @@ function importExcelToQueue(input){
       updateCounters(); renderQueue();
       if(notFound.length) toast(`${notFound.length} code(s) non trouvés: ${notFound.slice(0,3).join(', ')}…`,'err');
       toast(`${imported} article(s) importé(s)`,'ok');
+
+      // Proposer la traduction en lot pour les items de file sans désignation arabe
+      const noAR = state.queue.filter(a => a.designation_fr && !a.designation_ar);
+      if(noAR.length > 0){
+        const go = confirm(
+          `${noAR.length} article(s) de la file n'ont pas de désignation arabe.\n\nLancer la traduction automatique IA ?`
+        );
+        if(go){
+          translateBatch(
+            state.queue,
+            (i, ar) => { state.queue[i].designation_ar = ar; },
+            350
+          ).then(n => {
+            if(n > 0){ save('queue'); renderQueue(); toast(`✅ ${n} désignation(s) arabe(s) générée(s)`, 'ok'); }
+          });
+        }
+      }
     }catch(err){ toast('Erreur lecture Excel: '+err.message,'err'); }
     input.value='';
   };
@@ -3707,6 +3970,23 @@ function importBaseExcel(input){
       renderBase();
       const msg = `✅ Import : ${added} ajoutés, ${updated} mis à jour${skipped ? ', '+skipped+' ignorés' : ''} — Base totale : ${state.base.length} articles`;
       toast(msg, 'ok');
+
+      // Proposer la traduction en lot pour les articles sans désignation arabe
+      const noAR = state.base.filter(a => a.designation_fr && !a.designation_ar);
+      if(noAR.length > 0){
+        const go = confirm(
+          `${noAR.length} article(s) n'ont pas de désignation arabe.\n\nLancer la traduction automatique IA (terminologie commerciale Marjane) ?\n\nDurée estimée : ~${Math.ceil(noAR.length * 0.5)} secondes`
+        );
+        if(go){
+          translateBatch(
+            state.base,
+            (i, ar) => { state.base[i].designation_ar = ar; },
+            350
+          ).then(n => {
+            if(n > 0){ saveBaseSafe(); renderBase(); toast(`✅ ${n} désignation(s) arabe(s) générée(s)`, 'ok'); }
+          });
+        }
+      }
     }catch(err){
       console.error('[importBaseExcel]', err);
       toast('❌ Erreur Excel : '+err.message, 'err');
@@ -5745,6 +6025,29 @@ function importExcelToA4File(input) {
       if (info) info.textContent = msg;
       setTimeout(() => { if (progWrap) progWrap.style.display = 'none'; }, 3000);
 
+      // Proposer traduction en lot pour les items A4 sans désignation arabe
+      const noAR = a4St.file.filter(a => a.desFR && !a.desAR);
+      if(noAR.length > 0){
+        setTimeout(()=>{
+          const go = confirm(
+            `${noAR.length} affiche(s) n'ont pas de désignation arabe.\n\nLancer la traduction automatique IA (terminologie commerciale Marjane) ?\n\nDurée estimée : ~${Math.ceil(noAR.length * 0.5)} secondes`
+          );
+          if(go){
+            // Construire un tableau proxy pour translateBatch (désignation_fr → desFR)
+            const proxy = a4St.file.map(a => ({ designation_fr: a.desFR, designation_ar: a.desAR }));
+            translateBatch(
+              proxy,
+              (i, ar) => {
+                a4St.file[i].desAR = ar;
+              },
+              350
+            ).then(n => {
+              if(n > 0){ a4Save(); renderA4File(); toast(`✅ ${n} désignation(s) arabe(s) générée(s) pour la file A4`, 'ok'); }
+            });
+          }
+        }, 400);
+      }
+
       // Switcher vers la file si on a ajouté des articles
       if (added > 0) {
         setTimeout(() => switchA4Tab('file'), 800);
@@ -6047,18 +6350,33 @@ function a4RenderEls(ctx, W, H, data, els) {
     ctx.textBaseline = 'middle';
   }
 
-  // ── Gencode ─────────────────────────────────────────────────────
+  // ── Gencode — ID-39 (Code 39) natif ─────────────────────────────
   if (data.code && els.gencode) {
-    const e = els.gencode;
-    const gx = e.x * W;
-    const gy = e.y * H;
-    const color = e.color || '#FFF';
-    // Dessiner uniquement le texte du gencode (propre, sans barres parasites)
-    ctx.fillStyle = color;
-    ctx.font = 'bold ' + (e.fs * sc) + 'px "IBM Plex Mono",monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(data.code, gx, gy);
+    const e   = els.gencode;
+    const gx  = e.x * W;
+    const gy  = e.y * H;
+    const color  = e.color || '#FFFFFF';
+    const fsPx   = (e.fs || 12) * sc;
+    // Hauteur des barres : proportionnelle à la taille de police (×4)
+    const barH   = fsPx * 4;
+    // Texte sous le code : même taille que fs
+    const textH  = fsPx;
+    // Fond semi-transparent pour lisibilité sur tous les fonds d'image
+    const totalH = barH + textH + 8;
+    const unitPx = Math.max(1.0, barH / 40);
+    // Estimer la largeur pour le fond (approximation)
+    const estW = (typeof sanitizeCode39 === 'function')
+      ? (sanitizeCode39(String(data.code)).length + 2) * 13 * unitPx
+      : 180 * sc;
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.roundRect(gx - estW / 2 - 6, gy - barH / 2 - 4, estW + 12, totalH + 4, 4);
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+    a4DrawCode39(ctx, String(data.code), gx, gy, barH, textH, color);
   }
 
   // ── Picto (image uploadée 5×3 cm) ───────────────────────────────
@@ -6096,7 +6414,119 @@ function a4WrapText(ctx, text, x, y, maxW, lineH, maxLines) {
   lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
 }
 
-// a4DrawBarcode supprimée — rendu gencode simplifié (texte seul, sans barres parasites)
+// ─── ID-39 (Code 39) — Implémentation native canvas ─────────────
+// Norme ISO/IEC 16388 — Code 3 de 9 — ID-39
+// Chaque caractère = 5 barres + 4 espaces (9 éléments, 3 larges)
+// Séparateur inter-caractères = 1 espace étroit
+// Caractères supportés : 0-9, A-Z, - . ESPACE $ / + %  et * (start/stop)
+(function(){
+  const N = 1; // largeur barre étroite (unité de base)
+  const W = 3; // largeur barre large
+
+  // Table d'encodage ID-39 officielle (ISO/IEC 16388)
+  // Alternance : Barre Espace Barre Espace Barre Espace Barre Espace Barre
+  // N=étroit W=large
+  const C39 = {
+    '0':'NNNWWNWNN','1':'WNNWNNNNW','2':'NNWWNNNNW','3':'WNWWNNNNN',
+    '4':'NNNWWNNNW','5':'WNNWWNNNN','6':'NNWWWNNNN','7':'NNNWNNWNW',
+    '8':'WNNWNNWNN','9':'NNWWNNWNN',
+    'A':'WNNNNWNNW','B':'NNWNNWNNW','C':'WNWNNWNNN','D':'NNNNNWWNW',
+    'E':'WNNNNWWNN','F':'NNWNNWWNN','G':'NNNWNWWNW','H':'WNNWNWNNN',
+    'I':'NNWWNWNNN','J':'NNNNNWWNN','K':'WNNNNNNWW','L':'NNWNNNNWW',
+    'M':'WNWNNNNWN','N':'NNNNNWNNW','O':'WNNNNWNWN','P':'NNWNNWNWN',
+    'Q':'NNNWNWNNW','R':'WNNWNWNNW','S':'NNWWNWNNW','T':'NNNWNWWNN',
+    'U':'WWNNNNNNW','V':'NWWNNNNNN','W':'WWWNNNNNN','X':'NWNNWNNNW',
+    'Y':'WWNNWNNNN','Z':'NWWNWNNNN',
+    '-':'NWNNNNWNW','.':'WWNNNNWNN',' ':'NWWNNNWNN',
+    '$':'NWNWNWNNN','/':'NWNNNWNWN','+':'NNNWNWNWN','%':'NWNWNNNWN',
+    '*':'NWNNWNWNN'  // caractère start/stop uniquement
+  };
+
+  // Sanitize : convertit en majuscules, filtre les caractères non supportés ID-39
+  // Les chiffres EAN (0-9) sont tous supportés nativement
+  function sanitize39(str){
+    return str.toUpperCase().split('').filter(c => c !== '*' && C39[c] !== undefined).join('');
+  }
+
+  // Calcule la largeur totale en unités (y compris start/stop *)
+  function calcWidth39(clean){
+    const encoded = '*' + clean + '*';
+    let units = 0;
+    for(const ch of encoded){
+      const p = C39[ch];
+      if(!p) continue;
+      for(const bit of p) units += (bit === 'W' ? W : N);
+      units += N; // inter-character gap
+    }
+    return Math.max(1, units - N); // retirer le dernier gap
+  }
+
+  // Dessine un code-barres ID-39 sur le canvas
+  // cx, cy : centre du code-barres
+  // barH   : hauteur des barres en pixels
+  // textH  : taille du texte sous le code (0 = pas de texte)
+  // color  : couleur des barres (ex: '#FFFFFF' ou '#000000')
+  window.a4DrawCode39 = function(ctx, text, cx, cy, barH, textH, color){
+    if(!text) return;
+    const clean = sanitize39(String(text));
+    if(!clean){ 
+      // Aucun caractère valide ID-39 → afficher un message d'erreur discret
+      ctx.save();
+      ctx.fillStyle = '#ef4444';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ID-39: caractères invalides', cx, cy);
+      ctx.restore();
+      return;
+    }
+    const encoded = '*' + clean + '*';
+
+    // Calcul de la largeur totale pour centrer le code
+    const totalUnits = calcWidth39(clean);
+    // unitPx : largeur d'une unité étroite en pixels
+    // Formule : on veut que les barres soient bien proportionnées à la hauteur
+    const unitPx = Math.max(1.0, barH / 40);
+    const totalW = totalUnits * unitPx;
+
+    // Point de départ (bord gauche du code, centré sur cx)
+    let x = Math.round(cx - totalW / 2);
+    const yTop = Math.round(cy - barH / 2);
+
+    ctx.save();
+    for(let ci = 0; ci < encoded.length; ci++){
+      const ch = encoded[ci];
+      const pattern = C39[ch];
+      if(!pattern) continue;
+
+      for(let i = 0; i < 9; i++){
+        const wide = pattern[i] === 'W';
+        const w = (wide ? W : N) * unitPx;
+        if(i % 2 === 0){
+          // Index pair = barre (dessinée)
+          ctx.fillStyle = color;
+          ctx.fillRect(x, yTop, Math.max(1, Math.round(w)), barH);
+        }
+        // Index impair = espace (fond, rien à dessiner)
+        x += w;
+      }
+      x += N * unitPx; // gap inter-caractère
+    }
+
+    // Texte sous le code-barres (affiche le code original sans les * start/stop)
+    if(textH > 4){
+      ctx.fillStyle = color;
+      ctx.font = 'bold ' + Math.round(textH) + 'px "IBM Plex Mono",monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(clean, cx, Math.round(cy + barH / 2 + 3));
+    }
+    ctx.restore();
+  };
+
+  // Expose sanitize pour usage externe (validation formulaire)
+  window.sanitizeCode39 = sanitize39;
+})();
 
 function a4DarkenHex(hex, amt) {
   try {
