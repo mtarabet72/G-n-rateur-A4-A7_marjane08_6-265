@@ -6479,16 +6479,14 @@ function a4RenderEls(ctx, W, H, data, els) {
       for(const ch of enc39) totalUnits += _charUnits(ch) + 1;
       totalUnits = Math.max(1, totalUnits - 1); // retirer dernier gap
 
-      // ── unitPx : clampé pour que le code rentre dans le canvas ───
-      const maxW    = W - 24;                        // largeur max disponible (marges 12px)
-      const unitPxIdeal = Math.max(1.0, fsPx * 4 / 40); // basé sur fs demandé
-      const unitPxMax   = maxW / totalUnits;            // maximum pour tenir dans canvas
-      const unitPx  = Math.min(unitPxIdeal, unitPxMax); // on prend le plus petit
-
-      // ── Dimensions finales ────────────────────────────────────────
-      const barH   = unitPx * 40;   // hauteur proportionnelle à unitPx
-      const textH  = Math.max(fsPx * 0.8, 10 * sc);    // texte sous les barres
-      const totalH = barH + textH + 6;
+      // ── Dimensions : fs contrôle directement barH, sans minimum forcé ──
+      const barH   = fsPx * 4;                          // fs=1→barH=4px, fs=8→barH=32px
+      const unitPxIdeal = barH / 40;                    // unitPx dérivé de barH
+      const unitPxMax   = (W - 24) / totalUnits;        // plafond pour ne pas déborder
+      const unitPx  = Math.min(unitPxIdeal, unitPxMax); // jamais plus large que le canvas
+      const realBarH = unitPx * 40;                     // barH réel après clamp largeur
+      const textH  = fsPx * 0.8;                        // texte proportionnel au fs
+      const totalH = realBarH + textH + 6;
       const realW  = totalUnits * unitPx;
 
       // ── Position ──────────────────────────────────────────────────
@@ -6496,18 +6494,16 @@ function a4RenderEls(ctx, W, H, data, els) {
       const cyRaw = e.y * H;
       const cy = Math.min(cyRaw, H - totalH / 2 - 4);
 
-      // ── Fond blanc (scannable) puis fond semi-transparent ─────────
+      // ── Fond blanc (scannable) ───────────────────────────────────
       ctx.save();
-      // Fond blanc plein pour garantir le contraste de scan
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      ctx.roundRect(cx - realW / 2 - 8, cy - barH / 2 - 5, realW + 16, totalH + 6, 4);
+      ctx.roundRect(cx - realW / 2 - 6, cy - realBarH / 2 - 4, realW + 12, totalH + 4, 4);
       ctx.fill();
-      ctx.globalAlpha = 1.0;
       ctx.restore();
 
       // ── Dessiner le code-barres ID-39 ────────────────────────────
-      a4DrawCode39(ctx, String(data.code), cx, cy, barH, textH, '#000000');
+      a4DrawCode39(ctx, String(data.code), cx, cy, realBarH, textH, '#000000');
 
       // ── Surimpression couleur template si demandé ─────────────────
       // (les barres sont dessinées en noir sur blanc pour scannabilité)
