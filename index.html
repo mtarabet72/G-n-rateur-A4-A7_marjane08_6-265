@@ -5128,7 +5128,7 @@ const A4_POS_FIELDS = [
   {key:'prixPromo', label:'Prix Promo',  defX:0.50, defY:0.47, defFS:74,   defColor:'#FFFFFF', isPickto:false},
   {key:'diff',      label:'Différence',  defX:0.05, defY:0.58, defFS:22,   defColor:'#22c55e', isPickto:false},
   {key:'fidelite',  label:'Fidélité',    defX:0.05, defY:0.65, defFS:20,   defColor:'#f59e0b', isPickto:false},
-  {key:'gencode',   label:'Gencode',     defX:0.50, defY:0.91, defFS:12,   defColor:'#FFFFFF', isPickto:false},
+  {key:'gencode',   label:'Gencode',     defX:0.50, defY:0.91, defFS:14,   defColor:'#FFFFFF', isPickto:false},
   {key:'picto',     label:'Picto (W)',   defX:0.77, defY:0.27, defFS:0.20, defColor:null,      isPickto:true},
 ];
 // Valeurs par défaut pour les rectangles diff et fidélité A4 (en fraction 0-1 du canvas)
@@ -5147,6 +5147,21 @@ const a4St = {
 };
 
 let a4Tpls    = JSON.parse(localStorage.getItem('a4_tpls') || 'null') || buildDefaultA4Tpls();
+
+// ── Migration : corriger les valeurs gencode.fs < 8 dans les templates sauvegardés ──
+(function _migrateTemplates(){
+  let changed = false;
+  (a4Tpls || []).forEach(tpl => {
+    if (tpl.els && tpl.els.gencode) {
+      const g = tpl.els.gencode;
+      if (!g.fs || g.fs < 8) { g.fs = 14; changed = true; }
+    }
+  });
+  if (changed) {
+    localStorage.setItem('a4_tpls', JSON.stringify(a4Tpls));
+    console.log('[Migration] gencode.fs corrigé → 14 sur les templates existants');
+  }
+})();
 let a4Pictos  = JSON.parse(localStorage.getItem('a4_pictos') || '[]');
 let a4Inited  = false;
 let a4EditIdx = -1;
@@ -5198,7 +5213,7 @@ function buildDefaultA4Tpls() {
     prixPromo:{x:0.50, y:0.47, fs:74, color:'#FFFFFF'},
     diff:     {x:0.05, y:0.58, fs:22, color:'#22c55e'},
     fidelite: {x:0.05, y:0.65, fs:20, color:'#f59e0b'},
-    gencode:  {x:0.50, y:0.91, fs:12, color:'#FFFFFF'},
+    gencode:  {x:0.50, y:0.91, fs:14, color:'#FFFFFF'},
     picto:    {x:0.77, y:0.27, w:0.20, h:0.14},
   }; }
   return [
@@ -5634,7 +5649,7 @@ function renderA4TplMgr() {
         mgrLabelRow('Fidélité (px)', mgrNumInput(i,'fidelite','fs', fsV('fidelite',20), '1','8','80',0)) +
         mgrLabelRow('Fid décScale', mgrNumInput(i,'fidelite','decScale', dsV('fidelite',0.45), '0.01','0.20','0.80',2)) +
         '<div></div>' +
-        mgrLabelRow('Gencode (px)', mgrNumInput(i,'gencode','fs', fsV('gencode',12), '1','6','40',0)) +
+        mgrLabelRow('Gencode (px)', mgrNumInput(i,'gencode','fs', fsV('gencode',14), '1','8','40',0)) +
         '<div></div><div></div>' +
       '</div>';
 
@@ -5813,7 +5828,9 @@ function mgrBuildTempTpl(i) {
     }
     const x = parseFloat(xEl.value) || f.defX;
     const y = parseFloat(yEl.value) || f.defY;
-    const fs= parseFloat(fsEl.value) || f.defFS;
+    let fs = parseFloat(fsEl.value) || f.defFS;
+    // Clamp gencode.fs minimum 8 pour garantir un code-barres lisible
+    if (f.key === 'gencode' && fs < 8) { fs = 8; if(fsEl) fsEl.value = 8; }
     if (f.isPickto) {
       els[f.key] = {x, y, w:fs, h:fs*1.45};
     } else {
@@ -5872,6 +5889,10 @@ function saveMgrTpl(i) {
   if (!a4Tpls[i]) return;
   const tempTpl = mgrBuildTempTpl(i);
   if (!tempTpl) return;
+  // Sécurité : garantir gencode.fs >= 8 avant sauvegarde
+  if (tempTpl.els && tempTpl.els.gencode && tempTpl.els.gencode.fs < 8) {
+    tempTpl.els.gencode.fs = 14;
+  }
   a4Tpls[i] = Object.assign(a4Tpls[i], {
     bg: tempTpl.bg, bg2: tempTpl.bg2, els: tempTpl.els
   });
@@ -6445,49 +6466,72 @@ function a4RenderEls(ctx, W, H, data, els) {
   if (data.code && els.gencode) {
     const e     = els.gencode;
     const color = e.color || '#FFFFFF';
-    const fsPx  = (e.fs || 12) * sc;
+    const fsPx  = Math.max(e.fs || 14, 8) * sc;  // fs minimum 8
 
-    // Dimensions du code-barres
-    const barH  = Math.max(fsPx * 4, 20 * sc);  // hauteur minimale garantie
-    const textH = fsPx;                          // hauteur du texte sous les barres
-    const totalH = barH + textH + 8;             // hauteur totale
-
-    // unitPx identique à celui de a4DrawCode39 pour que fond et barres s'alignent
-    const unitPx = Math.max(1.0, barH / 40);
-
-    // Largeur EXACTE via calcWidth39 (même algo qu'à l'intérieur de a4DrawCode39)
+    // Sanitize du code pour obtenir la chaîne réelle
     const codeStr = (typeof sanitizeCode39 === 'function')
       ? sanitizeCode39(String(data.code))
-      : String(data.code).replace(/[^0-9A-Z\-. $/+%]/gi, '').toUpperCase();
+      : String(data.code).replace(/[^0-9A-Z\-. $\/+%]/gi, '').toUpperCase();
 
-    // Calcul manuel de la largeur réelle en unités (N=1, W=3, gap=1)
-    const _C39w = {'0':13,'1':13,'2':13,'3':13,'4':13,'5':13,'6':13,'7':13,'8':13,'9':13,
-      'A':13,'B':13,'C':13,'D':13,'E':13,'F':13,'G':13,'H':13,'I':13,'J':13,'K':13,'L':13,
-      'M':13,'N':13,'O':13,'P':13,'Q':13,'R':13,'S':13,'T':13,'U':13,'V':13,'W':13,'X':13,
-      'Y':13,'Z':13,'-':13,'.':13,' ':13,'$':13,'/':13,'+':13,'%':13,'*':13};
-    const encoded39 = '*' + codeStr + '*';
-    let totalUnits = 0;
-    for(const ch of encoded39){ totalUnits += (_C39w[ch]||13) + 1; }
-    totalUnits = Math.max(1, totalUnits - 1);
-    const realW = totalUnits * unitPx;
+    if (codeStr) {
+      // ── Calcul exact de la largeur en unités Code 39 ─────────────
+      // Chaque caractère = somme de son pattern (N=1,W=3) + 1 gap inter-char
+      // On délègue à a4CalcCode39Units si disponible, sinon estimation 15u/char
+      const _P39 = {
+        '0':'NNNWWNWNN','1':'WNNWNNNNW','2':'NNWWNNNNW','3':'WNWWNNNNN',
+        '4':'NNNWWNNNW','5':'WNNWWNNNN','6':'NNWWWNNNN','7':'NNNWNNWNW',
+        '8':'WNNWNNWNN','9':'NNWWNNWNN','A':'WNNNNWNNW','B':'NNWNNWNNW',
+        'C':'WNWNNWNNN','D':'NNNNNWWNW','E':'WNNNNWWNN','F':'NNWNNWWNN',
+        'G':'NNNWNWWNW','H':'WNNWNWNNN','I':'NNWWNWNNN','J':'NNNNNWWNN',
+        'K':'WNNNNNNWW','L':'NNWNNNNWW','M':'WNWNNNNWN','N':'NNNNNWNNW',
+        'O':'WNNNNWNWN','P':'NNWNNWNWN','Q':'NNNWNWNNW','R':'WNNWNWNNW',
+        'S':'NNWWNWNNW','T':'NNNWNWWNN','U':'WWNNNNNNW','V':'NWWNNNNNN',
+        'W':'WWWNNNNNN','X':'NWNNWNNNW','Y':'WWNNWNNNN','Z':'NWWNWNNNN',
+        '-':'NWNNNNWNW','.':'WWNNNNWNN',' ':'NWWNNNWNN','$':'NWNWNWNNN',
+        '/':'NWNNNWNWN','+':'NNNWNWNWN','%':'NWNWNNNWN','*':'NWNNWNWNN'
+      };
+      function _charUnits(ch){
+        const p = _P39[ch]; if(!p) return 15;
+        let u=0; for(const b of p) u += (b==='W'?3:1); return u;
+      }
+      const enc39 = '*' + codeStr + '*';
+      let totalUnits = 0;
+      for(const ch of enc39) totalUnits += _charUnits(ch) + 1;
+      totalUnits = Math.max(1, totalUnits - 1); // retirer dernier gap
 
-    // Position : cx centré, cy = centre des barres — tout dans le canvas
-    const cx = Math.min(Math.max(e.x * W, realW / 2 + 8), W - realW / 2 - 8);
-    const cyRaw = e.y * H;
-    const cy = Math.min(cyRaw, H - totalH / 2 - 4);
+      // ── unitPx : clampé pour que le code rentre dans le canvas ───
+      const maxW    = W - 24;                        // largeur max disponible (marges 12px)
+      const unitPxIdeal = Math.max(1.0, fsPx * 4 / 40); // basé sur fs demandé
+      const unitPxMax   = maxW / totalUnits;            // maximum pour tenir dans canvas
+      const unitPx  = Math.min(unitPxIdeal, unitPxMax); // on prend le plus petit
 
-    // Fond semi-transparent aligné exactement sur les barres
-    ctx.save();
-    ctx.globalAlpha = 0.65;
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.roundRect(cx - realW / 2 - 6, cy - barH / 2 - 4, realW + 12, totalH + 4, 4);
-    ctx.fill();
-    ctx.globalAlpha = 1.0;
-    ctx.restore();
+      // ── Dimensions finales ────────────────────────────────────────
+      const barH   = Math.max(unitPx * 40, 18 * sc);   // hauteur proportionnelle à unitPx
+      const textH  = Math.max(fsPx * 0.8, 10 * sc);    // texte sous les barres
+      const totalH = barH + textH + 6;
+      const realW  = totalUnits * unitPx;
 
-    // Dessiner le code-barres ID-39
-    a4DrawCode39(ctx, String(data.code), cx, cy, barH, textH, color);
+      // ── Position ──────────────────────────────────────────────────
+      const cx = Math.min(Math.max(e.x * W, realW / 2 + 12), W - realW / 2 - 12);
+      const cyRaw = e.y * H;
+      const cy = Math.min(cyRaw, H - totalH / 2 - 4);
+
+      // ── Fond blanc (scannable) puis fond semi-transparent ─────────
+      ctx.save();
+      // Fond blanc plein pour garantir le contraste de scan
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.roundRect(cx - realW / 2 - 8, cy - barH / 2 - 5, realW + 16, totalH + 6, 4);
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+      ctx.restore();
+
+      // ── Dessiner le code-barres ID-39 ────────────────────────────
+      a4DrawCode39(ctx, String(data.code), cx, cy, barH, textH, '#000000');
+
+      // ── Surimpression couleur template si demandé ─────────────────
+      // (les barres sont dessinées en noir sur blanc pour scannabilité)
+    }
   }
 
   // ── Picto (image uploadée 5×3 cm) ───────────────────────────────
