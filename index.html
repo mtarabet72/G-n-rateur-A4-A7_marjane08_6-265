@@ -5128,7 +5128,7 @@ const A4_POS_FIELDS = [
   {key:'prixPromo', label:'Prix Promo',  defX:0.50, defY:0.47, defFS:74,   defColor:'#FFFFFF', isPickto:false},
   {key:'diff',      label:'Différence',  defX:0.05, defY:0.58, defFS:22,   defColor:'#22c55e', isPickto:false},
   {key:'fidelite',  label:'Fidélité',    defX:0.05, defY:0.65, defFS:20,   defColor:'#f59e0b', isPickto:false},
-  {key:'gencode',   label:'Gencode',     defX:0.50, defY:0.91, defFS:14,   defColor:'#FFFFFF', isPickto:false},
+  {key:'gencode',   label:'Gencode',     defX:0.50, defY:0.91, defFS:8,    defColor:'#FFFFFF', isPickto:false},
   {key:'picto',     label:'Picto (W)',   defX:0.77, defY:0.27, defFS:0.20, defColor:null,      isPickto:true},
 ];
 // Valeurs par défaut pour les rectangles diff et fidélité A4 (en fraction 0-1 du canvas)
@@ -5148,20 +5148,6 @@ const a4St = {
 
 let a4Tpls    = JSON.parse(localStorage.getItem('a4_tpls') || 'null') || buildDefaultA4Tpls();
 
-// ── Migration : corriger les valeurs gencode.fs < 8 dans les templates sauvegardés ──
-(function _migrateTemplates(){
-  let changed = false;
-  (a4Tpls || []).forEach(tpl => {
-    if (tpl.els && tpl.els.gencode) {
-      const g = tpl.els.gencode;
-      if (!g.fs || g.fs < 8) { g.fs = 14; changed = true; }
-    }
-  });
-  if (changed) {
-    localStorage.setItem('a4_tpls', JSON.stringify(a4Tpls));
-    console.log('[Migration] gencode.fs corrigé → 14 sur les templates existants');
-  }
-})();
 let a4Pictos  = JSON.parse(localStorage.getItem('a4_pictos') || '[]');
 let a4Inited  = false;
 let a4EditIdx = -1;
@@ -5213,7 +5199,7 @@ function buildDefaultA4Tpls() {
     prixPromo:{x:0.50, y:0.47, fs:74, color:'#FFFFFF'},
     diff:     {x:0.05, y:0.58, fs:22, color:'#22c55e'},
     fidelite: {x:0.05, y:0.65, fs:20, color:'#f59e0b'},
-    gencode:  {x:0.50, y:0.91, fs:14, color:'#FFFFFF'},
+    gencode:  {x:0.50, y:0.91, fs:8, color:'#FFFFFF'},
     picto:    {x:0.77, y:0.27, w:0.20, h:0.14},
   }; }
   return [
@@ -5649,7 +5635,7 @@ function renderA4TplMgr() {
         mgrLabelRow('Fidélité (px)', mgrNumInput(i,'fidelite','fs', fsV('fidelite',20), '1','8','80',0)) +
         mgrLabelRow('Fid décScale', mgrNumInput(i,'fidelite','decScale', dsV('fidelite',0.45), '0.01','0.20','0.80',2)) +
         '<div></div>' +
-        mgrLabelRow('Gencode (px)', mgrNumInput(i,'gencode','fs', fsV('gencode',14), '1','8','40',0)) +
+        mgrLabelRow('Gencode (px)', mgrNumInput(i,'gencode','fs', fsV('gencode',8), '1','1','40',0)) +
         '<div></div><div></div>' +
       '</div>';
 
@@ -5829,8 +5815,6 @@ function mgrBuildTempTpl(i) {
     const x = parseFloat(xEl.value) || f.defX;
     const y = parseFloat(yEl.value) || f.defY;
     let fs = parseFloat(fsEl.value) || f.defFS;
-    // Clamp gencode.fs minimum 8 pour garantir un code-barres lisible
-    if (f.key === 'gencode' && fs < 8) { fs = 8; if(fsEl) fsEl.value = 8; }
     if (f.isPickto) {
       els[f.key] = {x, y, w:fs, h:fs*1.45};
     } else {
@@ -5889,10 +5873,6 @@ function saveMgrTpl(i) {
   if (!a4Tpls[i]) return;
   const tempTpl = mgrBuildTempTpl(i);
   if (!tempTpl) return;
-  // Sécurité : garantir gencode.fs >= 8 avant sauvegarde
-  if (tempTpl.els && tempTpl.els.gencode && tempTpl.els.gencode.fs < 8) {
-    tempTpl.els.gencode.fs = 14;
-  }
   a4Tpls[i] = Object.assign(a4Tpls[i], {
     bg: tempTpl.bg, bg2: tempTpl.bg2, els: tempTpl.els
   });
@@ -6466,7 +6446,7 @@ function a4RenderEls(ctx, W, H, data, els) {
   if (data.code && els.gencode) {
     const e     = els.gencode;
     const color = e.color || '#FFFFFF';
-    const fsPx  = Math.max(e.fs || 14, 8) * sc;  // fs minimum 8
+    const fsPx  = (e.fs || 14) * sc;
 
     // Sanitize du code pour obtenir la chaîne réelle
     const codeStr = (typeof sanitizeCode39 === 'function')
@@ -6506,7 +6486,7 @@ function a4RenderEls(ctx, W, H, data, els) {
       const unitPx  = Math.min(unitPxIdeal, unitPxMax); // on prend le plus petit
 
       // ── Dimensions finales ────────────────────────────────────────
-      const barH   = Math.max(unitPx * 40, 18 * sc);   // hauteur proportionnelle à unitPx
+      const barH   = unitPx * 40;   // hauteur proportionnelle à unitPx
       const textH  = Math.max(fsPx * 0.8, 10 * sc);    // texte sous les barres
       const totalH = barH + textH + 6;
       const realW  = totalUnits * unitPx;
