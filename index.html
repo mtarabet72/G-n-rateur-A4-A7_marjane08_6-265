@@ -697,6 +697,13 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <span id="hdrBase" class="badge badge-red">Base: 0</span>
       <span id="hdrStorage" class="badge" style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);cursor:pointer" onclick="switchTab('dashboard')" title="IndexedDB actif — stockage illimité — cliquer pour détails">💾 OK</span>
       <button id="installBtn" onclick="installPWA()" title="Installer l'application sur cet appareil" style="display:none;background:var(--amber);color:#000;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700"><i class="ri-download-cloud-2-line"></i> Installer</button>
+      <button id="apiKeyBtn" onclick="openApiKeyModal()" title="Configurer la clé API Anthropic pour la traduction IA"
+        style="background:rgba(11,61,145,.5);border:1px solid rgba(255,222,0,.4);border-radius:8px;
+               padding:5px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;
+               display:flex;align-items:center;gap:4px">
+        <i class="ri-key-2-line" style="font-size:14px"></i>
+        <span id="apiKeyBtnLabel">Clé API</span>
+      </button>
     </div>
   </header>
 
@@ -2599,6 +2606,67 @@ const $$ = s => document.querySelectorAll(s);
 // ═══════════════════════════════════════════════════════════════
 // TRADUCTEUR FR → AR COMMERCIAL (IA — Anthropic API)
 // ═══════════════════════════════════════════════════════════════
+// ─── Gestion clé API Anthropic ───────────────────────────────────
+function _getAnthropicKey(){
+  return localStorage.getItem('marjane_anthropic_key') || '';
+}
+function _setAnthropicKey(k){
+  if(k) localStorage.setItem('marjane_anthropic_key', k.trim());
+  else  localStorage.removeItem('marjane_anthropic_key');
+}
+
+// Modale pour saisir / modifier la clé API
+function openApiKeyModal(callback){
+  const existing = _getAnthropicKey();
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:#0d1f3c;border:1px solid rgba(255,222,0,.4);border-radius:16px;padding:28px 24px;width:100%;max-width:420px">
+      <div style="font-size:20px;font-weight:800;color:#ffde00;margin-bottom:6px">🔑 Clé API Anthropic</div>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:16px">
+        Nécessaire pour la traduction IA. Disponible sur
+        <a href="https://console.anthropic.com/keys" target="_blank" style="color:#60a5fa">console.anthropic.com/keys</a>.
+        Stockée localement sur cet appareil.
+      </div>
+      <input id="_apiKeyInput" type="password" value="${existing}"
+        placeholder="sk-ant-api03-…"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,222,0,.3);
+               background:rgba(255,255,255,.07);color:#fff;font-size:13px;font-family:monospace;
+               margin-bottom:4px">
+      <div style="display:flex;gap:6px;margin-top:4px;margin-bottom:14px">
+        <button onclick="this.closest('div[id]')||this;document.getElementById('_apiKeyInput').type=document.getElementById('_apiKeyInput').type==='password'?'text':'password'"
+          style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#94a3b8;font-size:11px;cursor:pointer">
+          👁 Afficher / Masquer
+        </button>
+        ${existing ? '<button onclick="_setAnthropicKey(\'\');this.closest(\'div\').previousElementSibling.value=\'\';toast(\'Clé supprimée\',\'ok\')"  style="padding:6px 10px;border-radius:6px;border:1px solid #dc262660;background:#7f1d1d40;color:#f87171;font-size:11px;cursor:pointer">🗑 Supprimer</button>' : ''}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="this.closest('div').parentElement.parentElement.remove()"
+          style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#94a3b8;cursor:pointer;font-weight:700">
+          Annuler
+        </button>
+        <button id="_apiKeySave"
+          style="flex:2;padding:10px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#000;font-weight:800;cursor:pointer">
+          ✅ Enregistrer
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>{ const i=document.getElementById('_apiKeyInput'); if(i){ i.focus(); i.select(); }},100);
+  document.getElementById('_apiKeySave').onclick = function(){
+    const key = (document.getElementById('_apiKeyInput')||{value:''}).value.trim();
+    _setAnthropicKey(key);
+    overlay.remove();
+    // Mettre à jour le label du bouton header
+    const lbl = document.getElementById('apiKeyBtnLabel');
+    const btn = document.getElementById('apiKeyBtn');
+    if(lbl) lbl.textContent = key ? '🔑 API OK' : 'Clé API';
+    if(btn) btn.style.borderColor = key ? 'rgba(74,222,128,.5)' : 'rgba(255,222,0,.4)';
+    if(callback) callback(key);
+    else toast(key ? '🔑 Clé API enregistrée' : '🗑 Clé supprimée', 'ok');
+  };
+}
+
 async function translateToArabic(srcId, dstId, btnId, isA4 = false){
   const srcEl = document.getElementById(srcId);
   const dstEl = document.getElementById(dstId);
@@ -2607,6 +2675,16 @@ async function translateToArabic(srcId, dstId, btnId, isA4 = false){
 
   const textFR = srcEl.value.trim();
   if(!textFR){ toast('Saisissez d\'abord la désignation française', 'err'); return; }
+
+  // Vérifier la clé API — si absente, ouvrir la modale de saisie
+  let apiKey = _getAnthropicKey();
+  if(!apiKey){
+    openApiKeyModal(function(key){
+      if(key) translateToArabic(srcId, dstId, btnId, isA4);
+      else toast('🔑 Traduction annulée — clé API requise', 'err');
+    });
+    return;
+  }
 
   // État chargement
   const origHTML = btnEl ? btnEl.innerHTML : '';
@@ -2630,13 +2708,16 @@ Règles strictes :
 
 Désignation à traduire : "${textFR.substring(0, 120)}"`;
 
+    const headers = {
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01',
+      'x-api-key': apiKey,
+      'anthropic-dangerous-direct-browser-access': 'true'
+    };
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers,
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 120,
@@ -2646,7 +2727,17 @@ Désignation à traduire : "${textFR.substring(0, 120)}"`;
 
     if(!response.ok){
       const err = await response.json().catch(()=>({}));
-      throw new Error(err.error?.message || 'Erreur API ' + response.status);
+      const msg = err.error?.message || 'Erreur API ' + response.status;
+      // Clé invalide → proposer de la corriger
+      if(response.status === 401){
+        if(btnEl){ btnEl.disabled=false; btnEl.innerHTML=origHTML; }
+        openApiKeyModal(function(key){
+          if(key) translateToArabic(srcId, dstId, btnId, isA4);
+        });
+        toast('🔑 Clé API invalide — veuillez la corriger', 'err');
+        return;
+      }
+      throw new Error(msg);
     }
 
     const data = await response.json();
@@ -2654,32 +2745,22 @@ Désignation à traduire : "${textFR.substring(0, 120)}"`;
 
     if(!translation){ throw new Error('Réponse vide de l\'IA'); }
 
-    // Injecter la traduction dans le champ cible
     dstEl.value = translation;
-
-    // Déclencher les événements nécessaires pour la mise à jour de l'aperçu
     if(isA4){
       dstEl.dataset.manual = '1';
       dstEl.dispatchEvent(new Event('input', { bubbles: true }));
     }
-
     toast('✅ Traduction arabe générée par IA', 'ok');
 
   }catch(e){
     console.error('[Traducteur IA]', e);
-    // Message d'erreur adapté
-    if(e.message && e.message.includes('401')){
-      toast('🔑 Clé API manquante — l\'app doit être servie via claude.ai', 'err');
-    } else if(e.message && e.message.includes('network')){
+    if(e.message && e.message.includes('network')){
       toast('📡 Réseau indisponible — vérifiez votre connexion', 'err');
     } else {
       toast('❌ Erreur traduction : ' + (e.message || 'inconnue'), 'err');
     }
   } finally {
-    if(btnEl){
-      btnEl.disabled = false;
-      btnEl.innerHTML = origHTML;
-    }
+    if(btnEl){ btnEl.disabled = false; btnEl.innerHTML = origHTML; }
   }
 }
 
@@ -2690,6 +2771,8 @@ Désignation à traduire : "${textFR.substring(0, 120)}"`;
 // Traduit un seul terme FR → AR via l'API Anthropic
 async function _translateOneTerm(textFR){
   if(!textFR || !textFR.trim()) return '';
+  const apiKey = _getAnthropicKey();
+  if(!apiKey) throw new Error('Clé API manquante');
   const prompt = `Tu es un expert en traduction commerciale pour la grande distribution au Maroc (hypermarché Marjane).
 Traduis la désignation produit française en arabe marocain commercial (arabe standard adapté étiquette).
 Règles : terminologie supermarché, max 60 caractères, conserve les marques/chiffres/unités, retourne UNIQUEMENT la traduction arabe.
@@ -2700,6 +2783,7 @@ Désignation : "${textFR.substring(0, 120).trim()}"`;
     headers: {
       'Content-Type': 'application/json',
       'anthropic-version': '2023-06-01',
+      'x-api-key': apiKey,
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
@@ -6365,33 +6449,40 @@ function a4RenderEls(ctx, W, H, data, els) {
     const fsPx  = (e.fs || 12) * sc;
 
     // Dimensions du code-barres
-    const barH  = fsPx * 4;          // hauteur des barres
-    const textH = fsPx;              // hauteur du texte sous les barres
-    const totalH = barH + textH + 8; // hauteur totale (barres + texte + marges)
+    const barH  = Math.max(fsPx * 4, 20 * sc);  // hauteur minimale garantie
+    const textH = fsPx;                          // hauteur du texte sous les barres
+    const totalH = barH + textH + 8;             // hauteur totale
 
-    // unitPx : largeur d'une unité étroite
+    // unitPx identique à celui de a4DrawCode39 pour que fond et barres s'alignent
     const unitPx = Math.max(1.0, barH / 40);
 
-    // Largeur estimée du code (nb de chars × 13 unités × unitPx)
+    // Largeur EXACTE via calcWidth39 (même algo qu'à l'intérieur de a4DrawCode39)
     const codeStr = (typeof sanitizeCode39 === 'function')
       ? sanitizeCode39(String(data.code))
       : String(data.code).replace(/[^0-9A-Z\-. $/+%]/gi, '').toUpperCase();
-    const estW = (codeStr.length + 2) * 13 * unitPx;
 
-    // Position : cx centré, cy = centre des barres
-    // On s'assure que le bloc entier reste dans le canvas
-    const cx = Math.min(Math.max(e.x * W, estW / 2 + 8), W - estW / 2 - 8);
-    // cy positionne le centre des barres
-    // on recule pour que le bloc totalH ne dépasse pas en bas
+    // Calcul manuel de la largeur réelle en unités (N=1, W=3, gap=1)
+    const _C39w = {'0':13,'1':13,'2':13,'3':13,'4':13,'5':13,'6':13,'7':13,'8':13,'9':13,
+      'A':13,'B':13,'C':13,'D':13,'E':13,'F':13,'G':13,'H':13,'I':13,'J':13,'K':13,'L':13,
+      'M':13,'N':13,'O':13,'P':13,'Q':13,'R':13,'S':13,'T':13,'U':13,'V':13,'W':13,'X':13,
+      'Y':13,'Z':13,'-':13,'.':13,' ':13,'$':13,'/':13,'+':13,'%':13,'*':13};
+    const encoded39 = '*' + codeStr + '*';
+    let totalUnits = 0;
+    for(const ch of encoded39){ totalUnits += (_C39w[ch]||13) + 1; }
+    totalUnits = Math.max(1, totalUnits - 1);
+    const realW = totalUnits * unitPx;
+
+    // Position : cx centré, cy = centre des barres — tout dans le canvas
+    const cx = Math.min(Math.max(e.x * W, realW / 2 + 8), W - realW / 2 - 8);
     const cyRaw = e.y * H;
     const cy = Math.min(cyRaw, H - totalH / 2 - 4);
 
-    // Fond semi-transparent derrière le code-barres
+    // Fond semi-transparent aligné exactement sur les barres
     ctx.save();
-    ctx.globalAlpha = 0.60;
+    ctx.globalAlpha = 0.65;
     ctx.fillStyle = '#000000';
     ctx.beginPath();
-    ctx.roundRect(cx - estW / 2 - 6, cy - barH / 2 - 4, estW + 12, totalH + 4, 4);
+    ctx.roundRect(cx - realW / 2 - 6, cy - barH / 2 - 4, realW + 12, totalH + 4, 4);
     ctx.fill();
     ctx.globalAlpha = 1.0;
     ctx.restore();
@@ -6971,6 +7062,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.querySelectorAll('.hdr-title').forEach(h=>{
     h.innerHTML = '<span style="color:#fff">MARJANE</span> <span style="color:var(--marjane-yellow,#ffde00)">ÉTIQUETTES</span>';
   });
+  // Mise à jour du label bouton clé API
+  (function(){
+    const lbl = document.getElementById('apiKeyBtnLabel');
+    if(!lbl) return;
+    const k = localStorage.getItem('marjane_anthropic_key');
+    lbl.textContent = k ? '🔑 API OK' : 'Clé API';
+    if(k){ const btn=document.getElementById('apiKeyBtn'); if(btn) btn.style.borderColor='rgba(74,222,128,.5)'; }
+  })();
 });
 </script>
 
