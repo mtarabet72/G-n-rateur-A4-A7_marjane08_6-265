@@ -2608,11 +2608,11 @@ const $$ = s => document.querySelectorAll(s);
 // ═══════════════════════════════════════════════════════════════
 // ─── Gestion clé API Anthropic ───────────────────────────────────
 function _getAnthropicKey(){
-  return localStorage.getItem('marjane_anthropic_key') || '';
+  return localStorage.getItem('marjane_groq_key') || '';
 }
 function _setAnthropicKey(k){
-  if(k) localStorage.setItem('marjane_anthropic_key', k.trim());
-  else  localStorage.removeItem('marjane_anthropic_key');
+  if(k) localStorage.setItem('marjane_groq_key', k.trim());
+  else  localStorage.removeItem('marjane_groq_key');
 }
 
 // Modale pour saisir / modifier la clé API
@@ -2622,14 +2622,15 @@ function openApiKeyModal(callback){
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
   overlay.innerHTML = `
     <div style="background:#0d1f3c;border:1px solid rgba(255,222,0,.4);border-radius:16px;padding:28px 24px;width:100%;max-width:420px">
-      <div style="font-size:20px;font-weight:800;color:#ffde00;margin-bottom:6px">🔑 Clé API Anthropic</div>
+      <div style="font-size:20px;font-weight:800;color:#ffde00;margin-bottom:6px">🔑 Clé API Groq</div>
       <div style="font-size:12px;color:#94a3b8;margin-bottom:16px">
-        Nécessaire pour la traduction IA. Disponible sur
-        <a href="https://console.anthropic.com/keys" target="_blank" style="color:#60a5fa">console.anthropic.com/keys</a>.
+        Gratuit sur
+        <a href="https://console.groq.com/keys" target="_blank" style="color:#60a5fa">console.groq.com/keys</a>
+        → créer un compte → API Keys → Create API Key.
         Stockée localement sur cet appareil.
       </div>
       <input id="_apiKeyInput" type="password" value="${existing}"
-        placeholder="sk-ant-api03-…"
+        placeholder="gsk_…"
         style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,222,0,.3);
                background:rgba(255,255,255,.07);color:#fff;font-size:13px;font-family:monospace;
                margin-bottom:4px">
@@ -2710,17 +2711,16 @@ Désignation à traduire : "${textFR.substring(0, 120)}"`;
 
     const headers = {
       'Content-Type': 'application/json',
-      'anthropic-version': '2023-06-01',
-      'x-api-key': apiKey,
-      'anthropic-dangerous-direct-browser-access': 'true'
+      'Authorization': 'Bearer ' + apiKey
     };
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'llama-3.3-70b-versatile',
         max_tokens: 120,
+        temperature: 0.3,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -2741,7 +2741,7 @@ Désignation à traduire : "${textFR.substring(0, 120)}"`;
     }
 
     const data = await response.json();
-    const translation = (data.content?.[0]?.text || '').trim();
+    const translation = (data.choices?.[0]?.message?.content || '').trim();
 
     if(!translation){ throw new Error('Réponse vide de l\'IA'); }
 
@@ -2778,23 +2778,22 @@ Traduis la désignation produit française en arabe marocain commercial (arabe s
 Règles : terminologie supermarché, max 60 caractères, conserve les marques/chiffres/unités, retourne UNIQUEMENT la traduction arabe.
 Désignation : "${textFR.substring(0, 120).trim()}"`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'anthropic-version': '2023-06-01',
-      'x-api-key': apiKey,
-      'anthropic-dangerous-direct-browser-access': 'true'
+      'Authorization': 'Bearer ' + apiKey
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 80,
+      temperature: 0.3,
       messages: [{ role: 'user', content: prompt }]
     })
   });
   if(!response.ok) throw new Error('API ' + response.status);
   const data = await response.json();
-  return (data.content?.[0]?.text || '').trim();
+  return (data.choices?.[0]?.message?.content || '').trim();
 }
 
 // Affiche une modale de progression pour la traduction en lot
@@ -7066,7 +7065,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   (function(){
     const lbl = document.getElementById('apiKeyBtnLabel');
     if(!lbl) return;
-    const k = localStorage.getItem('marjane_anthropic_key');
+    const k = localStorage.getItem('marjane_groq_key');
     lbl.textContent = k ? '🔑 API OK' : 'Clé API';
     if(k){ const btn=document.getElementById('apiKeyBtn'); if(btn) btn.style.borderColor='rgba(74,222,128,.5)'; }
   })();
