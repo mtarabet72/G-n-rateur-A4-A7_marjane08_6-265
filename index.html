@@ -2632,7 +2632,11 @@ Désignation à traduire : "${textFR.substring(0, 120)}"`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 120,
@@ -2693,7 +2697,11 @@ Désignation : "${textFR.substring(0, 120).trim()}"`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 80,
@@ -6352,31 +6360,44 @@ function a4RenderEls(ctx, W, H, data, els) {
 
   // ── Gencode — ID-39 (Code 39) natif ─────────────────────────────
   if (data.code && els.gencode) {
-    const e   = els.gencode;
-    const gx  = e.x * W;
-    const gy  = e.y * H;
-    const color  = e.color || '#FFFFFF';
-    const fsPx   = (e.fs || 12) * sc;
-    // Hauteur des barres : proportionnelle à la taille de police (×4)
-    const barH   = fsPx * 4;
-    // Texte sous le code : même taille que fs
-    const textH  = fsPx;
-    // Fond semi-transparent pour lisibilité sur tous les fonds d'image
-    const totalH = barH + textH + 8;
+    const e     = els.gencode;
+    const color = e.color || '#FFFFFF';
+    const fsPx  = (e.fs || 12) * sc;
+
+    // Dimensions du code-barres
+    const barH  = fsPx * 4;          // hauteur des barres
+    const textH = fsPx;              // hauteur du texte sous les barres
+    const totalH = barH + textH + 8; // hauteur totale (barres + texte + marges)
+
+    // unitPx : largeur d'une unité étroite
     const unitPx = Math.max(1.0, barH / 40);
-    // Estimer la largeur pour le fond (approximation)
-    const estW = (typeof sanitizeCode39 === 'function')
-      ? (sanitizeCode39(String(data.code)).length + 2) * 13 * unitPx
-      : 180 * sc;
+
+    // Largeur estimée du code (nb de chars × 13 unités × unitPx)
+    const codeStr = (typeof sanitizeCode39 === 'function')
+      ? sanitizeCode39(String(data.code))
+      : String(data.code).replace(/[^0-9A-Z\-. $/+%]/gi, '').toUpperCase();
+    const estW = (codeStr.length + 2) * 13 * unitPx;
+
+    // Position : cx centré, cy = centre des barres
+    // On s'assure que le bloc entier reste dans le canvas
+    const cx = Math.min(Math.max(e.x * W, estW / 2 + 8), W - estW / 2 - 8);
+    // cy positionne le centre des barres
+    // on recule pour que le bloc totalH ne dépasse pas en bas
+    const cyRaw = e.y * H;
+    const cy = Math.min(cyRaw, H - totalH / 2 - 4);
+
+    // Fond semi-transparent derrière le code-barres
     ctx.save();
-    ctx.globalAlpha = 0.55;
+    ctx.globalAlpha = 0.60;
     ctx.fillStyle = '#000000';
     ctx.beginPath();
-    ctx.roundRect(gx - estW / 2 - 6, gy - barH / 2 - 4, estW + 12, totalH + 4, 4);
+    ctx.roundRect(cx - estW / 2 - 6, cy - barH / 2 - 4, estW + 12, totalH + 4, 4);
     ctx.fill();
     ctx.globalAlpha = 1.0;
     ctx.restore();
-    a4DrawCode39(ctx, String(data.code), gx, gy, barH, textH, color);
+
+    // Dessiner le code-barres ID-39
+    a4DrawCode39(ctx, String(data.code), cx, cy, barH, textH, color);
   }
 
   // ── Picto (image uploadée 5×3 cm) ───────────────────────────────
