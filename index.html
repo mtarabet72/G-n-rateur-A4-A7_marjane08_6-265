@@ -1481,18 +1481,43 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
         
         <!-- ─── PALETTE COULEURS BALISAGE ─── -->
         <div class="card">
-          <div class="card-title" style="margin-bottom:10px"><i class="ri-palette-line"></i> Palette couleurs Balisage</div>
-          <p style="font-size:12px;color:var(--text4);margin-bottom:12px">Choisissez une couleur d'accent pour vos templates balisage. Cliquez pour appliquer.</p>
-          <div id="bPalette" class="pfr-palette" style="display:flex;flex-wrap:wrap;gap:8px">
-            <button class="pfr-swatch" title="#e11d48" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#e11d48');toast('Couleur #e11d48 appliquée','ok')"></button>
-            <button class="pfr-swatch" title="#f59e0b" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#f59e0b');toast('Couleur #f59e0b appliquée','ok')"></button>
-            <button class="pfr-swatch" title="#22c55e" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#22c55e');toast('Couleur #22c55e appliquée','ok')"></button>
-            <button class="pfr-swatch" title="#0ea5e9" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#0ea5e9');toast('Couleur #0ea5e9 appliquée','ok')"></button>
-            <button class="pfr-swatch" title="#8b5cf6" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#8b5cf6');toast('Couleur #8b5cf6 appliquée','ok')"></button>
-            <button class="pfr-swatch" title="#ec4899" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#ec4899');toast('Couleur #ec4899 appliquée','ok')"></button>
-            <button class="pfr-swatch" title="#000000" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#000000');toast('Couleur #000000 appliquée','ok')"></button>
+          <div class="card-title" style="margin-bottom:10px"><i class="ri-palette-line"></i> Palette couleurs par texte</div>
+          <p style="font-size:12px;color:var(--text4);margin-bottom:12px">Choisissez une couleur pour chaque zone de texte du balisage.</p>
+          <div id="bPalettePerText">
+            
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="width:140px;font-size:12px;color:var(--text3)">Désignation FR</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('desFR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('desFR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('desFR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('desFR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('desFR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('desFR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('desFR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('desFR','#ffffff')"></button></div>
+            <div id="bColorPreview_desFR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="width:140px;font-size:12px;color:var(--text3)">Désignation AR</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('desAR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('desAR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('desAR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('desAR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('desAR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('desAR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('desAR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('desAR','#ffffff')"></button></div>
+            <div id="bColorPreview_desAR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="width:140px;font-size:12px;color:var(--text3)">Ingrédients FR</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('ingFR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('ingFR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('ingFR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('ingFR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('ingFR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('ingFR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('ingFR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('ingFR','#ffffff')"></button></div>
+            <div id="bColorPreview_ingFR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="width:140px;font-size:12px;color:var(--text3)">Ingrédients AR</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('ingAR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('ingAR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('ingAR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('ingAR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('ingAR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('ingAR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('ingAR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('ingAR','#ffffff')"></button></div>
+            <div id="bColorPreview_ingAR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="width:140px;font-size:12px;color:var(--text3)">Allergènes FR</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('allerFR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('allerFR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('allerFR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('allerFR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('allerFR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('allerFR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('allerFR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('allerFR','#ffffff')"></button></div>
+            <div id="bColorPreview_allerFR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="width:140px;font-size:12px;color:var(--text3)">Allergènes AR</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('allerAR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('allerAR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('allerAR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('allerAR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('allerAR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('allerAR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('allerAR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('allerAR','#ffffff')"></button></div>
+            <div id="bColorPreview_allerAR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
+          </div>
           </div>
         </div>
+
 
 <!-- ─── RÉGLAGE DES AXES (intégré dans Templates) ─── -->
         <div class="card">
@@ -7660,14 +7685,14 @@ function _bDrawBalisageText(canvas, data, hasImg) {
   }
 
   // ── Texte : Désignation FR ──
-  ctx.fillStyle = hasImg ? '#ffffff' : '#1a0a00';
+  ctx.fillStyle = getBalisageTextColor('desFR', hasImg);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const desFRFont = (data.desFR || '').length > 18 ? 8 : 10;
   ctx.font = `700 ${desFRFont}px 'Barlow Condensed', sans-serif`;
   _bWrapText(ctx, data.desFR || 'Désignation FR', lp.x + lp.w/2, lp.y + 32, lp.w - 8, 12);
 
   // ── Texte : Désignation AR — RTL ──
-  ctx.fillStyle = hasImg ? '#fff8ee' : '#3d1c00';
+  ctx.fillStyle = getBalisageTextColor('desAR', hasImg);
   ctx.font = `600 9px 'IBM Plex Sans Arabic', sans-serif`;
   ctx.direction = 'rtl';
   _bWrapText(ctx, data.desAR || 'الاسم بالعربية', lp.x + lp.w/2, lp.y + 68, lp.w - 8, 12);
@@ -7682,14 +7707,14 @@ function _bDrawBalisageText(canvas, data, hasImg) {
   }
 
   // ── Texte : Ingrédients AR — RTL ──
-  ctx.fillStyle = hasImg ? '#ffffff' : '#2a1500';
+  ctx.fillStyle = getBalisageTextColor('ingAR', hasImg);
   ctx.font = `400 7.5px 'IBM Plex Sans Arabic', sans-serif`;
   ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.direction = 'rtl';
   _bWrapTextMulti(ctx, data.ingAR || '', mp.x + mp.w - 6, 20, mp.w - 12, 10, 5);
   ctx.direction = 'ltr';
 
   // ── Texte : Ingrédients FR ──
-  ctx.fillStyle = hasImg ? '#ffffff' : '#2a1500';
+  ctx.fillStyle = getBalisageTextColor('ingFR', hasImg);
   ctx.font = `400 7.5px 'Barlow Condensed', sans-serif`;
   ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.direction = 'ltr';
   _bWrapTextMulti(ctx, data.ingFR || '', mp.x + 6, 50, mp.w - 12, 10, 5);
@@ -7702,7 +7727,7 @@ function _bDrawBalisageText(canvas, data, hasImg) {
     _bWrapTextAllergen(ctx, data.allerFR, rxStart, 6, rxW, 9, 5,
       `700 7.5px 'Barlow Condensed', sans-serif`,
       `700 7.5px 'Barlow Condensed', sans-serif`,
-      '#ef4444', hasImg ? '#ffffff' : '#3d0000');
+      getBalisageTextColor('allerFR', hasImg), hasImg ? '#ffffff' : '#3d0000');
   } else if (!hasImg) {
     ctx.fillStyle = '#ccc';
     ctx.font = `700 7.5px 'Barlow Condensed', sans-serif`;
@@ -7712,7 +7737,7 @@ function _bDrawBalisageText(canvas, data, hasImg) {
 
   // ── Texte : Allergènes AR — RTL ──
   if (data.allerAR) {
-    ctx.fillStyle = hasImg ? '#ffdddd' : '#3d0010';
+    ctx.fillStyle = getBalisageTextColor('allerAR', hasImg);
     ctx.font = `600 7px 'IBM Plex Sans Arabic', sans-serif`;
     ctx.textAlign = 'right'; ctx.direction = 'rtl';
     _bWrapTextMulti(ctx, data.allerAR, rxStart + rxW, 60, rxW, 9, 5);
@@ -8343,7 +8368,7 @@ function bDrawBalisageTextOnly(canvas, data, axes) {
   // Désignation FR
   const desFR = pos('desFR');
   ctx.font = `700 ${desFR.fs}px 'Barlow Condensed', sans-serif`;
-  ctx.fillStyle = '#1a0a00';
+  ctx.fillStyle = getBalisageTextColor('desFR', false);
   ctx.textAlign = 'center';
   ctx.direction = 'ltr';
   ctx.fillText(data.desFR || '', desFR.x, desFR.y);
@@ -8351,7 +8376,7 @@ function bDrawBalisageTextOnly(canvas, data, axes) {
   // Désignation AR
   const desAR = pos('desAR');
   ctx.font = `600 ${desAR.fs}px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.fillStyle = '#3d1c00';
+  ctx.fillStyle = getBalisageTextColor('desAR', false);
   ctx.textAlign = 'center';
   ctx.direction = 'rtl';
   ctx.fillText(data.desAR || '', desAR.x, desAR.y);
@@ -8360,7 +8385,7 @@ function bDrawBalisageTextOnly(canvas, data, axes) {
   // Ingrédients AR
   const ingAR = pos('ingAR');
   ctx.font = `400 ${ingAR.fs}px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.fillStyle = '#2a1500';
+  ctx.fillStyle = getBalisageTextColor('ingAR', false);
   ctx.textAlign = 'right';
   ctx.direction = 'rtl';
   ctx.fillText(data.ingAR || '', ingAR.x + ingAR.w/2, ingAR.y);
@@ -8368,7 +8393,7 @@ function bDrawBalisageTextOnly(canvas, data, axes) {
   // Ingrédients FR
   const ingFR = pos('ingFR');
   ctx.font = `400 ${ingFR.fs}px 'Barlow Condensed', sans-serif`;
-  ctx.fillStyle = '#2a1500';
+  ctx.fillStyle = getBalisageTextColor('ingAR', false);
   ctx.textAlign = 'left';
   ctx.direction = 'ltr';
   ctx.fillText(data.ingFR || '', ingFR.x - ingFR.w/2, ingFR.y);
@@ -8376,14 +8401,14 @@ function bDrawBalisageTextOnly(canvas, data, axes) {
   // Allergènes FR
   const allerFR = pos('allerFR');
   ctx.font = `700 ${allerFR.fs}px 'Barlow Condensed', sans-serif`;
-  ctx.fillStyle = '#ef4444';
+  ctx.fillStyle = getBalisageTextColor('allerFR', false);
   ctx.textAlign = 'left';
   ctx.fillText(data.allerFR || '', allerFR.x - allerFR.w/2, allerFR.y);
 
   // Allergènes AR
   const allerAR = pos('allerAR');
   ctx.font = `600 ${allerAR.fs}px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.fillStyle = '#c084fc';
+  ctx.fillStyle = getBalisageTextColor('allerAR', false);
   ctx.textAlign = 'right';
   ctx.direction = 'rtl';
   ctx.fillText(data.allerAR || '', allerAR.x + allerAR.w/2, allerAR.y);
@@ -8412,6 +8437,53 @@ const B_AXES_DEFAULTS = [
   { key:'allerFR', label:'Allergènes FR',         x:338, y:6,   w:108, h:9,  fs:7  },
   { key:'allerAR', label:'Allergènes AR',         x:338, y:60,  w:108, h:9,  fs:7  },
 ];
+
+
+// ─── Couleurs textes balisage ─────────────────────────────────────
+const B_TEXT_COLOR_DEFAULTS = {
+  desFR: '#1a0a00',
+  desAR: '#3d1c00',
+  ingFR: '#2a1500',
+  ingAR: '#2a1500',
+  allerFR: '#ef4444',
+  allerAR: '#c084fc'
+};
+function getBalisageTextColors(){
+  try { return JSON.parse(localStorage.getItem('balisage_text_colors')||'{}'); } catch(e){ return {}; }
+}
+function getBalisageTextColor(key, hasImg){
+  const saved = getBalisageTextColors();
+  if (hasImg) {
+    // Sur image, forcer blanc pour lisibilité sauf allergènes
+    if (key==='allerFR') return '#ffdddd';
+    if (key==='allerAR') return '#ffdddd';
+    return '#ffffff';
+  }
+  return saved[key] || B_TEXT_COLOR_DEFAULTS[key] || '#000000';
+}
+function setBalisageTextColor(key, color){
+  const cols = getBalisageTextColors();
+  cols[key] = color;
+  localStorage.setItem('balisage_text_colors', JSON.stringify(cols));
+  const prev = document.getElementById('bColorPreview_'+key);
+  if (prev) prev.style.background = color;
+  toast(`Couleur ${key} → ${color}`,'ok');
+  bRenderTplAxesPreview();
+  bSyncPreview();
+}
+function initBalisagePalettePreviews(){
+  const cols = getBalisageTextColors();
+  ['desFR','desAR','ingFR','ingAR','allerFR','allerAR'].forEach(k=>{
+    const el = document.getElementById('bColorPreview_'+k);
+    if (el) el.style.background = cols[k] || B_TEXT_COLOR_DEFAULTS[k];
+  });
+}
+// Appeler à l'ouverture de l'onglet templates
+const _origSwitchBalisageTab = switchBalisageTab;
+switchBalisageTab = function(name){
+  _origSwitchBalisageTab(name);
+  if (name==='templates') setTimeout(initBalisagePalettePreviews, 50);
+};
 
 let _bAxes = null; // overrides
 
