@@ -824,6 +824,661 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       </div>
       <!-- Preview -->
       <div style="position:sticky;top:8px;align-self:start">
+        <div class="card">
+          <div class="card-title"><i class="ri-eye-line"></i> Aperçu A7</div>
+          <div id="previewWrap">
+            <canvas id="previewCanvas" width="222" height="315"></canvas>
+            <div class="pv-meta">
+              <span class="pv-chip" id="pvTemplate">—</span>
+              <span class="pv-chip" id="pvCode">CODE —</span>
+              <span class="pv-chip" id="pvSpecial" style="display:none;color:var(--amber)">Prix calculé actif</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FILE D'IMPRESSION ===== -->
+  <div id="tab-file" class="tab">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div class="card-title" style="margin:0"><i class="ri-printer-line"></i> File d'impression</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="clearQueue()"><i class="ri-delete-bin-line"></i> Vider</button>
+          <button class="btn btn-amber" onclick="generatePDF()"><i class="ri-file-pdf-line"></i> PDF A4</button>
+          <button class="btn btn-blue" style="background:#1d4ed8" onclick="shareByEmail()"><i class="ri-mail-send-line"></i> Email</button>
+          <button class="btn" style="background:#25D366;color:#fff;border:none" onclick="shareByWhatsApp()"><i class="ri-whatsapp-line"></i> WhatsApp</button>
+        </div>
+      </div>
+      <div class="tbl-wrap" style="max-height:500px">
+        <table>
+          <thead><tr>
+            <th>Code</th><th>Désignation</th><th>Template</th>
+            <th>Prix</th><th>Unité</th><th>Grammage</th><th>Fidélité</th><th></th>
+          </tr></thead>
+          <tbody id="queueBody"></tbody>
+        </table>
+        <div id="queueEmpty" style="padding:32px;text-align:center;color:var(--text4)">
+          <i class="ri-inbox-2-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
+          File vide — commencez à scanner des codes
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text4);margin-top:8px">
+        PDF A4 · 4 étiquettes par page · Images template en arrière-plan
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BASE DE DONNÉES ===== -->
+  <div id="tab-base" class="tab">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- Actions bar -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="baseSearch" placeholder="Rechercher code ou désignation…" style="flex:1;min-width:180px;max-width:340px" oninput="_basePage=0;renderBase()">
+        <button class="btn btn-amber btn-sm" onclick="openArticleModal()"><i class="ri-add-line"></i> Nouvel article</button>
+        <button class="btn btn-blue btn-sm" onclick="exportBaseExcel()"><i class="ri-download-2-line"></i> Exporter Excel</button>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+          <i class="ri-upload-2-line"></i> Importer Excel
+          <input type="file" accept=".xlsx,.xls,.xlsm" style="display:none" onchange="importBaseExcel(this)">
+        </label>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tbl-wrap" style="max-height:480px">
+          <table>
+            <thead><tr>
+              <th>Code</th><th>Désignation FR</th><th>Désig. AR</th>
+              <th>Ingrédients FR</th><th>Ingrédients AR</th><th>Origine</th><th>Col J</th><th>Col K</th><th></th>
+            </tr></thead>
+            <tbody id="baseBody"></tbody>
+          </table>
+          <div id="baseEmpty" style="padding:32px;text-align:center;color:var(--text4)">
+            <i class="ri-database-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
+            Base de données vide
+          </div>
+        </div>
+      </div>
+      <div id="basePager" style="display:none"></div>
+      <div style="font-size:11px;color:var(--text4)">
+        Format import Excel: Colonne A=Code · B=Désig.FR · C=Désig.AR · D=Ingrédients FR · E=Ingrédients AR · F=Origine · G=ColJ · H=ColK
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HISTORIQUE ===== -->
+  <div id="tab-historique" class="tab">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="card-title" style="margin:0"><i class="ri-history-line"></i> Historique (DataStorage)</div>
+        <button class="btn btn-red btn-sm" onclick="clearHistory()"><i class="ri-delete-bin-line"></i> Effacer</button>
+      </div>
+      <div class="tbl-wrap" style="max-height:500px">
+        <table>
+          <thead><tr>
+            <th>Format</th><th>Date / Heure</th><th>Code</th><th>Désignation</th>
+            <th>Template</th><th>Prix</th><th>Unité</th><th>Fidélité</th>
+          </tr></thead>
+          <tbody id="histBody"></tbody>
+        </table>
+        <div id="histEmpty" style="padding:32px;text-align:center;color:var(--text4)">
+          <i class="ri-history-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
+          Aucun historique enregistré
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="tab-dashboard" class="tab">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- KPIs row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div class="card" style="text-align:center;padding:14px 8px">
+          <div id="dashToday" style="font-size:32px;font-weight:900;color:var(--amber)">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">AUJOURD'HUI</div>
+        </div>
+        <div class="card" style="text-align:center;padding:14px 8px">
+          <div id="dashWeek" style="font-size:32px;font-weight:900;color:var(--amber)">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">CETTE SEMAINE</div>
+        </div>
+        <div class="card" style="text-align:center;padding:14px 8px">
+          <div id="dashTotal" style="font-size:32px;font-weight:900;color:var(--amber)">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">TOTAL GÉNÉRATIONS</div>
+        </div>
+        <div class="card" style="text-align:center;padding:14px 8px">
+          <div id="dashUser" style="font-size:16px;font-weight:800;color:#60a5fa;margin-top:4px">—</div>
+          <div id="dashUserCount" style="font-size:11px;color:var(--amber);margin-top:2px">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">OPÉRATEUR ACTUEL</div>
+        </div>
+      </div>
+      <!-- Chart + Templates row -->
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:14px">
+        <div class="card" id="dashBox">
+          <div class="card-title"><i class="ri-bar-chart-2-line"></i> Activité 7 jours — A7 <span style="color:#ef4444">■</span>A4</div>
+          <canvas id="dashChart" style="width:100%;height:160px;border-radius:8px"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ri-pie-chart-2-line"></i> Top Templates A7</div>
+          <div id="dashTemplates" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+      <!-- Storage bar (will be injected by JS) -->
+      <div class="card" id="dashStorageCard">
+        <div class="card-title"><i class="ri-database-2-line"></i> Santé du Stockage</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--text3)">LocalStorage navigateur (~10 MB max)</span>
+          <span id="dashStorageLabel" style="font-size:11px;font-weight:700;color:var(--amber)"></span>
+        </div>
+        <div style="background:var(--surf3);border-radius:6px;height:12px;overflow:hidden">
+          <div id="dashStorageBar" style="height:100%;border-radius:6px;transition:width .6s ease;background:var(--amber);width:0%"></div>
+        </div>
+        <div id="dashStorageTip" style="font-size:11px;color:var(--text4);margin-top:8px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-ghost btn-sm" onclick="_cleanStorage()"><i class="ri-delete-bin-3-line"></i> Nettoyer historique</button>
+          <button class="btn btn-ghost btn-sm" onclick="_purgeTemplateImages()"><i class="ri-image-2-line"></i> Purger images</button>
+          <button class="btn btn-amber btn-sm" onclick="exportAllData()"><i class="ri-save-3-line"></i> Sauvegarder tout</button>
+        </div>
+      </div>
+      <!-- Recent activity -->
+      <div class="card">
+        <div class="card-title"><i class="ri-time-line"></i> Activité Récente — 20 dernières générations (A7 + A4)</div>
+        <div class="tbl-wrap" style="max-height:400px">
+          <table>
+            <thead><tr><th>Format</th><th>Heure</th><th>Code</th><th>Désignation</th><th>Template</th><th>Prix</th></tr></thead>
+            <tbody id="dashRecent"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TEMPLATES ===== -->
+  <div id="tab-templates" class="tab">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="card-title" style="margin:0"><i class="ri-image-add-line"></i> Gestionnaire de Templates</div>
+        <span style="font-size:11px;color:var(--text3)">Uploadez vos 13 slides POTX exportées en image</span>
+      </div>
+      <p style="font-size:12px;color:var(--text4);margin-bottom:14px">Format A7 · 74×105mm · PNG ou JPG · Stockage local</p>
+      <div id="tplGrid" class="tpl-grid"></div>
+    </div>
+  </div>
+
+  <!-- ===== CONFIG ===== -->
+  <div id="tab-config" class="tab">
+    <div class="g2">
+      <!-- Mapping préfixes -->
+      <div class="card">
+        <div class="card-title"><i class="ri-flow-chart"></i> Mapping Préfixes → Template</div>
+        <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Le préfixe le plus long est prioritaire</p>
+        <div id="mappingList" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:10px"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="addMapping()"><i class="ri-add-line"></i> Ajouter</button>
+          <button class="btn btn-amber btn-sm" onclick="saveMapping()"><i class="ri-save-line"></i> Enregistrer</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetMapping()"><i class="ri-refresh-line"></i> Réinitialiser</button>
+        </div>
+      </div>
+      <!-- Mapping produit spécifique -->
+      <div class="card">
+        <div class="card-title"><i class="ri-link"></i> Forcer Template par Code</div>
+        <input id="tplOverrideSearch" placeholder="Rechercher code…" style="margin-bottom:10px" oninput="renderTplOverrideTable()">
+        <div class="tbl-wrap" style="max-height:320px">
+          <table>
+            <thead><tr><th>Code</th><th>Désignation</th><th>Auto</th><th>Forcer</th></tr></thead>
+            <tbody id="tplOverrideBody"></tbody>
+          </table>
+        </div>
+        <button class="btn btn-amber btn-sm" style="margin-top:10px" onclick="saveTplOverrides()"><i class="ri-save-line"></i> Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div><!-- /#app -->
+
+<!-- ===== MODAL ARTICLE ===== -->
+<div class="modal-bg" id="articleModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Nouvel Article</div>
+    <button class="modal-close" onclick="closeArticleModal()"><i class="ri-close-line"></i></button>
+    <div class="field"><label class="lbl">Code Article *</label><input id="m_code" placeholder="Ex: 2658179"></div>
+    <div class="g2">
+      <div class="field"><label class="lbl">Désignation FR *</label><input id="m_desFR" placeholder="Nom français"></div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label class="lbl" style="margin:0">Désignation AR</label>
+          <button type="button" id="btnTransA7" onclick="translateToArabic('m_desFR','m_desAR','btnTransA7')"
+            style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                   border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s"
+            title="Traduire la désignation FR en arabe commercial (IA)">
+            <i class="ri-translate-2" style="font-size:14px"></i> Traduire IA
+          </button>
+        </div>
+        <input id="m_desAR" class="ar" placeholder="الاسم بالعربية">
+      </div>
+    </div>
+    <div class="field"><label class="lbl">Ingrédients (FR)</label><textarea id="m_ing" placeholder="Lait, sucre, farine… (allergènes en majuscules)"></textarea></div>
+    <div class="field"><label class="lbl">Ingrédients (AR)</label><textarea id="m_ing_ar" class="ar" placeholder="المكونات بالعربية…" style="direction:rtl;text-align:right"></textarea></div>
+    <div class="g2">
+      <div class="field"><label class="lbl">Origine</label><input id="m_origine" placeholder="France, Maroc…"></div>
+      <div class="field"><label class="lbl">Col J (Rectangle 41)</label><input id="m_colJ" placeholder="Valeur Col J"></div>
+    </div>
+    <div class="field"><label class="lbl">Col K (Rectangle 31)</label><input id="m_colK" placeholder="Valeur Col K"></div>
+    <div class="sep"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeArticleModal()">Annuler</button>
+      <button class="btn btn-amber" onclick="saveArticle()"><i class="ri-save-line"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+  </div><!-- /#a7-mode -->
+
+  <!-- ============================================================ -->
+  <!-- ======================= MODE A4 ============================ -->
+  <!-- ============================================================ -->
+  <div id="a4-mode">
+    <nav class="nav">
+      <button class="nav-btn active" data-a4tab="saisie" onclick="switchA4Tab('saisie')"><i class="ri-flashlight-line"></i> SAISIE A4</button>
+      <button class="nav-btn" data-a4tab="templates" onclick="switchA4Tab('templates')"><i class="ri-layout-grid-line"></i> TEMPLATES</button>
+      <button class="nav-btn" data-a4tab="file" onclick="switchA4Tab('file')"><i class="ri-printer-line"></i> FILE <span id="a4FileCount" class="count">0</span></button>
+    </nav>
+
+    <!-- TAB SAISIE -->
+    <div id="a4tab-saisie" class="tab active">
+      <div class="a4-grid">
+        <!-- FORMULAIRE GAUCHE -->
+        <div>
+          <div class="a4-form-section">
+            <h3><i class="ri-barcode-line"></i> Code produit</h3>
+            <div style="display:flex;gap:8px">
+              <input id="a4Code" class="mono" inputmode="numeric" placeholder="Scanner ou saisir gencode…"
+                style="font-size:20px;font-weight:700;color:var(--amber);letter-spacing:3px;text-align:center;height:54px;flex:1;transition:border-color .3s"
+                oninput="a4LookupArticle()" autocomplete="off">
+              <button class="btn btn-amber" onclick="startA4BarcScan()" style="padding:10px 14px" title="Scanner"><i class="ri-qr-scan-2-line"></i></button>
+              <button class="btn btn-ghost" onclick="a4ClearDesig()" style="padding:10px 12px" title="Effacer désignation"><i class="ri-eraser-line"></i></button>
+            </div>
+ 
+            <div id="a4ArticleBadge" style="display:none;margin-top:8px;padding:9px 12px;border-radius:9px;
+              font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;border:1.5px solid;
+              transition:all .2s">
+            </div>         </div>
+          <div class="a4-form-section">
+            <h3><i class="ri-text"></i> Désignation</h3>
+            <div class="field"><label class="lbl">Désignation FR</label>
+              <input id="a4DesFR" placeholder="Nom du produit en français" oninput="this.dataset.manual=this.value?'1':'';a4Sync()"></div>
+            <div class="field">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <label class="lbl" style="margin:0">الاسم بالعربية</label>
+                <button type="button" id="btnTransA4" onclick="translateToArabic('a4DesFR','a4DesAR','btnTransA4',true)"
+                  style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                         border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s"
+                  title="Traduire la désignation FR en arabe commercial (IA)">
+                  <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
+                </button>
+              </div>
+              <input id="a4DesAR" placeholder="الاسم بالعربية" class="ar" style="direction:rtl;text-align:right" oninput="this.dataset.manual=this.value?'1':'';a4Sync()">
+            </div>
+          </div>
+          <div class="a4-form-section">
+            <h3><i class="ri-price-tag-3-line"></i> Prix &amp; Secteur</h3>
+            <div class="price-row" style="margin-bottom:10px">
+              <div class="price-input-wrap">
+                <span class="price-lbl">PRIX BARRÉ</span>
+                <input id="a4Barre" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" class="prix-barre-input" oninput="a4CalcDiff()">
+              </div>
+              <div class="price-input-wrap">
+                <span class="price-lbl">PRIX PROMO</span>
+                <input id="a4Promo" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" class="prix-promo-input" oninput="a4CalcDiff()">
+              </div>
+            </div>
+            <div id="a4DiffBadge" class="diff-badge diff-hidden"><i class="ri-subtract-fill"></i> ÉCONOMIE: — DH</div>
+            <div style="margin-top:10px">
+              <label class="lbl" style="margin-bottom:6px">Secteur (seuil affichage différence)</label>
+              <div class="secteur-toggle">
+                <button class="secteur-btn active" id="btnFood" onclick="setSecteur('food')">🥩 FOOD ≥ 5 DH</button>
+                <button class="secteur-btn" id="btnNonFood" onclick="setSecteur('nonfood')">🧴 NON-FOOD ≥ 10%</button>
+              </div>
+            </div>
+          </div>
+          <div class="a4-form-section">
+            <h3><i class="ri-gift-line"></i> % Fidélité</h3>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input id="a4Fidelite" type="text" inputmode="decimal" placeholder="Ex: 5"
+                style="font-size:20px;font-weight:700;color:var(--amber);text-align:center;height:48px;flex:1"
+                oninput="a4CalcDiff()">
+              <div id="a4FidVal" style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:var(--amber);min-width:100px;text-align:center"></div>
+            </div>
+          </div>
+          <div class="a4-form-section">
+            <h3><i class="ri-image-2-line"></i> Picto
+              <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:4px">5×3 cm · sélectionner ou uploader</span>
+            </h3>
+            <div class="picto-upload-grid" id="a4PictoGrid">
+              <!-- rempli par renderA4PictoGrid() -->
+            </div>
+            <label class="picto-add-btn" style="margin-top:6px;width:100%;aspect-ratio:auto;flex-direction:row;height:36px;border-radius:8px;gap:6px" for="pictoFileInput">
+              <i class="ri-upload-cloud-2-line" style="font-size:16px"></i>
+              <span style="font-size:11px">Uploader un picto (JPG/PNG — 5×3 cm recommandé)</span>
+            </label>
+            <input type="file" id="pictoFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadPicto(this)">
+            <div style="margin-top:6px;display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm" style="flex:1" onclick="a4SelectPicto('aucun')">
+                <i class="ri-close-circle-line"></i> Aucun picto
+              </button>
+            </div>
+          </div>
+
+          <button class="btn btn-amber btn-full" style="margin-bottom:8px" onclick="a4AddToFile()">
+            <i class="ri-add-circle-line"></i> AJOUTER À LA FILE
+          </button>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn btn-blue" style="flex:1" onclick="a4GenPDF()"><i class="ri-file-pdf-line"></i> PDF APERÇU</button>
+            <button class="btn btn-ghost" style="flex:1" onclick="a4GenPNG()"><i class="ri-image-line"></i> PNG</button>
+          </div>
+
+          <!-- ── IMPORT EXCEL A4 ── -->
+          <div class="a4-form-section" style="margin-top:4px">
+            <h3><i class="ri-file-excel-2-line"></i> Import Excel → File A4
+              <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:6px">batch multi-affiches</span>
+            </h3>
+            <div style="font-size:11px;color:var(--text4);margin-bottom:8px;line-height:1.6">
+              <span style="color:var(--amber);font-weight:700">Colonnes requises :</span><br>
+              A&nbsp;=&nbsp;Gencode &nbsp;·&nbsp; B&nbsp;=&nbsp;Prix barré &nbsp;·&nbsp; C&nbsp;=&nbsp;Prix promo<br>
+              D&nbsp;=&nbsp;% Fidélité &nbsp;·&nbsp; E&nbsp;=&nbsp;Nom picto &nbsp;·&nbsp; F&nbsp;=&nbsp;Nom template A4
+            </div>
+            <label id="a4ExcelDropZone" class="drop-zone" style="cursor:pointer;display:block;padding:14px;text-align:center;border:2px dashed var(--border2);border-radius:10px;background:rgba(255,179,0,0.04);transition:background .2s">
+              <i class="ri-file-excel-2-line" style="font-size:28px;display:block;margin-bottom:6px;color:#22c55e"></i>
+              <span style="font-size:12px;color:var(--text3)">Déposer le fichier Excel ici<br>ou cliquer pour sélectionner</span>
+              <input type="file" id="a4ExcelInput" accept=".xlsx,.xls,.xlsm" style="display:none" onchange="importExcelToA4File(this)">
+            </label>
+            <div id="a4ExcelProgress" style="display:none;margin-top:8px">
+              <div style="background:var(--surf3);border-radius:6px;height:8px;overflow:hidden">
+                <div id="a4ExcelBar" style="height:100%;background:var(--amber);width:0%;transition:width .3s"></div>
+              </div>
+              <div id="a4ExcelInfo" style="font-size:11px;color:var(--text3);margin-top:4px;text-align:center"></div>
+            </div>
+          </div>
+        </div>
+        <!-- APERÇU DROITE -->
+        <div class="a4-canvas-wrap">
+<div class="preview-toolbar">
+  <button class="zoom-btn" onclick="window.__zoomPreview(-0.1)">−</button>
+  <button class="zoom-btn" onclick="window.__zoomPreview(0.1)">+</button>
+  <button class="zoom-btn" onclick="window.__zoomPreview(0)" title="Fit">⤢</button>
+  <button class="btn" style="margin-left:auto;padding:8px 14px;border-radius:999px;background:#ffb300;color:#000;font-weight:800;" onclick="window.__exportPNG()">PNG HD</button>
+  <button class="btn" style="padding:8px 14px;border-radius:999px;background:#ff8f00;color:#000;font-weight:800;" onclick="window.__exportPDF()">PDF</button>
+</div>
+
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+              <div class="card-title" style="margin:0"><i class="ri-eye-line"></i> Aperçu A4</div>
+              <select id="a4TplSelect" onchange="a4SelectTplFromSelect(this.value)"
+                style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;height:36px;
+                       background:var(--surf3);color:var(--amber);border:1px solid var(--border2);
+                       border-radius:8px;padding:0 10px;cursor:pointer;min-width:150px">
+              </select>
+            </div>
+            <canvas id="a4PreviewCanvas" width="420" height="594" style="width:100%"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB TEMPLATES -->
+    <div id="a4tab-templates" class="tab">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div class="card-title" style="margin:0"><i class="ri-layout-grid-line"></i> Templates A4</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-amber btn-sm" onclick="openA4TplModal()"><i class="ri-add-line"></i> Nouveau</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportA4Tpls()"><i class="ri-download-2-line"></i> Export JSON</button>
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer"><i class="ri-upload-2-line"></i> Import JSON
+              <input type="file" accept=".json" style="display:none" onchange="importA4Tpls(this)">
+            </label>
+          </div>
+        </div>
+        <div id="a4TplMgrGrid"></div>
+      </div>
+    </div>
+
+    <!-- TAB FILE -->
+    <div id="a4tab-file" class="tab">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div class="card-title" style="margin:0"><i class="ri-printer-line"></i> File d'impression A4</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="a4ClearFile()"><i class="ri-delete-bin-line"></i> Vider</button>
+            <button class="btn btn-amber" onclick="a4PrintAll()"><i class="ri-file-pdf-line"></i> Imprimer tout</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:500px">
+          <table>
+            <thead><tr><th>#</th><th>Code</th><th>Désignation</th><th>Template</th>
+              <th>Barré</th><th>Promo</th><th>Diff.</th><th>Fidé.</th><th>Picto</th><th></th></tr></thead>
+            <tbody id="a4FileBody"></tbody>
+          </table>
+          <div id="a4FileEmpty" style="padding:32px;text-align:center;color:var(--text4)">
+            <i class="ri-inbox-2-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
+            File vide
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /#a4-mode -->
+
+  <!-- ============================================================ -->
+  <!-- ==================== MODE BALISAGE ========================= -->
+  <!-- ============================================================ -->
+  <div id="balisage-mode" style="display:none">
+    <nav class="nav">
+      <button class="nav-btn active" data-btab="saisie" onclick="switchBalisageTab('saisie')"><i class="ri-flashlight-line"></i> SAISIE</button>
+      <button class="nav-btn" data-btab="file" onclick="switchBalisageTab('file')"><i class="ri-printer-line"></i> FILE <span id="balisageFileCount" class="count">0</span></button>
+      <button class="nav-btn" data-btab="templates" onclick="switchBalisageTab('templates')"><i class="ri-image-edit-line"></i> TEMPLATES</button>
+      </nav>
+
+    <!-- TAB SAISIE BALISAGE — logique A7 (scan + lookup base + aperçu live) -->
+    <div id="btab-saisie" class="tab active">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start" class="balisage-layout">
+
+        <!-- LEFT: FORMULAIRE -->
+        <div style="display:flex;flex-direction:column;gap:12px">
+
+          <!-- ── Code produit + scan ── -->
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <label class="lbl" style="margin:0">Code produit</label>
+              <span class="ar" style="font-size:11px;color:var(--text3)">أدخل الكود أو امسح</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="bCodeInput" autocomplete="off" inputmode="numeric"
+                placeholder="Scanner ou saisir le code-barres…"
+                style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:700;
+                       color:var(--amber);letter-spacing:3px;text-align:center;height:58px"
+                oninput="bLookup()" autofocus>
+              <button class="btn btn-amber" title="Scanner code-barres"
+                onclick="startBarcodeScan(function(c){ document.getElementById('bCodeInput').value=c; bLookup(); bLookupEnter(); })"
+                style="padding:12px 14px;min-width:48px;height:58px"><i class="ri-qr-scan-2-line" style="font-size:20px"></i></button>
+            </div>
+            <div id="bStatusBar" style="margin-top:8px;height:28px;font-size:13px;line-height:28px;
+              padding:0 8px;border-radius:6px;transition:all .2s"></div>
+          </div>
+
+          <!-- ── Type de gabarit ── -->
+          <div class="card" style="padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Gabarit</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <button id="bGabaritBOUL" class="btn btn-amber" onclick="bSetGabarit('BOUL')"
+                style="height:48px;font-size:13px;letter-spacing:1px">
+                <i class="ri-bread-line"></i> BOULANGERIE
+              </button>
+              <button id="bGabaritPAT" class="btn btn-ghost" onclick="bSetGabarit('PAT')"
+                style="height:48px;font-size:13px;letter-spacing:1px">
+                <i class="ri-cake-3-line"></i> PÂTISSERIE
+              </button>
+            </div>
+            <div id="bGabaritBadge" style="margin-top:8px;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;
+              background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--amber);text-align:center">
+              <span id="bGabaritLabel">BOULANGERIE</span> · 150×40 mm · 7 / page A4
+            </div>
+          </div>
+
+          <!-- ── Désignations (remplies auto depuis base) ── -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:10px"><i class="ri-text"></i> Désignation</div>
+
+            <div class="field">
+              <label class="lbl">Désignation FR</label>
+              <input id="bDesFR" placeholder="Rempli auto depuis la base…" oninput="bSyncPreview()" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <label class="lbl" style="margin:0">الاسم بالعربية</label>
+                <button type="button" onclick="bTranslateAR()" id="bBtnTransAR"
+                  style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                         border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">
+                  <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
+                </button>
+              </div>
+              <input id="bDesAR" class="ar" placeholder="الاسم يُملأ تلقائياً من القاعدة…"
+                style="direction:rtl;text-align:right" oninput="bSyncPreview()">
+            </div>
+          </div>
+
+          <!-- ── Ingrédients + Allergènes ── -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:10px"><i class="ri-list-check-3"></i> Ingrédients & Allergènes</div>
+
+            <div class="field">
+              <label class="lbl">Ingrédients (FR)</label>
+              <textarea id="bIngFR" rows="3"
+                placeholder="Farine de blé, eau, sel, levure… (ALLERGÈNES EN MAJUSCULES)"
+                oninput="bSyncPreview()"></textarea>
+            </div>
+
+            <div class="field">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <label class="lbl" style="margin:0">المكونات (AR)</label>
+                <button type="button" onclick="bTranslateIngAR()" id="bBtnTransIngAR"
+                  style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                         border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">
+                  <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
+                </button>
+              </div>
+              <textarea id="bIngAR" rows="3" class="ar"
+                placeholder="مكونات بالعربية…" style="direction:rtl;text-align:right"
+                oninput="bSyncPreview()"></textarea>
+            </div>
+
+          </div>
+
+          <!-- ── Boutons action ── -->
+          <button class="btn btn-amber btn-full" onclick="bAddToFile()">
+            <i class="ri-add-circle-line"></i> AJOUTER À LA FILE — ENTRÉE
+          </button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" style="flex:1" onclick="bClearForm()"><i class="ri-eraser-line"></i> Effacer</button>
+            <button class="btn btn-blue" style="flex:1" onclick="bPrintAll()"><i class="ri-file-pdf-line"></i> PDF FILE</button>
+          </div>
+
+          <!-- ── Import Excel → file balisage ── -->
+          <div class="card" style="padding:12px">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;font-weight:700">
+              <i class="ri-file-excel-2-line" style="color:#22c55e"></i> IMPORT EXCEL → FILE BALISAGE
+            </div>
+            <div style="font-size:10px;color:var(--text4);margin-bottom:8px;line-height:1.6">
+              Col A = Code produit &nbsp;·&nbsp; B = Type (BOUL/PAT) optionnel<br>
+              Les désignations et ingrédients sont lus depuis la <strong style="color:var(--amber)">BASE</strong>.
+            </div>
+            <label class="drop-zone" id="bExcelDrop">
+              <i class="ri-file-excel-2-line" style="font-size:24px;display:block;margin-bottom:4px;color:#22c55e"></i>
+              Déposer ou cliquer (.xlsx/.xls)
+              <input type="file" id="bExcelInput" accept=".xlsx,.xls,.xlsm" style="display:none" onchange="bImportExcelFromBase(this)">
+            </label>
+          </div>
+        </div>
+
+        <!-- RIGHT: APERÇU BALISAGE -->
+        <div style="position:sticky;top:8px">
+          <div class="card">
+            <div class="card-title"><i class="ri-eye-line"></i> Aperçu Balisage <span style="font-size:10px;color:var(--text3);font-weight:400">150×40 mm</span></div>
+            <div style="overflow:auto;border-radius:10px;border:2px solid var(--border2);background:#f5f0e8">
+              <canvas id="bPreviewCanvas" width="450" height="120"
+                style="display:block;width:100%;border-radius:8px"></canvas>
+            </div>
+            <div style="font-size:10px;color:var(--text4);margin-top:6px;text-align:center">
+              Gabarit : <span id="bPreviewGabaritLabel" style="color:var(--amber);font-weight:700">BOULANGERIE</span>
+              · 150×40 mm
+            </div>
+            <!-- Meta chips -->
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+              <span id="bPvCode"   class="pv-chip">CODE —</span>
+              <span id="bPvMatch" class="pv-chip" style="display:none;color:var(--green)">✓ Base</span>
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm" style="flex:1" onclick="bDownloadPNG()"><i class="ri-image-line"></i> PNG</button>
+              <button class="btn btn-amber btn-sm" style="flex:1" onclick="bAddToFile()"><i class="ri-add-line"></i> Ajouter</button>
+            </div>
+          </div>
+          <!-- File count -->
+          <div class="card" style="margin-top:12px;padding:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;color:var(--text3);font-weight:700">BALISAGES EN FILE</span>
+              <span id="bFileCountBadge" style="font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:900;color:var(--amber)">0</span>
+            </div>
+            <div style="font-size:10px;color:var(--text4);margin-top:4px">7 balisages par page A4 portrait</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /#btab-saisie -->
+
+    <!-- TAB FILE BALISAGE -->
+    <div id="btab-file" class="tab">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div class="card-title" style="margin:0"><i class="ri-printer-line"></i> File BALISAGE</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="bClearFile()"><i class="ri-delete-bin-line"></i> Vider</button>
+            <button class="btn btn-amber" onclick="bPrintAll()"><i class="ri-file-pdf-line"></i> Imprimer tout (PDF A4)</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:500px">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Type</th><th>Désig. FR</th><th>الاسم</th><th>Ingrédients</th><th>Allergènes</th><th></th>
+            </tr></thead>
+            <tbody id="bFileBody"></tbody>
+          </table>
+          <div id="bFileEmpty" style="padding:32px;text-align:center;color:var(--text4)">
+            <i class="ri-inbox-2-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
+            File vide — saisissez ou importez des balisages
+          </div>
+        </div>
+      </div>
+    </div><!-- /#btab-file -->
+
+
+    <!-- TAB TEMPLATES BALISAGE -->
+    <div id="btab-templates" class="tab">
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Grille templates -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+            <div class="card-title" style="margin:0"><i class="ri-image-edit-line"></i> Templates Balisage</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="bExportTemplates()"><i class="ri-download-2-line"></i> Exporter JSON</button>
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer"><i class="ri-upload-2-line"></i> Importer JSON
+                <input type="file" accept=".json" style="display:none" onchange="bImportTemplates(this)">
+              </label>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--text4);margin-bottom:14px">Format Balisage · 150×40 mm · PNG ou JPG · Image de fond par gabarit</p>
+          <!-- Grid: BOULANGERIE / PÂTISSERIE + slots custom -->
+          <div id="bTplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
+        </div>
+
+        
         <!-- ─── PALETTE COULEURS BALISAGE ─── -->
         <div class="card">
           <div class="card-title" style="margin-bottom:10px"><i class="ri-palette-line"></i> Palette couleurs par texte</div>
@@ -849,34 +1504,6 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
             <div style="width:140px;font-size:12px;color:var(--text3)">Ingrédients AR</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#5c2d0a" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#5c2d0a;cursor:pointer" onclick="setBalisageTextColor('ingAR','#5c2d0a')"></button><button class="pfr-swatch" title="#8B5E3C" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8B5E3C;cursor:pointer" onclick="setBalisageTextColor('ingAR','#8B5E3C')"></button><button class="pfr-swatch" title="#3d1c00" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#3d1c00;cursor:pointer" onclick="setBalisageTextColor('ingAR','#3d1c00')"></button><button class="pfr-swatch" title="#2a1500" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#2a1500;cursor:pointer" onclick="setBalisageTextColor('ingAR','#2a1500')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('ingAR','#000000')"></button><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('ingAR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('ingAR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('ingAR','#22c55e')"></button></div>
             <div id="bColorPreview_ingAR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
-          </div>
-          </div>
-        </div>
-
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:140px;font-size:12px;color:var(--text3)">Désignation AR</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('desAR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('desAR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('desAR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('desAR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('desAR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('desAR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('desAR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('desAR','#ffffff')"></button></div>
-            <div id="bColorPreview_desAR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:140px;font-size:12px;color:var(--text3)">Ingrédients FR</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('ingFR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('ingFR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('ingFR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('ingFR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('ingFR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('ingFR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('ingFR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('ingFR','#ffffff')"></button></div>
-            <div id="bColorPreview_ingFR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:140px;font-size:12px;color:var(--text3)">Ingrédients AR</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('ingAR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('ingAR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('ingAR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('ingAR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('ingAR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('ingAR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('ingAR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('ingAR','#ffffff')"></button></div>
-            <div id="bColorPreview_ingAR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:140px;font-size:12px;color:var(--text3)">Allergènes FR</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('allerFR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('allerFR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('allerFR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('allerFR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('allerFR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('allerFR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('allerFR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('allerFR','#ffffff')"></button></div>
-            <div id="bColorPreview_allerFR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:140px;font-size:12px;color:var(--text3)">Allergènes AR</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('allerAR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('allerAR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('allerAR','#22c55e')"></button><button class="pfr-swatch" title="#0ea5e9" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="setBalisageTextColor('allerAR','#0ea5e9')"></button><button class="pfr-swatch" title="#8b5cf6" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="setBalisageTextColor('allerAR','#8b5cf6')"></button><button class="pfr-swatch" title="#ec4899" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="setBalisageTextColor('allerAR','#ec4899')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('allerAR','#000000')"></button><button class="pfr-swatch" title="#ffffff" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#ffffff;cursor:pointer" onclick="setBalisageTextColor('allerAR','#ffffff')"></button></div>
-            <div id="bColorPreview_allerAR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
           </div>
           </div>
         </div>
@@ -6935,6 +7562,13 @@ function switchBalisageTab(name) {
   if (name === 'axes')      bRenderAxesEditor();
   if (name === 'saisie') setTimeout(() => { try { document.getElementById('bCodeInput').focus(); } catch(e){} }, 50);
 }
+// Hook palette init
+const _origSwitchBalisageTab = switchBalisageTab;
+switchBalisageTab = function(name){
+  _origSwitchBalisageTab(name);
+  if (name==='templates') setTimeout(initBalisagePalettePreviews, 50);
+};
+
 
 // ─── Form helpers ─────────────────────────────────────────────────
 function bClearForm() {
@@ -7069,43 +7703,16 @@ function _bDrawBalisageText(canvas, data, hasImg) {
     ctx.fillText('المكونات', mp.x + mp.w/2, 5);
   }
 
-  // ── Texte : Ingrédients AR — RTL ──
-  ctx.fillStyle = getBalisageTextColor('ingAR', hasImg);
-  ctx.font = `400 7.5px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.direction = 'rtl';
-  _bWrapTextMulti(ctx, data.ingAR || '', mp.x + mp.w - 6, 20, mp.w - 12, 10, 5);
+    // ── Texte : Ingrédients AR — RTL avec allergènes ──
+  ctx.textBaseline = 'top'; ctx.direction = 'rtl';
+  _bWrapTextAllergenAr(ctx, data.ingAR || '', mp.x + mp.w - 6, 20, mp.w - 12, 10, 5, `400 7.5px 'IBM Plex Sans Arabic', sans-serif`, `700 7.5px 'IBM Plex Sans Arabic', sans-serif`, '#ef4444', getBalisageTextColor('ingAR', hasImg));
   ctx.direction = 'ltr';
 
-  // ── Texte : Ingrédients FR ──
-  ctx.fillStyle = getBalisageTextColor('ingFR', hasImg);
-  ctx.font = `400 7.5px 'Barlow Condensed', sans-serif`;
-  ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.direction = 'ltr';
-  _bWrapTextMulti(ctx, data.ingFR || '', mp.x + 6, 50, mp.w - 12, 10, 5);
+  // ── Texte : Ingrédients FR avec allergènes ──
+  ctx.textBaseline = 'top'; ctx.direction = 'ltr';
+  _bWrapTextAllergen(ctx, data.ingFR || '', mp.x + 6, 50, mp.w - 12, 10, 5, `400 7.5px 'Barlow Condensed', sans-serif`, `700 7.5px 'Barlow Condensed', sans-serif`, '#ef4444', getBalisageTextColor('ingFR', hasImg));
 
-  // ── Texte : Allergènes FR (rouge gras) ──
-  const rxStart = rp.x + 20;
-  const rxW = rp.w - 24;
-  if (data.allerFR) {
-    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    _bWrapTextAllergen(ctx, data.allerFR, rxStart, 6, rxW, 9, 5,
-      `700 7.5px 'Barlow Condensed', sans-serif`,
-      `700 7.5px 'Barlow Condensed', sans-serif`,
-      getBalisageTextColor('allerFR', hasImg), hasImg ? '#ffffff' : '#3d0000');
-  } else if (!hasImg) {
-    ctx.fillStyle = '#ccc';
-    ctx.font = `700 7.5px 'Barlow Condensed', sans-serif`;
-    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.fillText('Allergènes FR', rxStart, 6);
-  }
-
-  // ── Texte : Allergènes AR — RTL ──
-  if (data.allerAR) {
-    ctx.fillStyle = getBalisageTextColor('allerAR', hasImg);
-    ctx.font = `600 7px 'IBM Plex Sans Arabic', sans-serif`;
-    ctx.textAlign = 'right'; ctx.direction = 'rtl';
-    _bWrapTextMulti(ctx, data.allerAR, rxStart + rxW, 60, rxW, 9, 5);
-    ctx.direction = 'ltr';
-  }
+    }
 
   // ── Bordure générale (seulement sans image) ──
   if (!hasImg) {
@@ -7176,6 +7783,38 @@ function _bWrapTextAllergen(ctx, text, x, y, maxW, lineH, maxLines, fontNorm, fo
     });
   });
 }
+
+function _bWrapTextAllergenAr(ctx, text, x, y, maxW, lineH, maxLines, fontNorm, fontAllerg, colorAllerg, colorNorm) {
+  if (!text) return;
+  const rawTokens = text.split(/(\s+)/);
+  ctx.textBaseline = 'top';
+  let lines = [[]];
+  let curW = 0;
+  for (const raw of rawTokens) {
+    if (!raw.trim()) continue;
+    const isAlg = typeof isAllergenAr === 'function' ? isAllergenAr(raw) : false;
+    ctx.font = isAlg ? fontAllerg : fontNorm;
+    const ww = ctx.measureText(raw + ' ').width;
+    if (curW + ww > maxW && lines[lines.length-1].length>0) {
+      if (lines.length >= maxLines) break;
+      lines.push([]);
+      curW = 0;
+    }
+    lines[lines.length-1].push({word: raw, isAlg});
+    curW += ww;
+  }
+  lines.forEach((lineArr, li) => {
+    let cx = x;
+    lineArr.forEach(({word, isAlg}) => {
+      ctx.font = isAlg ? fontAllerg : fontNorm;
+      ctx.fillStyle = isAlg ? colorAllerg : colorNorm;
+      const ww = ctx.measureText(word + ' ').width;
+      ctx.fillText(word, cx, y + li*lineH);
+      cx -= ww;
+    });
+  });
+}
+
 
 // Helper: wrap texte sur plusieurs lignes centré
 function _bWrapText(ctx, text, cx, cy, maxW, lineH) {
@@ -7719,7 +8358,6 @@ function bDrawBalisageTextOnly(canvas, data, axes) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
-  // Helper : convertir axes (px relatif au canvas 450×120) en position réelle
   function pos(key) {
     if (axes && axes[key]) return axes[key];
     return B_AXES_DEFAULTS.find(a => a.key === key) || {x:0,y:0,w:50,h:12,fs:9};
@@ -7752,33 +8390,19 @@ function bDrawBalisageTextOnly(canvas, data, axes) {
   ctx.textAlign = 'right';
   ctx.direction = 'rtl';
   ctx.fillText(data.ingAR || '', ingAR.x + ingAR.w/2, ingAR.y);
+  ctx.direction = 'ltr';
 
   // Ingrédients FR
   const ingFR = pos('ingFR');
   ctx.font = `400 ${ingFR.fs}px 'Barlow Condensed', sans-serif`;
-  ctx.fillStyle = getBalisageTextColor('ingAR', false);
+  ctx.fillStyle = getBalisageTextColor('ingFR', false);
   ctx.textAlign = 'left';
   ctx.direction = 'ltr';
   ctx.fillText(data.ingFR || '', ingFR.x - ingFR.w/2, ingFR.y);
 
-  // Allergènes FR
-  const allerFR = pos('allerFR');
-  ctx.font = `700 ${allerFR.fs}px 'Barlow Condensed', sans-serif`;
-  ctx.fillStyle = getBalisageTextColor('allerFR', false);
-  ctx.textAlign = 'left';
-  ctx.fillText(data.allerFR || '', allerFR.x - allerFR.w/2, allerFR.y);
-
-  // Allergènes AR
-  const allerAR = pos('allerAR');
-  ctx.font = `600 ${allerAR.fs}px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.fillStyle = getBalisageTextColor('allerAR', false);
-  ctx.textAlign = 'right';
-  ctx.direction = 'rtl';
-  ctx.fillText(data.allerAR || '', allerAR.x + allerAR.w/2, allerAR.y);
-  ctx.direction = 'ltr';
-
   ctx.restore();
 }
+
 
 // Retourne l'image du template actif (pour bDrawBalisage)
 function bGetTplImg(gabarit) {
@@ -7797,31 +8421,22 @@ const B_AXES_DEFAULTS = [
   { key:'desAR',   label:'Désignation AR',        x:45,  y:68,  w:82,  h:12, fs:9  },
   { key:'ingAR',   label:'Ingrédients AR',        x:294, y:20,  w:198, h:10, fs:7  },
   { key:'ingFR',   label:'Ingrédients FR',        x:294, y:40,  w:198, h:10, fs:7  },
-  { key:'allerFR', label:'Allergènes FR',         x:338, y:6,   w:108, h:9,  fs:7  },
-  { key:'allerAR', label:'Allergènes AR',         x:338, y:60,  w:108, h:9,  fs:7  },
 ];
 
 
 // ─── Couleurs textes balisage ─────────────────────────────────────
 const B_TEXT_COLOR_DEFAULTS = {
-  desFR: '#1a0a00',
+  desFR: '#5c2d0a',
   desAR: '#3d1c00',
   ingFR: '#2a1500',
-  ingAR: '#2a1500',
-  allerFR: '#ef4444',
-  allerAR: '#c084fc'
+  ingAR: '#2a1500'
 };
 function getBalisageTextColors(){
   try { return JSON.parse(localStorage.getItem('balisage_text_colors')||'{}'); } catch(e){ return {}; }
 }
 function getBalisageTextColor(key, hasImg){
   const saved = getBalisageTextColors();
-  if (hasImg) {
-    // Sur image, forcer blanc pour lisibilité sauf allergènes
-    if (key==='allerFR') return '#ffdddd';
-    if (key==='allerAR') return '#ffdddd';
-    return '#ffffff';
-  }
+  if (hasImg) return '#ffffff';
   return saved[key] || B_TEXT_COLOR_DEFAULTS[key] || '#000000';
 }
 function setBalisageTextColor(key, color){
@@ -7830,23 +8445,17 @@ function setBalisageTextColor(key, color){
   localStorage.setItem('balisage_text_colors', JSON.stringify(cols));
   const prev = document.getElementById('bColorPreview_'+key);
   if (prev) prev.style.background = color;
-  toast(`Couleur ${key} → ${color}`,'ok');
-  bRenderTplAxesPreview();
-  bSyncPreview();
+  if (typeof toast === 'function') toast(`Couleur ${key} → ${color}`,'ok');
+  if (typeof bRenderTplAxesPreview === 'function') bRenderTplAxesPreview();
+  if (typeof bSyncPreview === 'function') bSyncPreview();
 }
 function initBalisagePalettePreviews(){
   const cols = getBalisageTextColors();
-  ['desFR','desAR','ingFR','ingAR','allerFR','allerAR'].forEach(k=>{
+  ['desFR','desAR','ingFR','ingAR'].forEach(k=>{
     const el = document.getElementById('bColorPreview_'+k);
     if (el) el.style.background = cols[k] || B_TEXT_COLOR_DEFAULTS[k];
   });
 }
-// Appeler à l'ouverture de l'onglet templates
-const _origSwitchBalisageTab = switchBalisageTab;
-switchBalisageTab = function(name){
-  _origSwitchBalisageTab(name);
-  if (name==='templates') setTimeout(initBalisagePalettePreviews, 50);
-};
 
 let _bAxes = null; // overrides
 
