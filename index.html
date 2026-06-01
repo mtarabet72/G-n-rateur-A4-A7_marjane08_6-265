@@ -1371,15 +1371,6 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
                 oninput="bSyncPreview()"></textarea>
             </div>
 
-            <div class="field">
-              <label class="lbl">Allergènes (FR)</label>
-              <input id="bAllerFR" placeholder="Ex: Gluten, Lait, Œufs…" oninput="bSyncPreview()">
-            </div>
-            <div class="field">
-              <label class="lbl">مسببات الحساسية (AR)</label>
-              <input id="bAllerAR" class="ar" placeholder="مسببات الحساسية بالعربية…"
-                style="direction:rtl;text-align:right" oninput="bSyncPreview()">
-            </div>
           </div>
 
           <!-- ── Boutons action ── -->
@@ -5646,6 +5637,21 @@ function a4Sync() {
   a4DrawPreview();
 }
 
+// Effacer code + désignations A4
+function a4ClearDesig() {
+  ['a4Code','a4DesFR','a4DesAR'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; delete el.dataset.manual; }
+  });
+  a4St.code = ''; a4St.desFR = ''; a4St.desAR = '';
+  const badge = document.getElementById('a4ArticleBadge');
+  if (badge) badge.style.display = 'none';
+  a4SaveForm();
+  a4DrawPreview();
+  toast('Formulaire A4 effacé', 'info');
+  try { document.getElementById('a4Code').focus(); } catch(e) {}
+}
+
 function a4CalcDiff() {
   const bEl = document.getElementById('a4Barre');
   const pEl = document.getElementById('a4Promo');
@@ -8063,6 +8069,13 @@ function _bTplsSave() {
 
 function bRenderTplGrid() {
   _bTplsLoad();
+  // Mettre à jour le sélecteur de l'aperçu axes
+  const sel = document.getElementById('bTplAxesGabaritSelect');
+  if (sel) {
+    const cur = sel.value;
+    sel.innerHTML = _bTpls.map(t => `<option value="${t.id}"${t.img?' style="color:#4ade80"':''}>${t.name}${t.img?' ✓':''}</option>`).join('');
+    if (_bTpls.find(t => t.id === cur)) sel.value = cur;
+  }
   const grid = document.getElementById('bTplGrid');
   if (!grid) return;
   grid.innerHTML = _bTpls.map((tpl, idx) => `
@@ -8112,6 +8125,15 @@ function bTplUploadImg(input, idx) {
     _bTplsSave();
     bRenderTplGrid();
     toast(`✅ Image uploadée — ${_bTpls[idx].name}`, 'ok');
+    // Sync le sélecteur d'aperçu avec le gabarit uploadé et rafraîchir
+    const sel = document.getElementById('bTplAxesGabaritSelect');
+    if (sel && _bTpls[idx]) {
+      // S'assurer que l'option existe (pour gabarits custom)
+      let opt = sel.querySelector(`option[value="${_bTpls[idx].id}"]`);
+      if (!opt) { opt = document.createElement('option'); opt.value = _bTpls[idx].id; opt.textContent = _bTpls[idx].name; sel.appendChild(opt); }
+      sel.value = _bTpls[idx].id;
+    }
+    bRenderTplAxesPreview();
     // Rafraîchir le canvas si gabarit actif
     bSyncPreview();
   };
@@ -8231,7 +8253,7 @@ function bSyncTplAxesToMain() {
   });
 }
 
-// Aperçu live dans l'onglet Templates (utilise les données du formulaire SAISIE)
+// Aperçu live dans l'onglet Templates (utilise les données du formulaire SAISIE + image du template)
 function bRenderTplAxesPreview() {
   const canvas = document.getElementById('bTplAxesPreviewCanvas');
   if (!canvas) return;
@@ -8251,7 +8273,7 @@ function bRenderTplAxesPreview() {
     allerAR: (document.getElementById('bAllerAR')?.value || '').trim() || 'الغلوتين',
   };
 
-  // Lire les valeurs depuis les inputs de l'onglet Templates
+  // Lire les valeurs depuis les inputs de l'onglet Templates (ou Axes si présents)
   const tmpAxes = {};
   B_AXES_DEFAULTS.forEach(axis => {
     const obj = {};
@@ -8264,25 +8286,108 @@ function bRenderTplAxesPreview() {
     tmpAxes[axis.key] = obj;
   });
 
-  bDrawBalisage(canvas, demoData);
+  // Overlay axes sur le canvas
+  function _drawAxesOverlay() {
+    const ctx = canvas.getContext('2d');
+    const COLORS = { desFR:'#4ade80', desAR:'#60a5fa', ingAR:'#f59e0b', allerFR:'#ef4444', allerAR:'#c084fc' };
+    B_AXES_DEFAULTS.forEach(axis => {
+      const v = tmpAxes[axis.key];
+      const color = COLORS[axis.key] || '#fff';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3,3]);
+      ctx.strokeRect(v.x - v.w/2, v.y - v.h/2, v.w, v.h);
+      ctx.setLineDash([]);
+      ctx.fillStyle = color;
+      ctx.font = `bold 6px monospace`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(axis.key, v.x - v.w/2 + 1, v.y - v.h/2 + 1);
+    });
+  }
 
-  // Overlay axes
+  // Chercher si ce gabarit a une image uploadée
+  _bTplsLoad();
+  const tpl = _bTpls.find(t => t.id === gabarit);
+
+  if (tpl && tpl.img) {
+    // Afficher l'image comme fond PUIS superposer le texte + les axes
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      // Superposer le texte du balisage par-dessus l'image
+      bDrawBalisageTextOnly(canvas, demoData, tmpAxes);
+      _drawAxesOverlay();
+    };
+    img.src = tpl.img;
+  } else {
+    // Pas d'image : rendu normal
+    bDrawBalisage(canvas, demoData);
+    _drawAxesOverlay();
+  }
+}
+
+// Dessine uniquement les textes (sans fond) par-dessus une image de template
+// Utilise les axes pour positionner chaque zone de texte
+function bDrawBalisageTextOnly(canvas, data, axes) {
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const COLORS = { desFR:'#4ade80', desAR:'#60a5fa', ingAR:'#f59e0b', allerFR:'#ef4444', allerAR:'#c084fc' };
-  B_AXES_DEFAULTS.forEach(axis => {
-    const v = tmpAxes[axis.key];
-    const color = COLORS[axis.key] || '#fff';
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3,3]);
-    ctx.strokeRect(v.x - v.w/2, v.y - v.h/2, v.w, v.h);
-    ctx.setLineDash([]);
-    ctx.fillStyle = color;
-    ctx.font = `bold 6px monospace`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(axis.key, v.x - v.w/2 + 1, v.y - v.h/2 + 1);
-  });
+  const W = canvas.width, H = canvas.height;
+
+  // Helper : convertir axes (px relatif au canvas 450×120) en position réelle
+  function pos(key) {
+    if (axes && axes[key]) return axes[key];
+    return B_AXES_DEFAULTS.find(a => a.key === key) || {x:0,y:0,w:50,h:12,fs:9};
+  }
+
+  ctx.save();
+  ctx.textBaseline = 'middle';
+
+  // Désignation FR
+  const desFR = pos('desFR');
+  ctx.font = `700 ${desFR.fs}px 'Barlow Condensed', sans-serif`;
+  ctx.fillStyle = '#1a0a00';
+  ctx.textAlign = 'center';
+  ctx.direction = 'ltr';
+  ctx.fillText(data.desFR || '', desFR.x, desFR.y);
+
+  // Désignation AR
+  const desAR = pos('desAR');
+  ctx.font = `600 ${desAR.fs}px 'IBM Plex Sans Arabic', sans-serif`;
+  ctx.fillStyle = '#3d1c00';
+  ctx.textAlign = 'center';
+  ctx.direction = 'rtl';
+  ctx.fillText(data.desAR || '', desAR.x, desAR.y);
+  ctx.direction = 'ltr';
+
+  // Ingrédients AR
+  const ingAR = pos('ingAR');
+  ctx.font = `400 ${ingAR.fs}px 'IBM Plex Sans Arabic', sans-serif`;
+  ctx.fillStyle = '#2a1500';
+  ctx.textAlign = 'right';
+  ctx.direction = 'rtl';
+  ctx.fillText(data.ingAR || '', ingAR.x + ingAR.w/2, ingAR.y);
+  ctx.direction = 'ltr';
+
+  // Allergènes FR
+  const allerFR = pos('allerFR');
+  ctx.font = `700 ${allerFR.fs}px 'Barlow Condensed', sans-serif`;
+  ctx.fillStyle = '#ef4444';
+  ctx.textAlign = 'left';
+  ctx.fillText(data.allerFR || '', allerFR.x - allerFR.w/2, allerFR.y);
+
+  // Allergènes AR
+  const allerAR = pos('allerAR');
+  ctx.font = `600 ${allerAR.fs}px 'IBM Plex Sans Arabic', sans-serif`;
+  ctx.fillStyle = '#c084fc';
+  ctx.textAlign = 'right';
+  ctx.direction = 'rtl';
+  ctx.fillText(data.allerAR || '', allerAR.x + allerAR.w/2, allerAR.y);
+  ctx.direction = 'ltr';
+
+  ctx.restore();
 }
 
 // Retourne l'image du template actif (pour bDrawBalisage)
