@@ -1293,8 +1293,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <button class="nav-btn active" data-btab="saisie" onclick="switchBalisageTab('saisie')"><i class="ri-flashlight-line"></i> SAISIE</button>
       <button class="nav-btn" data-btab="file" onclick="switchBalisageTab('file')"><i class="ri-printer-line"></i> FILE <span id="balisageFileCount" class="count">0</span></button>
       <button class="nav-btn" data-btab="templates" onclick="switchBalisageTab('templates')"><i class="ri-image-edit-line"></i> TEMPLATES</button>
-      <button class="nav-btn" data-btab="axes" onclick="switchBalisageTab('axes')"><i class="ri-settings-3-line"></i> AXES</button>
-    </nav>
+      </nav>
 
     <!-- TAB SAISIE BALISAGE — logique A7 (scan + lookup base + aperçu live) -->
     <div id="btab-saisie" class="tab active">
@@ -1499,25 +1498,19 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
         <!-- Grid: BOULANGERIE / PÂTISSERIE + slots custom -->
         <div id="bTplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
       </div>
-    </div><!-- /#btab-templates -->
-
-    <!-- TAB AXES BALISAGE -->
-    <div id="btab-axes" class="tab">
-      <div style="display:flex;flex-direction:column;gap:14px">
-        
+    
         <div class="card">
           <div class="card-title" style="margin-bottom:10px"><i class="ri-text"></i> Réglages par template (taille police)</div>
-          <p style="font-size:12px;color:var(--text4);margin-bottom:8px">Les réglages sont enregistrés pour chaque gabarit sélectionné dans la liste ci-dessus.</p>
+          <p style="font-size:12px;color:var(--text4);margin-bottom:8px">Les réglages sont enregistrés pour chaque gabarit sélectionné.</p>
           <div id="bAxesEditor" style="display:flex;flex-direction:column;gap:10px"></div>
           <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
             <button class="btn btn-amber" onclick="bSaveAxes()"><i class="ri-save-line"></i> Enregistrer</button>
             <button class="btn btn-ghost btn-sm" onclick="bResetAxes()"><i class="ri-refresh-line"></i> Réinitialiser</button>
           </div>
         </div>
+</div><!-- /#btab-templates -->
 
-    </div><!-- /#btab-axes -->
-
-  </div><!-- /#balisage-mode -->
+    </div><!-- /#balisage-mode -->
 
   <!-- MODAL TEMPLATE A4 -->
   <div id="a4TplModal" class="modal-bg">
@@ -7501,7 +7494,7 @@ function switchBalisageTab(name) {
   if (btn) btn.classList.add('active');
   if (name === 'file')      bRenderFile();
   if (name === 'templates') bRenderTplGrid();
-  if (name === 'axes')      bRenderAxesEditor();
+  if (name === 'templates') bRenderAxesEditor();
   if (name === 'saisie') setTimeout(() => { try { document.getElementById('bCodeInput').focus(); } catch(e){} }, 50);
 }
 const _origSwitchBalisageTab = switchBalisageTab;
