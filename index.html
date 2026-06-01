@@ -1,25 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head><!-- PLAYABLE_TOUCH_PATCH_V1 --><script>
-(function() {
-  if (window.__playableTouchPatchInstalled) return;
-  window.__playableTouchPatchInstalled = true;
-  var origAdd = EventTarget.prototype.addEventListener;
-  var blockedTypes = { touchstart: 1, touchmove: 1, wheel: 1 };
-  EventTarget.prototype.addEventListener = function(type, listener, options) {
-    if (blockedTypes[type]) {
-      if (options === undefined || options === null) {
-        options = { passive: true };
-      } else if (typeof options === 'boolean') {
-        options = { capture: options, passive: true };
-      } else {
-        options = Object.assign({}, options, { passive: true });
-      }
-    }
-    return origAdd.call(this, type, listener, options);
-  };
-})();
-</script>
+<head>
 <!-- Playables SDK -->
 <script>// Playables SDK v1.0.0
 // Game lifecycle bridge: rAF-based game-ready detection + event communication
@@ -1334,7 +1315,6 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
                 style="height:48px;font-size:13px;letter-spacing:1px">
                 <i class="ri-cake-3-line"></i> PÂTISSERIE
               </button>
-              <select id="bGabaritSelect" onchange="bSetGabarit(this.value)" style="grid-column:1/-1;margin-top:8px;padding:8px;border-radius:8px;background:var(--surf2);color:var(--text1);border:1px solid var(--border2)"></select>
             </div>
             <div id="bGabaritBadge" style="margin-top:8px;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;
               background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--amber);text-align:center">
@@ -7480,34 +7460,17 @@ function bUpdatePvMeta(code, found) {
 }
 
 // ─── Gabarit toggle ───────────────────────────────────────────────
-
-function bPopulateGabaritSelect() {
-  _bTplsLoad();
-  const sel = document.getElementById('bGabaritSelect');
-  if (!sel) return;
-  sel.innerHTML = _bTpls.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
-  sel.value = _bGabarit;
-}
-
 function bSetGabarit(type) {
   _bGabarit = type;
   const btnBOUL = document.getElementById('bGabaritBOUL');
-  const btnPAT = document.getElementById('bGabaritPAT');
-  if (btnBOUL) btnBOUL.classList.toggle('btn-amber', type==='BOUL');
-  if (btnBOUL) btnBOUL.classList.toggle('btn-ghost', type!=='BOUL');
-  if (btnPAT) btnPAT.classList.toggle('btn-amber', type==='PAT');
-  if (btnPAT) btnPAT.classList.toggle('btn-ghost', type!=='PAT');
-  const sel = document.getElementById('bGabaritSelect');
-  if (sel) sel.value = type;
+  const btnPAT  = document.getElementById('bGabaritPAT');
+  if (btnBOUL) btnBOUL.className = type === 'BOUL' ? 'btn btn-amber' : 'btn btn-ghost';
+  if (btnPAT)  btnPAT.className  = type === 'PAT'  ? 'btn btn-amber' : 'btn btn-ghost';
   const lbl = document.getElementById('bGabaritLabel');
-  if (lbl) {
-    _bTplsLoad();
-    const tpl = _bTpls.find(t=>t.id===type);
-    lbl.textContent = tpl ? tpl.name : type;
-  }
+  if (lbl) lbl.textContent = type === 'BOUL' ? 'BOULANGERIE' : 'PÂTISSERIE';
+  const pvLbl = document.getElementById('bPreviewGabaritLabel');
+  if (pvLbl) pvLbl.textContent = type === 'BOUL' ? 'BOULANGERIE' : 'PÂTISSERIE';
   bSyncPreview();
-  if (typeof bRenderAxesEditor === 'function') bRenderAxesEditor();
-  if (typeof initBalisageColors === 'function') initBalisageColors();
 }
 
 // ─── Tab switch Balisage ──────────────────────────────────────────
@@ -7983,8 +7946,8 @@ let _bTpls = [];
 function _bTplsLoad() {
   try { _bTpls = JSON.parse(localStorage.getItem('balisage_templates') || '[]'); } catch(e) { _bTpls = []; }
   // S'assurer que BOUL et PAT existent toujours
-  if (!_bTpls.find(t => t.id === 'BOUL')) _bTpls.unshift({ id:'BOUL', name:'BOULANGERIE (Slide1)', img: null, axes:{}, colors:{} });
-  if (!_bTpls.find(t => t.id === 'PAT'))  _bTpls.splice(1, 0, { id:'PAT',  name:'PÂTISSERIE (Slide2)',  img: null, axes:{}, colors:{} });
+  if (!_bTpls.find(t => t.id === 'BOUL')) _bTpls.unshift({ id:'BOUL', name:'BOULANGERIE (Slide1)', img: null, axes:{} });
+  if (!_bTpls.find(t => t.id === 'PAT'))  _bTpls.splice(1, 0, { id:'PAT',  name:'PÂTISSERIE (Slide2)',  img: null, axes:{} });
 }
 
 function _bTplsSave() {
@@ -8041,7 +8004,8 @@ function bTplUploadImg(input, idx) {
   reader.onload = e => {
     _bTplsLoad();
     _bTpls[idx].img = e.target.result;
-    _bTplsSave(); bRenderTplGrid(); bPopulateGabaritSelect();
+    _bTplsSave();
+    bRenderTplGrid();
     toast(`✅ Image uploadée — ${_bTpls[idx].name}`, 'ok');
     // Rafraîchir le canvas si gabarit actif
     bSyncPreview();
@@ -8063,7 +8027,8 @@ function bTplRemoveImg(idx) {
   if (!confirm('Supprimer l\'image de ce template ?')) return;
   _bTplsLoad();
   _bTpls[idx].img = null;
-  _bTplsSave(); bRenderTplGrid(); bPopulateGabaritSelect();
+  _bTplsSave();
+  bRenderTplGrid();
   toast('Image supprimée', 'info');
 }
 
@@ -8072,7 +8037,8 @@ function bTplDelete(idx) {
   if (['BOUL','PAT'].includes(_bTpls[idx]?.id)) return;
   if (!confirm(`Supprimer le template "${_bTpls[idx].name}" ?`)) return;
   _bTpls.splice(idx, 1);
-  _bTplsSave(); bRenderTplGrid(); bPopulateGabaritSelect();
+  _bTplsSave();
+  bRenderTplGrid();
   toast('Template supprimé', 'info');
 }
 
@@ -8081,8 +8047,9 @@ function bTplAddCustom() {
   if (!name || !name.trim()) return;
   _bTplsLoad();
   const id = 'CUSTOM_' + Date.now();
-  _bTpls.push({ id, name: name.trim().toUpperCase(), img: null, axes:{}, colors:{} });
-  _bTplsSave(); bRenderTplGrid(); bPopulateGabaritSelect();
+  _bTpls.push({ id, name: name.trim().toUpperCase(), img: null, axes:{} });
+  _bTplsSave();
+  bRenderTplGrid();
   toast(`Gabarit "${name.trim()}" ajouté`, 'ok');
 }
 
@@ -8111,7 +8078,8 @@ function bImportTemplates(input) {
         if (existing >= 0) { _bTpls[existing] = t; }
         else { _bTpls.push(t); }
       }
-      _bTplsSave(); bRenderTplGrid(); bPopulateGabaritSelect();
+      _bTplsSave();
+      bRenderTplGrid();
       toast(`✅ ${imported.length} template(s) importé(s)`, 'ok');
     } catch(err) {
       toast('❌ Erreur import: ' + err.message, 'err');
@@ -8145,9 +8113,9 @@ const B_AXES_DEFAULTS = [
 const B_TEXT_COLOR_DEFAULTS = {desFR:'#5c2d0a',desAR:'#3d1c00',ingFR:'#2a1500',ingAR:'#2a1500'};
 const BALISAGE_FONT = "'bf-maejane', 'Barlow Condensed', sans-serif";
 const BALISAGE_FONT_AR = "'bf-maejane', 'IBM Plex Sans Arabic', sans-serif";
-function getBalisageTextColor(k,hasImg){if(hasImg)return '#ffffff';const gab=_bGabarit||'BOUL';_bTplsLoad();const tpl=_bTpls.find(t=>t.id===gab);const colors=tpl?.colors||{};return colors[k]||B_TEXT_COLOR_DEFAULTS[k]||'#000000'}');return c[k]||B_TEXT_COLOR_DEFAULTS[k]||'#000000'}catch(e){return B_TEXT_COLOR_DEFAULTS[k]||'#000000'}}
-function setBalisageTextColor(k,c){const gab=_bGabarit||'BOUL';_bTplsLoad();const tpl=_bTpls.find(t=>t.id===gab);if(!tpl)return;if(!tpl.colors)tpl.colors={};tpl.colors[k]=c;_bTplsSave();const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=c;const ip=document.getElementById('bInp_'+k);if(ip)ip.value=c;bSyncPreview();}');o[k]=c;localStorage.setItem('balisage_text_colors',JSON.stringify(o));const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=c;const ip=document.getElementById('bInp_'+k);if(ip)ip.value=c;if(typeof bRenderTplAxesPreview==='function')bRenderTplAxesPreview();if(typeof bSyncPreview==='function')bSyncPreview();}
-function initBalisageColors(){const gab=_bGabarit||'BOUL';_bTplsLoad();const tpl=_bTpls.find(t=>t.id===gab);const o=tpl?.colors||{};['desFR','desAR','ingFR','ingAR'].forEach(k=>{const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=o[k]||B_TEXT_COLOR_DEFAULTS[k];const ip=document.getElementById('bInp_'+k);if(ip)ip.value=o[k]||B_TEXT_COLOR_DEFAULTS[k];});}');['desFR','desAR','ingFR','ingAR'].forEach(k=>{const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=o[k]||B_TEXT_COLOR_DEFAULTS[k];const ip=document.getElementById('bInp_'+k);if(ip)ip.value=o[k]||B_TEXT_COLOR_DEFAULTS[k];});}
+function getBalisageTextColor(k,hasImg){if(hasImg)return '#ffffff';try{const c=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');return c[k]||B_TEXT_COLOR_DEFAULTS[k]||'#000000'}catch(e){return B_TEXT_COLOR_DEFAULTS[k]||'#000000'}}
+function setBalisageTextColor(k,c){const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');o[k]=c;localStorage.setItem('balisage_text_colors',JSON.stringify(o));const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=c;const ip=document.getElementById('bInp_'+k);if(ip)ip.value=c;if(typeof bRenderTplAxesPreview==='function')bRenderTplAxesPreview();if(typeof bSyncPreview==='function')bSyncPreview();}
+function initBalisageColors(){const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');['desFR','desAR','ingFR','ingAR'].forEach(k=>{const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=o[k]||B_TEXT_COLOR_DEFAULTS[k];const ip=document.getElementById('bInp_'+k);if(ip)ip.value=o[k]||B_TEXT_COLOR_DEFAULTS[k];});}
 
 let _bAxes = null;
 
