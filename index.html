@@ -1470,19 +1470,62 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
 
     <!-- TAB TEMPLATES BALISAGE -->
     <div id="btab-templates" class="tab">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-          <div class="card-title" style="margin:0"><i class="ri-image-edit-line"></i> Templates Balisage</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-ghost btn-sm" onclick="bExportTemplates()"><i class="ri-download-2-line"></i> Exporter JSON</button>
-            <label class="btn btn-ghost btn-sm" style="cursor:pointer"><i class="ri-upload-2-line"></i> Importer JSON
-              <input type="file" accept=".json" style="display:none" onchange="bImportTemplates(this)">
-            </label>
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Grille templates -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+            <div class="card-title" style="margin:0"><i class="ri-image-edit-line"></i> Templates Balisage</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="bExportTemplates()"><i class="ri-download-2-line"></i> Exporter JSON</button>
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer"><i class="ri-upload-2-line"></i> Importer JSON
+                <input type="file" accept=".json" style="display:none" onchange="bImportTemplates(this)">
+              </label>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--text4);margin-bottom:14px">Format Balisage · 150×40 mm · PNG ou JPG · Image de fond par gabarit</p>
+          <!-- Grid: BOULANGERIE / PÂTISSERIE + slots custom -->
+          <div id="bTplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
+        </div>
+
+        <!-- ─── RÉGLAGE DES AXES (intégré dans Templates) ─── -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px">
+            <div class="card-title" style="margin:0"><i class="ri-settings-3-line"></i> Réglage des axes — Zones de texte</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-amber btn-sm" onclick="bSaveAxes(); bRenderTplAxesPreview()"><i class="ri-save-line"></i> Enregistrer</button>
+              <button class="btn btn-ghost btn-sm" onclick="bResetAxes(); bRenderTplAxesPreview()"><i class="ri-refresh-line"></i> Réinitialiser</button>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:12px">
+            Ajustez la position (X, Y), la taille (W, H) et la taille de police (FS) de chaque zone de texte sur le canvas 150×40 mm (450×120 px).
+          </p>
+          <!-- Axes editor inline -->
+          <div id="bTplAxesEditor" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+
+        <!-- ─── APERÇU LIVE TEMPLATES ─── -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px"><i class="ri-eye-line"></i> Aperçu live — Template sélectionné</div>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+            <select id="bTplAxesGabaritSelect" onchange="bRenderTplAxesPreview()"
+              style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;height:36px;
+                     background:var(--surf3);color:var(--amber);border:1px solid var(--border2);
+                     border-radius:8px;padding:0 10px;cursor:pointer;min-width:160px">
+              <option value="BOUL">BOULANGERIE</option>
+              <option value="PAT">PÂTISSERIE</option>
+            </select>
+            <span style="font-size:11px;color:var(--text4)">Les données affichées proviennent du formulaire SAISIE</span>
+          </div>
+          <div style="overflow:auto;border-radius:10px;border:2px solid var(--border2);background:#f5f0e8">
+            <canvas id="bTplAxesPreviewCanvas" width="450" height="120"
+              style="display:block;width:100%;border-radius:8px"></canvas>
+          </div>
+          <div style="margin-top:8px;font-size:10px;color:var(--text4);text-align:center">
+            Les rectangles colorés matérialisent les zones de texte · <span style="color:#4ade80">vert=DesFR</span> · <span style="color:#60a5fa">bleu=DesAR</span> · <span style="color:#f59e0b">orange=IngAR</span> · <span style="color:#ef4444">rouge=AllerFR</span> · <span style="color:#c084fc">violet=AllerAR</span>
           </div>
         </div>
-        <p style="font-size:12px;color:var(--text4);margin-bottom:14px">Format Balisage · 150×40 mm · PNG ou JPG · Image de fond par gabarit</p>
-        <!-- Grid: BOULANGERIE / PÂTISSERIE + slots custom -->
-        <div id="bTplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
+
       </div>
     </div><!-- /#btab-templates -->
 
@@ -3428,10 +3471,10 @@ function drawLabelText(ctx, item){
     const lineHDesAR = fzDesAR * 1.2;
     ctx.font = `500 ${fzDesAR}px 'BFMarjane', 'IBM Plex Sans Arabic', sans-serif`;
     ctx.textBaseline = 'top';
-    // Pour l'arabe : on utilise wrapDesCenter avec direction RTL
-    // Les mots arabes se coupent normalement gauche→droite en canvas
+    ctx.direction = 'rtl';
     wrapDesCenter(ctx, desAR, CW / 2, yDesAR, maxDesW, lineHDesAR, 10,
       fz => `500 ${fz}px 'BFMarjane', 'IBM Plex Sans Arabic', sans-serif`, fzDesAR);
+    ctx.direction = 'ltr';
     ctx.textAlign = 'left';
   }
 
@@ -3689,6 +3732,7 @@ function drawLabelText(ctx, item){
       ctx.beginPath();
       ctx.roundRect(BOX_AR_X, BOX_AR_Y, BOX_AR_W, BOX_AR_H, BOX_R);
       ctx.clip();
+      ctx.direction = 'rtl';
       ctx.textBaseline = 'top';
       const wordsAR = ingText.split(' ');
       const rightXAR = startXAR + maxWAR;
@@ -7494,7 +7538,7 @@ function switchBalisageTab(name) {
   if (tab) tab.classList.add('active');
   if (btn) btn.classList.add('active');
   if (name === 'file')      bRenderFile();
-  if (name === 'templates') bRenderTplGrid();
+  if (name === 'templates') { bRenderTplGrid(); bRenderTplAxesEditor(); bRenderTplAxesPreview(); }
   if (name === 'axes')      bRenderAxesEditor();
   if (name === 'saisie') setTimeout(() => { try { document.getElementById('bCodeInput').focus(); } catch(e){} }, 50);
 }
@@ -7565,10 +7609,12 @@ function bDrawBalisage(canvas, data) {
   ctx.font = `700 ${desFRFont}px 'Barlow Condensed', sans-serif`;
   _bWrapText(ctx, data.desFR || 'Désignation FR', lp.x + lp.w/2, lp.y + 32, lp.w - 8, 12);
 
-  // Désignation AR (Rectangle 8)
+  // Désignation AR (Rectangle 8) — RTL
   ctx.fillStyle = '#3d1c00';
   ctx.font = `600 9px 'IBM Plex Sans Arabic', sans-serif`;
+  ctx.direction = 'rtl';
   _bWrapText(ctx, data.desAR || 'الاسم بالعربية', lp.x + lp.w/2, lp.y + 68, lp.w - 8, 12);
+  ctx.direction = 'ltr';
 
   // ── Panneau milieu : ingrédients arabes ──
   const mp = B_ZONES.midPanel;
@@ -7582,12 +7628,14 @@ function bDrawBalisage(canvas, data) {
   ctx.textBaseline = 'top';
   ctx.fillText('المكونات', mp.x + mp.w/2, 5);
 
-  // Ingrédients AR
+  // Ingrédients AR — RTL
   ctx.fillStyle = '#2a1500';
   ctx.font = `400 7.5px 'IBM Plex Sans Arabic', sans-serif`;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'top';
+  ctx.direction = 'rtl';
   _bWrapTextMulti(ctx, data.ingAR || '', mp.x + mp.w - 6, 20, mp.w - 12, 10, 5);
+  ctx.direction = 'ltr';
 
   // ── Barre verticale centrale avec texte tourné ──
   const bv = B_ZONES.barVert;
@@ -7629,14 +7677,20 @@ function bDrawBalisage(canvas, data) {
   const rxStart = rp.x + 20;
   const rxW = rp.w - 24;
 
-  ctx.fillStyle = '#3d0000';
-  ctx.font = `700 7.5px 'Barlow Condensed', sans-serif`;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
+  // ── Allergènes FR : mots détectés en ROUGE GRAS, autres en normal ──
   if (data.allerFR) {
-    _bWrapTextMulti(ctx, data.allerFR, rxStart, 6, rxW, 9, 5);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    // Rendu mot à mot avec coloration allergènes
+    _bWrapTextAllergen(ctx, data.allerFR, rxStart, 6, rxW, 9, 5,
+      `700 7.5px 'Barlow Condensed', sans-serif`,
+      `700 7.5px 'Barlow Condensed', sans-serif`,
+      '#ef4444', '#3d0000');
   } else {
     ctx.fillStyle = '#ccc';
+    ctx.font = `700 7.5px 'Barlow Condensed', sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
     ctx.fillText('Allergènes FR', rxStart, 6);
   }
 
@@ -7644,7 +7698,9 @@ function bDrawBalisage(canvas, data) {
     ctx.fillStyle = '#3d0010';
     ctx.font = `600 7px 'IBM Plex Sans Arabic', sans-serif`;
     ctx.textAlign = 'right';
+    ctx.direction = 'rtl';
     _bWrapTextMulti(ctx, data.allerAR, rxStart + rxW, 60, rxW, 9, 5);
+    ctx.direction = 'ltr';
   }
 
   // ── Bordure générale ──
@@ -7673,6 +7729,46 @@ function _bDrawArabesquePattern(ctx, x, y, w, h, color) {
     }
   }
   ctx.restore();
+}
+
+// Helper: rendu allergen FR mot à mot — allergènes en rouge gras, reste en couleur normale
+function _bWrapTextAllergen(ctx, text, x, y, maxW, lineH, maxLines, fontNorm, fontAllerg, colorAllerg, colorNorm) {
+  if (!text) return;
+  const words = text.split(/[\s,;]+/).filter(Boolean);
+  // Reconstituer le texte en tokens avec virgules
+  const rawTokens = text.split(/(\s*,\s*|\s+)/);
+  // Construction de lignes avec coloration inline
+  ctx.textBaseline = 'top';
+  let lineWords = [];
+  let curLineW = 0;
+  const lines = [[]]; // tableau de lignes, chaque ligne = [{word, isAllergen}]
+
+  for (const raw of rawTokens) {
+    const w = raw.trim();
+    if (!w) continue;
+    const isAllerg = (typeof isAllergen === 'function') ? isAllergen(w) : false;
+    const f = isAllerg ? fontAllerg : fontNorm;
+    ctx.font = f;
+    const ww = ctx.measureText(w + ' ').width;
+    if (curLineW + ww > maxW && lines[lines.length-1].length > 0) {
+      if (lines.length >= maxLines) break;
+      lines.push([]);
+      curLineW = 0;
+    }
+    lines[lines.length-1].push({ word: w, isAllergen: isAllerg });
+    curLineW += ww;
+  }
+
+  lines.forEach((lineArr, li) => {
+    let cx = x;
+    lineArr.forEach(({word, isAllergen: ia}) => {
+      const f = ia ? fontAllerg : fontNorm;
+      ctx.font = f;
+      ctx.fillStyle = ia ? colorAllerg : colorNorm;
+      ctx.fillText(word, cx, y + li * lineH);
+      cx += ctx.measureText(word + ' ').width;
+    });
+  });
 }
 
 // Helper: wrap texte sur plusieurs lignes centré
@@ -8096,6 +8192,97 @@ function bImportTemplates(input) {
     input.value = '';
   };
   reader.readAsText(file);
+}
+
+// ─── Éditeur axes dans l'onglet TEMPLATES (miroir de bRenderAxesEditor) ───────
+function bRenderTplAxesEditor() {
+  _bAxesLoad();
+  const container = document.getElementById('bTplAxesEditor');
+  if (!container) return;
+  container.innerHTML = B_AXES_DEFAULTS.map(axis => {
+    const vals = {};
+    ['x','y','w','h','fs'].forEach(p => { vals[p] = bGetAxeVal(axis.key, p); });
+    return `
+    <div class="card" style="padding:12px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--amber);margin-bottom:10px">${axis.label}</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+        ${['x','y','w','h','fs'].map(p => `
+          <div>
+            <label class="lbl">${p.toUpperCase()} <span style="color:var(--text4);font-size:9px">${p==='fs'?'px':p==='w'||p==='h'?'larg/haut':'pos'}</span></label>
+            <input id="btplaxe_${axis.key}_${p}" type="number" value="${vals[p]}" step="1" min="0"
+              style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--amber);text-align:center"
+              oninput="bSyncTplAxesToMain(); bRenderTplAxesPreview()">
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  bRenderTplAxesPreview();
+}
+
+// Synchronise les inputs de l'onglet Templates vers les inputs de l'onglet Axes (pour partage d'état)
+function bSyncTplAxesToMain() {
+  B_AXES_DEFAULTS.forEach(axis => {
+    ['x','y','w','h','fs'].forEach(prop => {
+      const tplEl  = document.getElementById(`btplaxe_${axis.key}_${prop}`);
+      const axeEl  = document.getElementById(`baxe_${axis.key}_${prop}`);
+      if (tplEl && axeEl) axeEl.value = tplEl.value;
+    });
+  });
+}
+
+// Aperçu live dans l'onglet Templates (utilise les données du formulaire SAISIE)
+function bRenderTplAxesPreview() {
+  const canvas = document.getElementById('bTplAxesPreviewCanvas');
+  if (!canvas) return;
+
+  // Gabarit sélectionné dans le sélecteur de l'aperçu
+  const sel = document.getElementById('bTplAxesGabaritSelect');
+  const gabarit = sel ? sel.value : _bGabarit;
+
+  // Récupérer les données actuelles du formulaire SAISIE
+  const demoData = {
+    gabarit,
+    desFR:   (document.getElementById('bDesFR')?.value   || '').trim() || 'Pain de campagne',
+    desAR:   (document.getElementById('bDesAR')?.value   || '').trim() || 'خبز ريفي',
+    ingFR:   (document.getElementById('bIngFR')?.value   || '').trim() || 'Farine de BLÉ, eau, sel, levure',
+    ingAR:   (document.getElementById('bIngAR')?.value   || '').trim() || 'دقيق القمح، ماء، ملح، خميرة',
+    allerFR: (document.getElementById('bAllerFR')?.value || '').trim() || 'GLUTEN',
+    allerAR: (document.getElementById('bAllerAR')?.value || '').trim() || 'الغلوتين',
+  };
+
+  // Lire les valeurs depuis les inputs de l'onglet Templates
+  const tmpAxes = {};
+  B_AXES_DEFAULTS.forEach(axis => {
+    const obj = {};
+    ['x','y','w','h','fs'].forEach(prop => {
+      const tplEl = document.getElementById(`btplaxe_${axis.key}_${prop}`);
+      const axeEl = document.getElementById(`baxe_${axis.key}_${prop}`);
+      const el = tplEl || axeEl;
+      obj[prop] = el ? (parseFloat(el.value) || axis[prop]) : bGetAxeVal(axis.key, prop);
+    });
+    tmpAxes[axis.key] = obj;
+  });
+
+  bDrawBalisage(canvas, demoData);
+
+  // Overlay axes
+  const ctx = canvas.getContext('2d');
+  const COLORS = { desFR:'#4ade80', desAR:'#60a5fa', ingAR:'#f59e0b', allerFR:'#ef4444', allerAR:'#c084fc' };
+  B_AXES_DEFAULTS.forEach(axis => {
+    const v = tmpAxes[axis.key];
+    const color = COLORS[axis.key] || '#fff';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.strokeRect(v.x - v.w/2, v.y - v.h/2, v.w, v.h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = color;
+    ctx.font = `bold 6px monospace`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(axis.key, v.x - v.w/2 + 1, v.y - v.h/2 + 1);
+  });
 }
 
 // Retourne l'image du template actif (pour bDrawBalisage)
