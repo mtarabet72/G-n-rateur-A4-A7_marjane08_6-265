@@ -1274,8 +1274,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <button class="nav-btn active" data-btab="saisie" onclick="switchBalisageTab('saisie')"><i class="ri-flashlight-line"></i> SAISIE</button>
       <button class="nav-btn" data-btab="file" onclick="switchBalisageTab('file')"><i class="ri-printer-line"></i> FILE <span id="balisageFileCount" class="count">0</span></button>
       <button class="nav-btn" data-btab="templates" onclick="switchBalisageTab('templates')"><i class="ri-image-edit-line"></i> TEMPLATES</button>
-      <button class="nav-btn" data-btab="axes" onclick="switchBalisageTab('axes')"><i class="ri-settings-3-line"></i> AXES</button>
-    </nav>
+      </nav>
 
     <!-- TAB SAISIE BALISAGE — logique A7 (scan + lookup base + aperçu live) -->
     <div id="btab-saisie" class="tab active">
@@ -1479,7 +1478,23 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           <div id="bTplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
         </div>
 
-        <!-- ─── RÉGLAGE DES AXES (intégré dans Templates) ─── -->
+        
+        <!-- ─── PALETTE COULEURS BALISAGE ─── -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px"><i class="ri-palette-line"></i> Palette couleurs Balisage</div>
+          <p style="font-size:12px;color:var(--text4);margin-bottom:12px">Choisissez une couleur d'accent pour vos templates balisage. Cliquez pour appliquer.</p>
+          <div id="bPalette" class="pfr-palette" style="display:flex;flex-wrap:wrap;gap:8px">
+            <button class="pfr-swatch" title="#e11d48" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#e11d48');toast('Couleur #e11d48 appliquée','ok')"></button>
+            <button class="pfr-swatch" title="#f59e0b" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#f59e0b');toast('Couleur #f59e0b appliquée','ok')"></button>
+            <button class="pfr-swatch" title="#22c55e" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#22c55e');toast('Couleur #22c55e appliquée','ok')"></button>
+            <button class="pfr-swatch" title="#0ea5e9" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#0ea5e9;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#0ea5e9');toast('Couleur #0ea5e9 appliquée','ok')"></button>
+            <button class="pfr-swatch" title="#8b5cf6" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#8b5cf6;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#8b5cf6');toast('Couleur #8b5cf6 appliquée','ok')"></button>
+            <button class="pfr-swatch" title="#ec4899" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#ec4899;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#ec4899');toast('Couleur #ec4899 appliquée','ok')"></button>
+            <button class="pfr-swatch" title="#000000" style="width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="document.documentElement.style.setProperty('--balisage-accent','#000000');toast('Couleur #000000 appliquée','ok')"></button>
+          </div>
+        </div>
+
+<!-- ─── RÉGLAGE DES AXES (intégré dans Templates) ─── -->
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px">
             <div class="card-title" style="margin:0"><i class="ri-settings-3-line"></i> Réglage des axes — Zones de texte</div>
@@ -1520,32 +1535,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       </div>
     </div><!-- /#btab-templates -->
 
-    <!-- TAB AXES BALISAGE -->
-    <div id="btab-axes" class="tab">
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="card">
-          <div class="card-title"><i class="ri-settings-3-line"></i> Axes — Zones de texte balisage</div>
-          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">
-            Ajustez la position et la taille des éléments texte sur le canvas 150×40 mm (450×120 px).
-            Les valeurs en px correspondent au canvas rendu à 3 px/mm.
-          </p>
-          <div id="bAxesEditor" style="display:flex;flex-direction:column;gap:10px"></div>
-          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-            <button class="btn btn-amber" onclick="bSaveAxes()"><i class="ri-save-line"></i> Enregistrer axes</button>
-            <button class="btn btn-ghost btn-sm" onclick="bResetAxes()"><i class="ri-refresh-line"></i> Réinitialiser</button>
-          </div>
-        </div>
-        <!-- Live preview -->
-        <div class="card">
-          <div class="card-title"><i class="ri-eye-line"></i> Aperçu axes</div>
-          <div style="overflow:auto;border-radius:10px;border:2px solid var(--border2);background:#f5f0e8">
-            <canvas id="bAxesPreviewCanvas" width="450" height="120" style="display:block;width:100%;border-radius:8px"></canvas>
-          </div>
-        </div>
-      </div>
-    </div><!-- /#btab-axes -->
-
-  </div><!-- /#balisage-mode -->
+    </div><!-- /#balisage-mode -->
 
   <!-- MODAL TEMPLATE A4 -->
   <div id="a4TplModal" class="modal-bg">
@@ -4403,7 +4393,7 @@ function exportBaseExcel(){
 // ═══════════════════════════════════════════════════════════════
 let _histPage = 0;
 const _histPageSize = 100;
-let _histFilter = 'all'; // 'all' | 'a7' | 'a4'
+let _histFilter = 'all'; // 'all' | 'a7' | 'a4' | 'balisage'
 let _histSearch = '';
 
 // Cache en mémoire pour l'historique A4 (chargé depuis IDB)
@@ -4424,10 +4414,15 @@ async function loadA4HistoryFromIDB(){
   }
 }
 
+function getBalisageHistory(){
+  try { return JSON.parse(localStorage.getItem('balisage_history')||'[]').map(h=>({...h,_type:'BALISAGE'})); } catch(e){ return []; }
+}
+
 function getAllHistory(){
   const a7 = (state.history||[]).map(h=>({...h, _type:'A7'}));
   const a4 = getA4History().map(h=>({...h, _type:'A4'}));
-  return [...a7, ...a4].sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
+  const bal = getBalisageHistory();
+  return [...a7, ...a4, ...bal].sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
 }
 
 function renderHistory(){
@@ -4440,6 +4435,7 @@ function renderHistory(){
   // Filtre type
   if(_histFilter==='a7') all = all.filter(h=>h._type==='A7');
   if(_histFilter==='a4') all = all.filter(h=>h._type==='A4');
+  if(_histFilter==='balisage') all = all.filter(h=>h._type==='BALISAGE');
   
   // Filtre recherche
   if(_histSearch){
@@ -4466,7 +4462,8 @@ function renderHistory(){
       <button onclick="_histFilter='all';_histPage=0;renderHistory()" style="border-radius:16px;padding:4px 12px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${_histFilter==='all'?'var(--amber)':'transparent'};color:${_histFilter==='all'?'#000':'var(--text3)'}">📋 Tout (${getAllHistory().length})</button>
       <button onclick="_histFilter='a7';_histPage=0;renderHistory()" style="border-radius:16px;padding:4px 12px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${_histFilter==='a7'?'#1d4ed8':'transparent'};color:${_histFilter==='a7'?'#fff':'var(--text3)'}">🏷 A7 (${(state.history||[]).length})</button>
       <button onclick="_histFilter='a4';_histPage=0;renderHistory()" style="border-radius:16px;padding:4px 12px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${_histFilter==='a4'?'#991b1b':'transparent'};color:${_histFilter==='a4'?'#fff':'var(--text3)'}">🖨 A4 (${getA4History().length})</button>
-    </div>
+    <button onclick="_histFilter='balisage';_histPage=0;renderHistory()" style="border-radius:16px;padding:4px 12px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${_histFilter==='balisage'?'#0ea5e9':'transparent'};color:${_histFilter==='balisage'?'#fff':'var(--text3)'}">🏷 BALISAGE (${getBalisageHistory().length})</button>
+      </div>
     <input placeholder="Rechercher code, désig., template…" value="${_histSearch}" oninput="_histSearch=this.value;_histPage=0;renderHistory()" style="flex:1;min-width:160px;max-width:280px;font-size:12px;padding:6px 10px">
     <span style="font-size:11px;color:var(--text3);margin-left:auto">${all.length} entrée(s)</span>
     ${totalPages>1?`<div style="display:flex;gap:4px">
@@ -5148,6 +5145,7 @@ function updateDashboard(){
 
   const a7hist = state.history||[];
   const a4hist = getA4History();
+  const balHist = getBalisageHistory();
 
   const todayA7 = a7hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
   const todayA4 = a4hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
@@ -5346,6 +5344,7 @@ function _refreshConfigStorage(){
   const rows = [
     ['Base articles (IDB)', (state.base||[]).length + ' articles', '#4ade80'],
     ['Historique A7 (IDB)', (state.history||[]).length + ' entrées', '#4ade80'],
+    ['Historique BALISAGE', (getBalisageHistory()||[]).length + ' générations', '#0ea5e9'],
     ['Historique A4 (IDB)', ((_a4HistoryCache)||[]).length + ' entrées', '#4ade80'],
     ['Templates images (IDB)', Object.keys(state.templates||{}).filter(k=>state.templates[k]).length + ' image(s)', '#4ade80'],
     ['File A7 (RAM)', (state.queue||[]).length + ' articles', '#f59e0b'],
@@ -7689,6 +7688,12 @@ function _bDrawBalisageText(canvas, data, hasImg) {
   _bWrapTextMulti(ctx, data.ingAR || '', mp.x + mp.w - 6, 20, mp.w - 12, 10, 5);
   ctx.direction = 'ltr';
 
+  // ── Texte : Ingrédients FR ──
+  ctx.fillStyle = hasImg ? '#ffffff' : '#2a1500';
+  ctx.font = `400 7.5px 'Barlow Condensed', sans-serif`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.direction = 'ltr';
+  _bWrapTextMulti(ctx, data.ingFR || '', mp.x + 6, 50, mp.w - 12, 10, 5);
+
   // ── Texte : Allergènes FR (rouge gras) ──
   const rxStart = rp.x + 20;
   const rxW = rp.w - 24;
@@ -7938,7 +7943,12 @@ async function bPrintAll() {
 
   const fname = `BALISAGE_${new Date().toISOString().slice(0,10)}.pdf`;
   pdf.save(fname);
-  toast(`✅ PDF généré — ${_bFile.length} balisage(s)`, 'ok');
+  try {
+    const hist = JSON.parse(localStorage.getItem('balisage_history')||'[]');
+    hist.unshift({ savedAt: new Date().toISOString(), count: _bFile.length, fname });
+    localStorage.setItem('balisage_history', JSON.stringify(hist.slice(0,500)));
+  } catch(e){}
+    toast(`✅ PDF généré — ${_bFile.length} balisage(s)`, 'ok');
 }
 
 // ─── PNG individuel ───────────────────────────────────────────────
@@ -8354,7 +8364,14 @@ function bDrawBalisageTextOnly(canvas, data, axes) {
   ctx.textAlign = 'right';
   ctx.direction = 'rtl';
   ctx.fillText(data.ingAR || '', ingAR.x + ingAR.w/2, ingAR.y);
+
+  // Ingrédients FR
+  const ingFR = pos('ingFR');
+  ctx.font = `400 ${ingFR.fs}px 'Barlow Condensed', sans-serif`;
+  ctx.fillStyle = '#2a1500';
+  ctx.textAlign = 'left';
   ctx.direction = 'ltr';
+  ctx.fillText(data.ingFR || '', ingFR.x - ingFR.w/2, ingFR.y);
 
   // Allergènes FR
   const allerFR = pos('allerFR');
@@ -8391,6 +8408,7 @@ const B_AXES_DEFAULTS = [
   { key:'desFR',   label:'Désignation FR',       x:45,  y:32,  w:82,  h:12, fs:10 },
   { key:'desAR',   label:'Désignation AR',        x:45,  y:68,  w:82,  h:12, fs:9  },
   { key:'ingAR',   label:'Ingrédients AR',        x:294, y:20,  w:198, h:10, fs:7  },
+  { key:'ingFR',   label:'Ingrédients FR',        x:294, y:40,  w:198, h:10, fs:7  },
   { key:'allerFR', label:'Allergènes FR',         x:338, y:6,   w:108, h:9,  fs:7  },
   { key:'allerAR', label:'Allergènes AR',         x:338, y:60,  w:108, h:9,  fs:7  },
 ];
