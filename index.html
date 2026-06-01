@@ -1391,10 +1391,6 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
             </div>
 
             <div class="field">
-              <label class="lbl">Allergènes (FR)</label>
-              <input id="bAllerFR" placeholder="Ex: Gluten, Lait, Œufs…" oninput="bSyncPreview()">
-            </div>
-            <div class="field">
               <label class="lbl">مسببات الحساسية (AR)</label>
               <input id="bAllerAR" class="ar" placeholder="مسببات الحساسية بالعربية…"
                 style="direction:rtl;text-align:right" oninput="bSyncPreview()">
@@ -1508,26 +1504,17 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <!-- TAB AXES BALISAGE -->
     <div id="btab-axes" class="tab">
       <div style="display:flex;flex-direction:column;gap:14px">
+        
         <div class="card">
-          <div class="card-title"><i class="ri-settings-3-line"></i> Axes — Zones de texte balisage</div>
-          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">
-            Ajustez la position et la taille des éléments texte sur le canvas 150×40 mm (450×120 px).
-            Les valeurs en px correspondent au canvas rendu à 3 px/mm.
-          </p>
+          <div class="card-title" style="margin-bottom:10px"><i class="ri-text"></i> Réglages par template (taille police)</div>
+          <p style="font-size:12px;color:var(--text4);margin-bottom:8px">Les réglages sont enregistrés pour chaque gabarit sélectionné dans la liste ci-dessus.</p>
           <div id="bAxesEditor" style="display:flex;flex-direction:column;gap:10px"></div>
           <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-            <button class="btn btn-amber" onclick="bSaveAxes()"><i class="ri-save-line"></i> Enregistrer axes</button>
+            <button class="btn btn-amber" onclick="bSaveAxes()"><i class="ri-save-line"></i> Enregistrer</button>
             <button class="btn btn-ghost btn-sm" onclick="bResetAxes()"><i class="ri-refresh-line"></i> Réinitialiser</button>
           </div>
         </div>
-        <!-- Live preview -->
-        <div class="card">
-          <div class="card-title"><i class="ri-eye-line"></i> Aperçu axes</div>
-          <div style="overflow:auto;border-radius:10px;border:2px solid var(--border2);background:#f5f0e8">
-            <canvas id="bAxesPreviewCanvas" width="450" height="120" style="display:block;width:100%;border-radius:8px"></canvas>
-          </div>
-        </div>
-      </div>
+
     </div><!-- /#btab-axes -->
 
   </div><!-- /#balisage-mode -->
@@ -7589,7 +7576,7 @@ function bDrawBalisage(canvas, data) {
 
   // Désignation AR (Rectangle 8)
   ctx.fillStyle = '#3d1c00';
-  ctx.font = `600 9px 'IBM Plex Sans Arabic', sans-serif`;
+  ctx.font = `600 9px ${BALISAGE_FONT_AR}`;
   _bWrapText(ctx, data.desAR || 'الاسم بالعربية', lp.x + lp.w/2, lp.y + 68, lp.w - 8, 12);
 
   // ── Panneau milieu : ingrédients arabes ──
@@ -7977,8 +7964,8 @@ let _bTpls = [];
 function _bTplsLoad() {
   try { _bTpls = JSON.parse(localStorage.getItem('balisage_templates') || '[]'); } catch(e) { _bTpls = []; }
   // S'assurer que BOUL et PAT existent toujours
-  if (!_bTpls.find(t => t.id === 'BOUL')) _bTpls.unshift({ id:'BOUL', name:'BOULANGERIE (Slide1)', img: null });
-  if (!_bTpls.find(t => t.id === 'PAT'))  _bTpls.splice(1, 0, { id:'PAT',  name:'PÂTISSERIE (Slide2)',  img: null });
+  if (!_bTpls.find(t => t.id === 'BOUL')) _bTpls.unshift({ id:'BOUL', name:'BOULANGERIE (Slide1)', img: null, axes:{} });
+  if (!_bTpls.find(t => t.id === 'PAT'))  _bTpls.splice(1, 0, { id:'PAT',  name:'PÂTISSERIE (Slide2)',  img: null, axes:{} });
 }
 
 function _bTplsSave() {
@@ -8078,7 +8065,7 @@ function bTplAddCustom() {
   if (!name || !name.trim()) return;
   _bTplsLoad();
   const id = 'CUSTOM_' + Date.now();
-  _bTpls.push({ id, name: name.trim().toUpperCase(), img: null });
+  _bTpls.push({ id, name: name.trim().toUpperCase(), img: null, axes:{} });
   _bTplsSave();
   bRenderTplGrid();
   toast(`Gabarit "${name.trim()}" ajouté`, 'ok');
@@ -8140,13 +8127,15 @@ const B_AXES_DEFAULTS = [
 ];
 
 
-// ─── Couleurs textes balisage ───
+// ─── Couleurs et police balisage ───
 const B_TEXT_COLOR_DEFAULTS = {desFR:'#5c2d0a',desAR:'#3d1c00',ingFR:'#2a1500',ingAR:'#2a1500'};
+const BALISAGE_FONT = "'bf-maejane', 'Barlow Condensed', sans-serif";
+const BALISAGE_FONT_AR = "'bf-maejane', 'IBM Plex Sans Arabic', sans-serif";
 function getBalisageTextColor(k,hasImg){if(hasImg)return '#ffffff';try{const c=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');return c[k]||B_TEXT_COLOR_DEFAULTS[k]||'#000000'}catch(e){return B_TEXT_COLOR_DEFAULTS[k]||'#000000'}}
 function setBalisageTextColor(k,c){const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');o[k]=c;localStorage.setItem('balisage_text_colors',JSON.stringify(o));const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=c;const ip=document.getElementById('bInp_'+k);if(ip)ip.value=c;if(typeof bRenderTplAxesPreview==='function')bRenderTplAxesPreview();if(typeof bSyncPreview==='function')bSyncPreview();}
 function initBalisageColors(){const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');['desFR','desAR','ingFR','ingAR'].forEach(k=>{const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=o[k]||B_TEXT_COLOR_DEFAULTS[k];const ip=document.getElementById('bInp_'+k);if(ip)ip.value=o[k]||B_TEXT_COLOR_DEFAULTS[k];});}
 
-let _bAxes = null; // overrides
+let _bAxes = null;
 
 function _bAxesLoad() {
   if (_bAxes) return;
@@ -8155,60 +8144,60 @@ function _bAxesLoad() {
 }
 
 function bGetAxeVal(key, prop) {
-  _bAxesLoad();
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
+  const tpl = (_bTpls||[]).find(t=>t.id===gab);
+  const axes = tpl?.axes || {};
   const def = B_AXES_DEFAULTS.find(a => a.key === key);
   if (!def) return 0;
-  return (_bAxes[key] && _bAxes[key][prop] !== undefined) ? _bAxes[key][prop] : def[prop];
+  return (axes[key] && axes[key][prop] !== undefined) ? axes[key][prop] : def[prop];
 }
 
 function bSaveAxes() {
-  _bAxesLoad();
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
+  _bTplsLoad();
+  const tpl = _bTpls.find(t=>t.id===gab);
+  if(!tpl) return;
+  if(!tpl.axes) tpl.axes = {};
   B_AXES_DEFAULTS.forEach(axis => {
     const obj = {};
     ['x','y','w','h','fs'].forEach(prop => {
       const el = document.getElementById(`baxe_${axis.key}_${prop}`);
-      if (el) obj[prop] = parseFloat(el.value) || axis[prop];
+      obj[prop] = el ? parseInt(el.value,10) : axis[prop];
     });
-    _bAxes[axis.key] = obj;
+    tpl.axes[axis.key] = obj;
   });
-  try { localStorage.setItem('balisage_axes', JSON.stringify(_bAxes)); } catch(e) {}
+  _bTplsSave();
   bSyncPreview();
-  bRenderAxesPreview();
-  toast('✅ Axes enregistrés', 'ok');
+  toast('✅ Axes enregistrés pour '+gab, 'ok');
 }
 
 function bResetAxes() {
-  if (!confirm('Réinitialiser tous les axes aux valeurs par défaut ?')) return;
-  _bAxes = {};
-  try { localStorage.removeItem('balisage_axes'); } catch(e) {}
+  if (!confirm('Réinitialiser les axes du gabarit actuel ?')) return;
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
+  _bTplsLoad();
+  const tpl = _bTpls.find(t=>t.id===gab);
+  if(tpl) delete tpl.axes;
+  _bTplsSave();
   bRenderAxesEditor();
   bSyncPreview();
   toast('Axes réinitialisés', 'info');
 }
 
 function bRenderAxesEditor() {
-  _bAxesLoad();
   const container = document.getElementById('bAxesEditor');
   if (!container) return;
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
+  _bTplsLoad();
+  const tpl = _bTpls.find(t=>t.id===gab) || {};
+  const axes = tpl.axes || {};
   container.innerHTML = B_AXES_DEFAULTS.map(axis => {
     const vals = {};
-    ['x','y','w','h','fs'].forEach(p => { vals[p] = bGetAxeVal(axis.key, p); });
-    return `
-    <div class="card" style="padding:12px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--amber);margin-bottom:10px">${axis.label}</div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
-        ${['x','y','w','h','fs'].map(p => `
-          <div>
-            <label class="lbl">${p.toUpperCase()} <span style="color:var(--text4);font-size:9px">${p==='fs'?'px':p==='w'||p==='h'?'largeur/haut':'position'}</span></label>
-            <input id="baxe_${axis.key}_${p}" type="number" value="${vals[p]}" step="${p==='fs'?'1':'1'}" min="0"
-              style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--amber);text-align:center"
-              oninput="bRenderAxesPreview()">
-          </div>
-        `).join('')}
-      </div>
+    ['x','y','w','h','fs'].forEach(p => { vals[p] = (axes[axis.key] && axes[axis.key][p] !== undefined) ? axes[axis.key][p] : axis[p]; });
+    return `<div style="display:grid;grid-template-columns:120px repeat(5,1fr);gap:6px;align-items:center">
+      <div style="font-size:12px;color:var(--text2)">${axis.label}</div>
+      ${['x','y','w','h','fs'].map(p=>`<input id="baxe_${axis.key}_${p}" type="number" value="${vals[p]}" style="width:100%;padding:4px;font-size:12px">`).join('')}
     </div>`;
   }).join('');
-  bRenderAxesPreview();
 }
 
 function bRenderAxesPreview() {
