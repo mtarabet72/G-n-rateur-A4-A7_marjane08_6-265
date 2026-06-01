@@ -1326,7 +1326,15 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           <div class="card" style="padding:12px">
             <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Gabarit</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <select id="bGabaritSelect" onchange="bSetGabarit(this.value)" style="padding:8px 12px;border-radius:8px;background:var(--surf2);color:var(--text1);border:1px solid var(--border2);min-width:200px"></select>
+              <button id="bGabaritBOUL" class="btn btn-amber" onclick="bSetGabarit('BOUL')"
+                style="height:48px;font-size:13px;letter-spacing:1px">
+                <i class="ri-bread-line"></i> BOULANGERIE
+              </button>
+              <button id="bGabaritPAT" class="btn btn-ghost" onclick="bSetGabarit('PAT')"
+                style="height:48px;font-size:13px;letter-spacing:1px">
+                <i class="ri-cake-3-line"></i> PÂTISSERIE
+              </button>
+              <select id="bGabaritSelect" onchange="bSetGabarit(this.value)" style="grid-column:1/-1;margin-top:8px;padding:8px;border-radius:8px;background:var(--surf2);color:var(--text1);border:1px solid var(--border2)"></select>
             </div>
             <div id="bGabaritBadge" style="margin-top:8px;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;
               background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--amber);text-align:center">
@@ -7472,21 +7480,6 @@ function bUpdatePvMeta(code, found) {
 }
 
 // ─── Gabarit toggle ───────────────────────────────────────────────
-function bSetGabarit(type) {
-  _bGabarit = type;
-  const sel = document.getElementById('bGabaritSelect');
-  if (sel) sel.value = type;
-  const lbl = document.getElementById('bGabaritLabel');
-  if (lbl) {
-    _bTplsLoad();
-    const tpl = _bTpls.find(t=>t.id===type);
-    lbl.textContent = tpl ? tpl.name : type;
-  }
-  const badge = document.getElementById('bGabaritBadge');
-  if (badge) badge.textContent = type;
-  bSyncPreview();
-  if (typeof bRenderAxesEditor === 'function') bRenderAxesEditor();
-}
 
 function bPopulateGabaritSelect() {
   _bTplsLoad();
@@ -7496,6 +7489,26 @@ function bPopulateGabaritSelect() {
   sel.value = _bGabarit;
 }
 
+function bSetGabarit(type) {
+  _bGabarit = type;
+  const btnBOUL = document.getElementById('bGabaritBOUL');
+  const btnPAT = document.getElementById('bGabaritPAT');
+  if (btnBOUL) btnBOUL.classList.toggle('btn-amber', type==='BOUL');
+  if (btnBOUL) btnBOUL.classList.toggle('btn-ghost', type!=='BOUL');
+  if (btnPAT) btnPAT.classList.toggle('btn-amber', type==='PAT');
+  if (btnPAT) btnPAT.classList.toggle('btn-ghost', type!=='PAT');
+  const sel = document.getElementById('bGabaritSelect');
+  if (sel) sel.value = type;
+  const lbl = document.getElementById('bGabaritLabel');
+  if (lbl) {
+    _bTplsLoad();
+    const tpl = _bTpls.find(t=>t.id===type);
+    lbl.textContent = tpl ? tpl.name : type;
+  }
+  bSyncPreview();
+  if (typeof bRenderAxesEditor === 'function') bRenderAxesEditor();
+  if (typeof initBalisageColors === 'function') initBalisageColors();
+}
 
 // ─── Tab switch Balisage ──────────────────────────────────────────
 function switchBalisageTab(name) {
@@ -7507,7 +7520,7 @@ function switchBalisageTab(name) {
   if (btn) btn.classList.add('active');
   if (name === 'file')      bRenderFile();
   if (name === 'templates') bRenderTplGrid();
-  if (name === 'templates') { bPopulateGabaritSelect(); bRenderAxesEditor(); initBalisageColors(); }
+  if (name === 'templates') bRenderAxesEditor();
   if (name === 'saisie') setTimeout(() => { try { document.getElementById('bCodeInput').focus(); } catch(e){} }, 50);
 }
 const _origSwitchBalisageTab = switchBalisageTab;
@@ -7551,33 +7564,19 @@ function bDrawBalisage(canvas, data) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const gab = data.gabarit || _bGabarit || 'BOUL';
-  _bTplsLoad();
-  const tpl = _bTpls.find(t=>t.id===gab);
-  const hasImg = !!(tpl && tpl.img);
-  
+  const theme = B_THEME[data.gabarit] || B_THEME.BOUL;
+
   ctx.clearRect(0, 0, W, H);
-  
-  if (hasImg) {
-    // Draw template image as background
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, W, H);
-      drawTexts();
-    };
-    img.src = tpl.img;
-    return;
-  } else {
-    // Fallback to theme
-    const theme = B_THEME[gab] || B_THEME.BOUL;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, W, H);
-    const lp = B_ZONES.leftPanel;
-    ctx.fillStyle = theme.bgLeft;
-    ctx.fillRect(lp.x, lp.y, lp.w, lp.h);
-  }
-  
-  function drawTexts() {
+
+  // ── Fond général ──
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Panneau gauche : décoration marocaine + désignations ──
+  const lp = B_ZONES.leftPanel;
+  // Motif fond arabesque (simulation: rectangle avec motif géo)
+  ctx.fillStyle = theme.bgLeft;
+  ctx.fillRect(lp.x, lp.y, lp.w, lp.h);
   // Bordure droite panneau gauche
   ctx.strokeStyle = theme.accentBorder;
   ctx.lineWidth = 1.5;
@@ -8147,7 +8146,7 @@ const B_TEXT_COLOR_DEFAULTS = {desFR:'#5c2d0a',desAR:'#3d1c00',ingFR:'#2a1500',i
 const BALISAGE_FONT = "'bf-maejane', 'Barlow Condensed', sans-serif";
 const BALISAGE_FONT_AR = "'bf-maejane', 'IBM Plex Sans Arabic', sans-serif";
 function getBalisageTextColor(k,hasImg){if(hasImg)return '#ffffff';const gab=_bGabarit||'BOUL';_bTplsLoad();const tpl=_bTpls.find(t=>t.id===gab);const colors=tpl?.colors||{};return colors[k]||B_TEXT_COLOR_DEFAULTS[k]||'#000000'}');return c[k]||B_TEXT_COLOR_DEFAULTS[k]||'#000000'}catch(e){return B_TEXT_COLOR_DEFAULTS[k]||'#000000'}}
-function setBalisageTextColor(k,c){const gab=_bGabarit||'BOUL';_bTplsLoad();const tpl=_bTpls.find(t=>t.id===gab);if(!tpl)return;if(!tpl.colors)tpl.colors={};tpl.colors[k]=c;_bTplsSave();const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=c;const ip=document.getElementById('bInp_'+k);if(ip)ip.value=c;if(typeof bRenderTplAxesPreview==='function')bRenderTplAxesPreview();if(typeof bSyncPreview==='function')bSyncPreview();}');o[k]=c;localStorage.setItem('balisage_text_colors',JSON.stringify(o));const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=c;const ip=document.getElementById('bInp_'+k);if(ip)ip.value=c;if(typeof bRenderTplAxesPreview==='function')bRenderTplAxesPreview();if(typeof bSyncPreview==='function')bSyncPreview();}
+function setBalisageTextColor(k,c){const gab=_bGabarit||'BOUL';_bTplsLoad();const tpl=_bTpls.find(t=>t.id===gab);if(!tpl)return;if(!tpl.colors)tpl.colors={};tpl.colors[k]=c;_bTplsSave();const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=c;const ip=document.getElementById('bInp_'+k);if(ip)ip.value=c;bSyncPreview();}');o[k]=c;localStorage.setItem('balisage_text_colors',JSON.stringify(o));const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=c;const ip=document.getElementById('bInp_'+k);if(ip)ip.value=c;if(typeof bRenderTplAxesPreview==='function')bRenderTplAxesPreview();if(typeof bSyncPreview==='function')bSyncPreview();}
 function initBalisageColors(){const gab=_bGabarit||'BOUL';_bTplsLoad();const tpl=_bTpls.find(t=>t.id===gab);const o=tpl?.colors||{};['desFR','desAR','ingFR','ingAR'].forEach(k=>{const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=o[k]||B_TEXT_COLOR_DEFAULTS[k];const ip=document.getElementById('bInp_'+k);if(ip)ip.value=o[k]||B_TEXT_COLOR_DEFAULTS[k];});}');['desFR','desAR','ingFR','ingAR'].forEach(k=>{const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=o[k]||B_TEXT_COLOR_DEFAULTS[k];const ip=document.getElementById('bInp_'+k);if(ip)ip.value=o[k]||B_TEXT_COLOR_DEFAULTS[k];});}
 
 let _bAxes = null;
@@ -8159,7 +8158,7 @@ function _bAxesLoad() {
 }
 
 function bGetAxeVal(key, prop) {
-  const gab = _bGabarit || 'BOUL';
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
   const tpl = (_bTpls||[]).find(t=>t.id===gab);
   const axes = tpl?.axes || {};
   const def = B_AXES_DEFAULTS.find(a => a.key === key);
@@ -8168,7 +8167,7 @@ function bGetAxeVal(key, prop) {
 }
 
 function bSaveAxes() {
-  const gab = _bGabarit || 'BOUL';
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
   _bTplsLoad();
   const tpl = _bTpls.find(t=>t.id===gab);
   if(!tpl) return;
@@ -8188,7 +8187,7 @@ function bSaveAxes() {
 
 function bResetAxes() {
   if (!confirm('Réinitialiser les axes du gabarit actuel ?')) return;
-  const gab = _bGabarit || 'BOUL';
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
   _bTplsLoad();
   const tpl = _bTpls.find(t=>t.id===gab);
   if(tpl) delete tpl.axes;
@@ -8201,7 +8200,7 @@ function bResetAxes() {
 function bRenderAxesEditor() {
   const container = document.getElementById('bAxesEditor');
   if (!container) return;
-  const gab = _bGabarit || 'BOUL';
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
   _bTplsLoad();
   const tpl = _bTpls.find(t=>t.id===gab) || {};
   const axes = tpl.axes || {};
@@ -8222,7 +8221,7 @@ function bRenderAxesPreview() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,canvas.width,canvas.height);
   
-  const gab = _bGabarit || 'BOUL';
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
   _bTplsLoad();
   const tpl = _bTpls.find(t=>t.id===gab);
   
