@@ -1481,30 +1481,12 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
         
         <!-- ─── PALETTE COULEURS BALISAGE ─── -->
         <div class="card">
-          <div class="card-title" style="margin-bottom:10px"><i class="ri-palette-line"></i> Palette couleurs par texte</div>
-          <p style="font-size:12px;color:var(--text4);margin-bottom:12px">Choisissez une couleur pour chaque zone de texte du balisage.</p>
-          <div id="bPalettePerText">
-            
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:140px;font-size:12px;color:var(--text3)">Désignation FR</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#5c2d0a" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#5c2d0a;cursor:pointer" onclick="setBalisageTextColor('desFR','#5c2d0a')"></button><button class="pfr-swatch" title="#8B5E3C" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8B5E3C;cursor:pointer" onclick="setBalisageTextColor('desFR','#8B5E3C')"></button><button class="pfr-swatch" title="#3d1c00" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#3d1c00;cursor:pointer" onclick="setBalisageTextColor('desFR','#3d1c00')"></button><button class="pfr-swatch" title="#2a1500" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#2a1500;cursor:pointer" onclick="setBalisageTextColor('desFR','#2a1500')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('desFR','#000000')"></button><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('desFR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('desFR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('desFR','#22c55e')"></button></div>
-            <div id="bColorPreview_desFR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:140px;font-size:12px;color:var(--text3)">Désignation AR</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#5c2d0a" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#5c2d0a;cursor:pointer" onclick="setBalisageTextColor('desAR','#5c2d0a')"></button><button class="pfr-swatch" title="#8B5E3C" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8B5E3C;cursor:pointer" onclick="setBalisageTextColor('desAR','#8B5E3C')"></button><button class="pfr-swatch" title="#3d1c00" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#3d1c00;cursor:pointer" onclick="setBalisageTextColor('desAR','#3d1c00')"></button><button class="pfr-swatch" title="#2a1500" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#2a1500;cursor:pointer" onclick="setBalisageTextColor('desAR','#2a1500')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('desAR','#000000')"></button><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('desAR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('desAR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('desAR','#22c55e')"></button></div>
-            <div id="bColorPreview_desAR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:140px;font-size:12px;color:var(--text3)">Ingrédients FR</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#5c2d0a" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#5c2d0a;cursor:pointer" onclick="setBalisageTextColor('ingFR','#5c2d0a')"></button><button class="pfr-swatch" title="#8B5E3C" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8B5E3C;cursor:pointer" onclick="setBalisageTextColor('ingFR','#8B5E3C')"></button><button class="pfr-swatch" title="#3d1c00" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#3d1c00;cursor:pointer" onclick="setBalisageTextColor('ingFR','#3d1c00')"></button><button class="pfr-swatch" title="#2a1500" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#2a1500;cursor:pointer" onclick="setBalisageTextColor('ingFR','#2a1500')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('ingFR','#000000')"></button><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('ingFR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('ingFR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('ingFR','#22c55e')"></button></div>
-            <div id="bColorPreview_ingFR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:140px;font-size:12px;color:var(--text3)">Ingrédients AR</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pfr-swatch" title="#5c2d0a" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#5c2d0a;cursor:pointer" onclick="setBalisageTextColor('ingAR','#5c2d0a')"></button><button class="pfr-swatch" title="#8B5E3C" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#8B5E3C;cursor:pointer" onclick="setBalisageTextColor('ingAR','#8B5E3C')"></button><button class="pfr-swatch" title="#3d1c00" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#3d1c00;cursor:pointer" onclick="setBalisageTextColor('ingAR','#3d1c00')"></button><button class="pfr-swatch" title="#2a1500" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#2a1500;cursor:pointer" onclick="setBalisageTextColor('ingAR','#2a1500')"></button><button class="pfr-swatch" title="#000000" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#000000;cursor:pointer" onclick="setBalisageTextColor('ingAR','#000000')"></button><button class="pfr-swatch" title="#e11d48" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#e11d48;cursor:pointer" onclick="setBalisageTextColor('ingAR','#e11d48')"></button><button class="pfr-swatch" title="#f59e0b" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#f59e0b;cursor:pointer" onclick="setBalisageTextColor('ingAR','#f59e0b')"></button><button class="pfr-swatch" title="#22c55e" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.2);background:#22c55e;cursor:pointer" onclick="setBalisageTextColor('ingAR','#22c55e')"></button></div>
-            <div id="bColorPreview_ingAR" style="width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);margin-left:auto"></div>
-          </div>
+          <div class="card-title" style="margin-bottom:10px"><i class="ri-palette-line"></i> Couleurs textes</div>
+          <div style="display:grid;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px"><div style="width:130px">Désignation FR</div><input id="bInp_desFR" type="color" onchange="setBalisageTextColor('desFR',this.value)"><div id="bPrev_desFR" style="width:20px;height:20px;border-radius:4px;border:1px solid #fff2"></div></div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="width:130px">Désignation AR</div><input id="bInp_desAR" type="color" onchange="setBalisageTextColor('desAR',this.value)"><div id="bPrev_desAR" style="width:20px;height:20px;border-radius:4px;border:1px solid #fff2"></div></div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="width:130px">Ingrédients FR</div><input id="bInp_ingFR" type="color" onchange="setBalisageTextColor('ingFR',this.value)"><div id="bPrev_ingFR" style="width:20px;height:20px;border-radius:4px;border:1px solid #fff2"></div></div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="width:130px">Ingrédients AR</div><input id="bInp_ingAR" type="color" onchange="setBalisageTextColor('ingAR',this.value)"><div id="bPrev_ingAR" style="width:20px;height:20px;border-radius:4px;border:1px solid #fff2"></div></div>
           </div>
         </div>
 
@@ -7562,12 +7544,8 @@ function switchBalisageTab(name) {
   if (name === 'axes')      bRenderAxesEditor();
   if (name === 'saisie') setTimeout(() => { try { document.getElementById('bCodeInput').focus(); } catch(e){} }, 50);
 }
-// Hook palette init
 const _origSwitchBalisageTab = switchBalisageTab;
-switchBalisageTab = function(name){
-  _origSwitchBalisageTab(name);
-  if (name==='templates') setTimeout(initBalisagePalettePreviews, 50);
-};
+switchBalisageTab = function(n){_origSwitchBalisageTab(n);if(n==='templates')setTimeout(initBalisageColors,50);};
 
 
 // ─── Form helpers ─────────────────────────────────────────────────
@@ -7682,14 +7660,14 @@ function _bDrawBalisageText(canvas, data, hasImg) {
   }
 
   // ── Texte : Désignation FR ──
-  ctx.fillStyle = getBalisageTextColor('desFR', hasImg);
+  ctx.fillStyle = getBalisageTextColor('desFR',hasImg);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const desFRFont = (data.desFR || '').length > 18 ? 8 : 10;
   ctx.font = `700 ${desFRFont}px 'Barlow Condensed', sans-serif`;
   _bWrapText(ctx, data.desFR || 'Désignation FR', lp.x + lp.w/2, lp.y + 32, lp.w - 8, 12);
 
   // ── Texte : Désignation AR — RTL ──
-  ctx.fillStyle = getBalisageTextColor('desAR', hasImg);
+  ctx.fillStyle = getBalisageTextColor('desAR',hasImg);
   ctx.font = `600 9px 'IBM Plex Sans Arabic', sans-serif`;
   ctx.direction = 'rtl';
   _bWrapText(ctx, data.desAR || 'الاسم بالعربية', lp.x + lp.w/2, lp.y + 68, lp.w - 8, 12);
@@ -7704,13 +7682,18 @@ function _bDrawBalisageText(canvas, data, hasImg) {
   }
 
     // ── Texte : Ingrédients AR — RTL avec allergènes ──
-  ctx.textBaseline = 'top'; ctx.direction = 'rtl';
-  _bWrapTextAllergenAr(ctx, data.ingAR || '', mp.x + mp.w - 6, 20, mp.w - 12, 10, 5, `400 7.5px 'IBM Plex Sans Arabic', sans-serif`, `700 7.5px 'IBM Plex Sans Arabic', sans-serif`, '#ef4444', getBalisageTextColor('ingAR', hasImg));
-  ctx.direction = 'ltr';
-
+  ctx.textBaseline='top';ctx.direction='rtl';
+  _bWrapTextAllergenAr(ctx,data.ingAR||'',mp.x+mp.w-6,20,mp.w-12,10,5,`400 7.5px 'IBM Plex Sans Arabic',sans-serif`,`700 7.5px 'IBM Plex Sans Arabic',sans-serif`,'#ef4444',getBalisageTextColor('ingAR',hasImg));
+  ctx.direction='ltr';
   // ── Texte : Ingrédients FR avec allergènes ──
-  ctx.textBaseline = 'top'; ctx.direction = 'ltr';
-  _bWrapTextAllergen(ctx, data.ingFR || '', mp.x + 6, 50, mp.w - 12, 10, 5, `400 7.5px 'Barlow Condensed', sans-serif`, `700 7.5px 'Barlow Condensed', sans-serif`, '#ef4444', getBalisageTextColor('ingFR', hasImg));
+  ctx.textBaseline='top';ctx.direction='ltr';
+  _bWrapTextAllergen(ctx,data.ingFR||'',mp.x+6,50,mp.w-12,10,5,`400 7.5px 'Barlow Condensed',sans-serif`,`700 7.5px 'Barlow Condensed',sans-serif`,'#ef4444',getBalisageTextColor('ingFR',hasImg));
+
+  // ── Texte : Ingrédients FR ──
+  ctx.fillStyle = hasImg ? '#ffffff' : '#2a1500';
+  ctx.font = `400 7.5px 'Barlow Condensed', sans-serif`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.direction = 'ltr';
+  _bWrapTextMulti(ctx, data.ingFR || '', mp.x + 6, 50, mp.w - 12, 10, 5);
 
     }
 
@@ -7784,35 +7767,10 @@ function _bWrapTextAllergen(ctx, text, x, y, maxW, lineH, maxLines, fontNorm, fo
   });
 }
 
-function _bWrapTextAllergenAr(ctx, text, x, y, maxW, lineH, maxLines, fontNorm, fontAllerg, colorAllerg, colorNorm) {
-  if (!text) return;
-  const rawTokens = text.split(/(\s+)/);
-  ctx.textBaseline = 'top';
-  let lines = [[]];
-  let curW = 0;
-  for (const raw of rawTokens) {
-    if (!raw.trim()) continue;
-    const isAlg = typeof isAllergenAr === 'function' ? isAllergenAr(raw) : false;
-    ctx.font = isAlg ? fontAllerg : fontNorm;
-    const ww = ctx.measureText(raw + ' ').width;
-    if (curW + ww > maxW && lines[lines.length-1].length>0) {
-      if (lines.length >= maxLines) break;
-      lines.push([]);
-      curW = 0;
-    }
-    lines[lines.length-1].push({word: raw, isAlg});
-    curW += ww;
-  }
-  lines.forEach((lineArr, li) => {
-    let cx = x;
-    lineArr.forEach(({word, isAlg}) => {
-      ctx.font = isAlg ? fontAllerg : fontNorm;
-      ctx.fillStyle = isAlg ? colorAllerg : colorNorm;
-      const ww = ctx.measureText(word + ' ').width;
-      ctx.fillText(word, cx, y + li*lineH);
-      cx -= ww;
-    });
-  });
+function _bWrapTextAllergenAr(ctx,text,x,y,maxW,lineH,maxLines,fontNorm,fontAllerg,colorAllerg,colorNorm){
+ if(!text)return;const toks=text.split(/(\s+)/);ctx.textBaseline='top';let lines=[[]],cur=0;
+ for(const t of toks){if(!t.trim())continue;const isA=typeof isAllergenAr==='function'?isAllergenAr(t):false;ctx.font=isA?fontAllerg:fontNorm;const w=ctx.measureText(t+' ').width;if(cur+w>maxW&&lines[lines.length-1].length){if(lines.length>=maxLines)break;lines.push([]);cur=0;}lines[lines.length-1].push({w:t,a:isA});cur+=w;}
+ lines.forEach((ln,i)=>{let cx=x;ln.forEach(o=>{ctx.font=o.a?fontAllerg:fontNorm;ctx.fillStyle=o.a?colorAllerg:colorNorm;const ww=ctx.measureText(o.w+' ').width;ctx.fillText(o.w,cx,y+i*lineH);cx-=ww;});});
 }
 
 
@@ -8356,50 +8314,12 @@ function bRenderTplAxesPreview() {
 function bDrawBalisageTextOnly(canvas, data, axes) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-
-  function pos(key) {
-    if (axes && axes[key]) return axes[key];
-    return B_AXES_DEFAULTS.find(a => a.key === key) || {x:0,y:0,w:50,h:12,fs:9};
-  }
-
-  ctx.save();
-  ctx.textBaseline = 'middle';
-
-  // Désignation FR
-  const desFR = pos('desFR');
-  ctx.font = `700 ${desFR.fs}px 'Barlow Condensed', sans-serif`;
-  ctx.fillStyle = getBalisageTextColor('desFR', false);
-  ctx.textAlign = 'center';
-  ctx.direction = 'ltr';
-  ctx.fillText(data.desFR || '', desFR.x, desFR.y);
-
-  // Désignation AR
-  const desAR = pos('desAR');
-  ctx.font = `600 ${desAR.fs}px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.fillStyle = getBalisageTextColor('desAR', false);
-  ctx.textAlign = 'center';
-  ctx.direction = 'rtl';
-  ctx.fillText(data.desAR || '', desAR.x, desAR.y);
-  ctx.direction = 'ltr';
-
-  // Ingrédients AR
-  const ingAR = pos('ingAR');
-  ctx.font = `400 ${ingAR.fs}px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.fillStyle = getBalisageTextColor('ingAR', false);
-  ctx.textAlign = 'right';
-  ctx.direction = 'rtl';
-  ctx.fillText(data.ingAR || '', ingAR.x + ingAR.w/2, ingAR.y);
-  ctx.direction = 'ltr';
-
-  // Ingrédients FR
-  const ingFR = pos('ingFR');
-  ctx.font = `400 ${ingFR.fs}px 'Barlow Condensed', sans-serif`;
-  ctx.fillStyle = getBalisageTextColor('ingFR', false);
-  ctx.textAlign = 'left';
-  ctx.direction = 'ltr';
-  ctx.fillText(data.ingFR || '', ingFR.x - ingFR.w/2, ingFR.y);
-
+  function pos(k){if(axes&&axes[k])return axes[k];return B_AXES_DEFAULTS.find(a=>a.key===k)||{x:0,y:0,w:50,h:12,fs:9};}
+  ctx.save();ctx.textBaseline='middle';
+  let p=pos('desFR');ctx.font=`700 ${p.fs}px 'Barlow Condensed',sans-serif`;ctx.fillStyle=getBalisageTextColor('desFR',false);ctx.textAlign='center';ctx.direction='ltr';ctx.fillText(data.desFR||'',p.x,p.y);
+  p=pos('desAR');ctx.font=`600 ${p.fs}px 'IBM Plex Sans Arabic',sans-serif`;ctx.fillStyle=getBalisageTextColor('desAR',false);ctx.textAlign='center';ctx.direction='rtl';ctx.fillText(data.desAR||'',p.x,p.y);ctx.direction='ltr';
+  p=pos('ingAR');ctx.font=`400 ${p.fs}px 'IBM Plex Sans Arabic',sans-serif`;ctx.fillStyle=getBalisageTextColor('ingAR',false);ctx.textAlign='right';ctx.direction='rtl';ctx.fillText(data.ingAR||'',p.x+p.w/2,p.y);ctx.direction='ltr';
+  p=pos('ingFR');ctx.font=`400 ${p.fs}px 'Barlow Condensed',sans-serif`;ctx.fillStyle=getBalisageTextColor('ingFR',false);ctx.textAlign='left';ctx.direction='ltr';ctx.fillText(data.ingFR||'',p.x-p.w/2,p.y);
   ctx.restore();
 }
 
@@ -8424,38 +8344,10 @@ const B_AXES_DEFAULTS = [
 ];
 
 
-// ─── Couleurs textes balisage ─────────────────────────────────────
-const B_TEXT_COLOR_DEFAULTS = {
-  desFR: '#5c2d0a',
-  desAR: '#3d1c00',
-  ingFR: '#2a1500',
-  ingAR: '#2a1500'
-};
-function getBalisageTextColors(){
-  try { return JSON.parse(localStorage.getItem('balisage_text_colors')||'{}'); } catch(e){ return {}; }
-}
-function getBalisageTextColor(key, hasImg){
-  const saved = getBalisageTextColors();
-  if (hasImg) return '#ffffff';
-  return saved[key] || B_TEXT_COLOR_DEFAULTS[key] || '#000000';
-}
-function setBalisageTextColor(key, color){
-  const cols = getBalisageTextColors();
-  cols[key] = color;
-  localStorage.setItem('balisage_text_colors', JSON.stringify(cols));
-  const prev = document.getElementById('bColorPreview_'+key);
-  if (prev) prev.style.background = color;
-  if (typeof toast === 'function') toast(`Couleur ${key} → ${color}`,'ok');
-  if (typeof bRenderTplAxesPreview === 'function') bRenderTplAxesPreview();
-  if (typeof bSyncPreview === 'function') bSyncPreview();
-}
-function initBalisagePalettePreviews(){
-  const cols = getBalisageTextColors();
-  ['desFR','desAR','ingFR','ingAR'].forEach(k=>{
-    const el = document.getElementById('bColorPreview_'+k);
-    if (el) el.style.background = cols[k] || B_TEXT_COLOR_DEFAULTS[k];
-  });
-}
+const B_TEXT_COLOR_DEFAULTS = {desFR:'#5c2d0a',desAR:'#3d1c00',ingFR:'#2a1500',ingAR:'#2a1500'};
+function getBalisageTextColor(k,hasImg){if(hasImg)return '#fff';try{const c=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');return c[k]||B_TEXT_COLOR_DEFAULTS[k]||'#000'}catch(e){return B_TEXT_COLOR_DEFAULTS[k]||'#000'}}
+function setBalisageTextColor(k,c){const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');o[k]=c;localStorage.setItem('balisage_text_colors',JSON.stringify(o));const p=document.getElementById('bPrev_'+k);if(p)p.style.background=c;const i=document.getElementById('bInp_'+k);if(i)i.value=c;if(typeof bRenderTplAxesPreview==='function')bRenderTplAxesPreview();if(typeof bSyncPreview==='function')bSyncPreview();}
+function initBalisageColors(){const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');['desFR','desAR','ingFR','ingAR'].forEach(k=>{const p=document.getElementById('bPrev_'+k);if(p)p.style.background=o[k]||B_TEXT_COLOR_DEFAULTS[k];const i=document.getElementById('bInp_'+k);if(i)i.value=o[k]||B_TEXT_COLOR_DEFAULTS[k];});}
 
 let _bAxes = null; // overrides
 
