@@ -1273,6 +1273,8 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <nav class="nav">
       <button class="nav-btn active" data-btab="saisie" onclick="switchBalisageTab('saisie')"><i class="ri-flashlight-line"></i> SAISIE</button>
       <button class="nav-btn" data-btab="file" onclick="switchBalisageTab('file')"><i class="ri-printer-line"></i> FILE <span id="balisageFileCount" class="count">0</span></button>
+      <button class="nav-btn" data-btab="templates" onclick="switchBalisageTab('templates')"><i class="ri-image-edit-line"></i> TEMPLATES</button>
+      <button class="nav-btn" data-btab="axes" onclick="switchBalisageTab('axes')"><i class="ri-settings-3-line"></i> AXES</button>
     </nav>
 
     <!-- TAB SAISIE BALISAGE -->
@@ -1325,14 +1327,6 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
               <input id="bDesAR" class="ar" placeholder="اسم المنتج بالعربية" style="direction:rtl;text-align:right" oninput="bSyncPreview()">
             </div>
 
-            <!-- Col C: Prix (Rectangle 4) -->
-            <div class="field">
-              <label class="lbl">Prix (DH) — <span style="color:var(--amber);font-family:'IBM Plex Mono',monospace;font-size:10px">Rectangle 4</span></label>
-              <input id="bPrix" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"
-                style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;color:var(--green);text-align:center;height:58px"
-                oninput="bSyncPreview()">
-            </div>
-
             <!-- Ingrédients FR -->
             <div class="field">
               <label class="lbl">Ingrédients (FR)</label>
@@ -1377,7 +1371,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           <div class="card" style="padding:12px">
             <div style="font-size:12px;color:var(--text3);margin-bottom:4px;font-weight:700"><i class="ri-file-excel-2-line" style="color:#22c55e"></i> IMPORT EXCEL BALISAGE</div>
             <div style="font-size:10px;color:var(--text4);margin-bottom:8px;line-height:1.6">
-              Col A = Désig. FR &nbsp;·&nbsp; B = Désig. AR &nbsp;·&nbsp; C = Prix &nbsp;·&nbsp; D = Ingrédients FR &nbsp;·&nbsp; E = Ingrédients AR &nbsp;·&nbsp; F = Allergènes FR &nbsp;·&nbsp; G = Allergènes AR &nbsp;·&nbsp; H = Type (BOUL/PAT)
+              Col A = Désig. FR &nbsp;·&nbsp; B = Désig. AR &nbsp;·&nbsp; C = Ingrédients FR &nbsp;·&nbsp; D = Ingrédients AR &nbsp;·&nbsp; E = Allergènes FR &nbsp;·&nbsp; F = Allergènes AR &nbsp;·&nbsp; G = Type (BOUL/PAT)
             </div>
             <label class="drop-zone" id="bExcelDrop">
               <i class="ri-file-excel-2-line" style="font-size:24px;display:block;margin-bottom:4px;color:#22c55e"></i>
@@ -1430,7 +1424,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
         <div class="tbl-wrap" style="max-height:500px">
           <table>
             <thead><tr>
-              <th>#</th><th>Type</th><th>Désig. FR</th><th>الاسم</th><th>Prix</th><th>Ingrédients</th><th>Allergènes</th><th></th>
+              <th>#</th><th>Type</th><th>Désig. FR</th><th>الاسم</th><th>Ingrédients</th><th>Allergènes</th><th></th>
             </tr></thead>
             <tbody id="bFileBody"></tbody>
           </table>
@@ -1441,6 +1435,50 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
         </div>
       </div>
     </div><!-- /#btab-file -->
+
+
+    <!-- TAB TEMPLATES BALISAGE -->
+    <div id="btab-templates" class="tab">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div class="card-title" style="margin:0"><i class="ri-image-edit-line"></i> Templates Balisage</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="bExportTemplates()"><i class="ri-download-2-line"></i> Exporter JSON</button>
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer"><i class="ri-upload-2-line"></i> Importer JSON
+              <input type="file" accept=".json" style="display:none" onchange="bImportTemplates(this)">
+            </label>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text4);margin-bottom:14px">Format Balisage · 150×40 mm · PNG ou JPG · Image de fond par gabarit</p>
+        <!-- Grid: BOULANGERIE / PÂTISSERIE + slots custom -->
+        <div id="bTplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
+      </div>
+    </div><!-- /#btab-templates -->
+
+    <!-- TAB AXES BALISAGE -->
+    <div id="btab-axes" class="tab">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="card-title"><i class="ri-settings-3-line"></i> Axes — Zones de texte balisage</div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">
+            Ajustez la position et la taille des éléments texte sur le canvas 150×40 mm (450×120 px).
+            Les valeurs en px correspondent au canvas rendu à 3 px/mm.
+          </p>
+          <div id="bAxesEditor" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn btn-amber" onclick="bSaveAxes()"><i class="ri-save-line"></i> Enregistrer axes</button>
+            <button class="btn btn-ghost btn-sm" onclick="bResetAxes()"><i class="ri-refresh-line"></i> Réinitialiser</button>
+          </div>
+        </div>
+        <!-- Live preview -->
+        <div class="card">
+          <div class="card-title"><i class="ri-eye-line"></i> Aperçu axes</div>
+          <div style="overflow:auto;border-radius:10px;border:2px solid var(--border2);background:#f5f0e8">
+            <canvas id="bAxesPreviewCanvas" width="450" height="120" style="display:block;width:100%;border-radius:8px"></canvas>
+          </div>
+        </div>
+      </div>
+    </div><!-- /#btab-axes -->
 
   </div><!-- /#balisage-mode -->
 
@@ -1695,7 +1733,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           </div>
         </div>
         <!-- Signature -->
-        <div style="position:absolute;bottom:10px;right:14px;font-family:monospace;font-size:10px;color:rgba(245,158,11,0.4);letter-spacing:1px">Marjane08</div>
+        <div style="position:absolute;bottom:10px;right:14px;font-family:monospace;font-size:10px;color:rgba(245,158,11,0.4);letter-spacing:1px">MTARABET</div>
       </div>
 
       <!-- Changelog -->
@@ -7334,12 +7372,14 @@ function switchBalisageTab(name) {
   const btn = document.querySelector('#balisage-mode .nav-btn[data-btab="' + name + '"]');
   if (tab) tab.classList.add('active');
   if (btn) btn.classList.add('active');
-  if (name === 'file') bRenderFile();
+  if (name === 'file')      bRenderFile();
+  if (name === 'templates') bRenderTplGrid();
+  if (name === 'axes')      bRenderAxesEditor();
 }
 
 // ─── Form helpers ─────────────────────────────────────────────────
 function bClearForm() {
-  ['bDesFR','bDesAR','bPrix','bIngFR','bIngAR','bAllerFR','bAllerAR'].forEach(id => {
+  ['bDesFR','bDesAR','bIngFR','bIngAR','bAllerFR','bAllerAR'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -7352,7 +7392,6 @@ function bGetFormData() {
     gabarit: _bGabarit,
     desFR:   (document.getElementById('bDesFR')?.value || '').trim(),
     desAR:   (document.getElementById('bDesAR')?.value || '').trim(),
-    prix:    (document.getElementById('bPrix')?.value  || '').trim(),
     ingFR:   (document.getElementById('bIngFR')?.value || '').trim(),
     ingAR:   (document.getElementById('bIngAR')?.value || '').trim(),
     allerFR: (document.getElementById('bAllerFR')?.value || '').trim(),
@@ -7403,17 +7442,6 @@ function bDrawBalisage(canvas, data) {
   ctx.fillStyle = '#3d1c00';
   ctx.font = `600 9px 'IBM Plex Sans Arabic', sans-serif`;
   _bWrapText(ctx, data.desAR || 'الاسم بالعربية', lp.x + lp.w/2, lp.y + 68, lp.w - 8, 12);
-
-  // Prix (Rectangle 4) — coin bas gauche
-  if (data.prix) {
-    ctx.fillStyle = theme.barColor;
-    ctx.fillRect(lp.x, H - 30, lp.w, 30);
-    ctx.fillStyle = '#fff';
-    ctx.font = `800 15px 'IBM Plex Mono', monospace`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(parseFloat(data.prix).toFixed(2) + ' DH', lp.x + lp.w/2, H - 15);
-  }
 
   // ── Panneau milieu : ingrédients arabes ──
   const mp = B_ZONES.midPanel;
@@ -7625,7 +7653,6 @@ function bRenderFile() {
         padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;color:var(--amber)">${item.gabarit}</span></td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.desFR||'—'}</td>
       <td class="ar" style="direction:rtl;text-align:right;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.desAR||'—'}</td>
-      <td class="mono" style="color:var(--green);font-weight:700">${item.prix?parseFloat(item.prix).toFixed(2)+' DH':'—'}</td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--text3)">${item.ingFR||'—'}</td>
       <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--red)">${item.allerFR||'—'}</td>
       <td><button class="btn btn-red btn-sm" onclick="bRemoveItem(${item.id})" title="Supprimer"><i class="ri-delete-bin-line"></i></button></td>
@@ -7697,7 +7724,7 @@ function bTranslateIngAR() {
   translateToArabic('bIngFR', 'bIngAR', 'bBtnTransIngAR');
 }
 
-// ─── Import Excel ─────────────────────────────────────────────────
+// ─── Import Excel (sans Prix) ─────────────────────────────────────
 function bImportExcel(input) {
   const file = input.files[0];
   if (!file) return;
@@ -7714,15 +7741,14 @@ function bImportExcel(input) {
         const r = rows[i];
         const desFR   = String(r[0] || '').trim();
         const desAR   = String(r[1] || '').trim();
-        const prix    = String(r[2] || '').trim();
-        const ingFR   = String(r[3] || '').trim();
-        const ingAR   = String(r[4] || '').trim();
-        const allerFR = String(r[5] || '').trim();
-        const allerAR = String(r[6] || '').trim();
-        const gabarit = String(r[7] || 'BOUL').trim().toUpperCase() === 'PAT' ? 'PAT' : 'BOUL';
+        const ingFR   = String(r[2] || '').trim();
+        const ingAR   = String(r[3] || '').trim();
+        const allerFR = String(r[4] || '').trim();
+        const allerAR = String(r[5] || '').trim();
+        const gabarit = String(r[6] || 'BOUL').trim().toUpperCase() === 'PAT' ? 'PAT' : 'BOUL';
         if (!desFR && !desAR) continue;
         _bFile.push({ id: Date.now() + i, ts: new Date().toLocaleString('fr-FR'),
-          gabarit, desFR, desAR, prix, ingFR, ingAR, allerFR, allerAR });
+          gabarit, desFR, desAR, ingFR, ingAR, allerFR, allerAR });
         added++;
       }
       bSaveFile();
@@ -7735,6 +7761,286 @@ function bImportExcel(input) {
     input.value = '';
   };
   reader.readAsBinaryString(file);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MODULE TEMPLATES BALISAGE
+// Stocke les images de fond pour les gabarits BOUL, PAT + customs
+// ══════════════════════════════════════════════════════════════════
+
+// State : { id:'BOUL'|'PAT'|custom, name:'...', img: base64|null }
+let _bTpls = [];
+
+function _bTplsLoad() {
+  try { _bTpls = JSON.parse(localStorage.getItem('balisage_templates') || '[]'); } catch(e) { _bTpls = []; }
+  // S'assurer que BOUL et PAT existent toujours
+  if (!_bTpls.find(t => t.id === 'BOUL')) _bTpls.unshift({ id:'BOUL', name:'BOULANGERIE (Slide1)', img: null });
+  if (!_bTpls.find(t => t.id === 'PAT'))  _bTpls.splice(1, 0, { id:'PAT',  name:'PÂTISSERIE (Slide2)',  img: null });
+}
+
+function _bTplsSave() {
+  try { localStorage.setItem('balisage_templates', JSON.stringify(_bTpls)); } catch(e) {
+    toast('⚠️ Stockage insuffisant — images trop lourdes', 'err');
+  }
+}
+
+function bRenderTplGrid() {
+  _bTplsLoad();
+  const grid = document.getElementById('bTplGrid');
+  if (!grid) return;
+  grid.innerHTML = _bTpls.map((tpl, idx) => `
+    <div style="background:var(--surf3);border:1.5px solid ${tpl.img ? 'var(--amber3)' : 'var(--border2)'};
+      border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;transition:border-color .15s">
+      <!-- Miniature -->
+      <div style="aspect-ratio:150/40;border-radius:8px;overflow:hidden;background:${tpl.img ? '#f5f0e8' : 'var(--surf)'};
+        border:1px solid var(--border);display:grid;place-items:center;position:relative">
+        ${tpl.img
+          ? `<img src="${tpl.img}" style="width:100%;height:100%;object-fit:cover">`
+          : `<span style="font-size:11px;color:var(--text4)">Aucune image</span>`}
+        ${tpl.img ? `<div style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);border-radius:6px;
+          padding:2px 6px;font-size:9px;font-weight:700;color:#4ade80">✓ IMAGE</div>` : ''}
+      </div>
+      <!-- Infos -->
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--amber);letter-spacing:.5px">${tpl.name}</div>
+      <div style="font-size:10px;color:var(--text4);font-family:'IBM Plex Mono',monospace">${tpl.id}</div>
+      <!-- Actions -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <label class="btn btn-amber btn-sm" style="cursor:pointer;flex:1;justify-content:center">
+          <i class="ri-upload-cloud-2-line"></i> ${tpl.img ? 'Remplacer' : 'Uploader'}
+          <input type="file" accept="image/png,image/jpeg,image/webp" style="display:none"
+            onchange="bTplUploadImg(this, ${idx})">
+        </label>
+        ${tpl.img ? `<button class="btn btn-ghost btn-sm" onclick="bTplDownload(${idx})" title="Télécharger"><i class="ri-download-line"></i></button>` : ''}
+        ${tpl.img ? `<button class="btn btn-red btn-sm" onclick="bTplRemoveImg(${idx})" title="Supprimer l'image"><i class="ri-delete-bin-line"></i></button>` : ''}
+        ${!['BOUL','PAT'].includes(tpl.id) ? `<button class="btn btn-red btn-sm" onclick="bTplDelete(${idx})" title="Supprimer le template"><i class="ri-close-line"></i></button>` : ''}
+      </div>
+    </div>
+  `).join('') + `
+    <!-- Bouton Ajouter custom -->
+    <div style="background:var(--surf3);border:1.5px dashed var(--border2);border-radius:14px;padding:14px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:160px;cursor:pointer"
+      onclick="bTplAddCustom()">
+      <i class="ri-add-circle-line" style="font-size:32px;color:var(--border2)"></i>
+      <span style="font-size:12px;color:var(--text4);font-weight:600">Ajouter un gabarit</span>
+    </div>
+  `;
+}
+
+function bTplUploadImg(input, idx) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _bTplsLoad();
+    _bTpls[idx].img = e.target.result;
+    _bTplsSave();
+    bRenderTplGrid();
+    toast(`✅ Image uploadée — ${_bTpls[idx].name}`, 'ok');
+    // Rafraîchir le canvas si gabarit actif
+    bSyncPreview();
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function bTplDownload(idx) {
+  _bTplsLoad();
+  const tpl = _bTpls[idx]; if (!tpl || !tpl.img) return;
+  const a = document.createElement('a');
+  a.href = tpl.img;
+  a.download = `balisage_template_${tpl.id}.png`;
+  a.click();
+}
+
+function bTplRemoveImg(idx) {
+  if (!confirm('Supprimer l\'image de ce template ?')) return;
+  _bTplsLoad();
+  _bTpls[idx].img = null;
+  _bTplsSave();
+  bRenderTplGrid();
+  toast('Image supprimée', 'info');
+}
+
+function bTplDelete(idx) {
+  _bTplsLoad();
+  if (['BOUL','PAT'].includes(_bTpls[idx]?.id)) return;
+  if (!confirm(`Supprimer le template "${_bTpls[idx].name}" ?`)) return;
+  _bTpls.splice(idx, 1);
+  _bTplsSave();
+  bRenderTplGrid();
+  toast('Template supprimé', 'info');
+}
+
+function bTplAddCustom() {
+  const name = prompt('Nom du nouveau gabarit balisage :');
+  if (!name || !name.trim()) return;
+  _bTplsLoad();
+  const id = 'CUSTOM_' + Date.now();
+  _bTpls.push({ id, name: name.trim().toUpperCase(), img: null });
+  _bTplsSave();
+  bRenderTplGrid();
+  toast(`Gabarit "${name.trim()}" ajouté`, 'ok');
+}
+
+function bExportTemplates() {
+  _bTplsLoad();
+  const data = JSON.stringify(_bTpls, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `balisage_templates_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('Templates exportés', 'ok');
+}
+
+function bImportTemplates(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) throw new Error('Format invalide');
+      _bTplsLoad();
+      // Merge : update existing ids, add new ones
+      for (const t of imported) {
+        const existing = _bTpls.findIndex(x => x.id === t.id);
+        if (existing >= 0) { _bTpls[existing] = t; }
+        else { _bTpls.push(t); }
+      }
+      _bTplsSave();
+      bRenderTplGrid();
+      toast(`✅ ${imported.length} template(s) importé(s)`, 'ok');
+    } catch(err) {
+      toast('❌ Erreur import: ' + err.message, 'err');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// Retourne l'image du template actif (pour bDrawBalisage)
+function bGetTplImg(gabarit) {
+  _bTplsLoad();
+  const tpl = _bTpls.find(t => t.id === gabarit);
+  return tpl?.img || null;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MODULE AXES BALISAGE
+// Permet d'ajuster positions/tailles des zones texte
+// ══════════════════════════════════════════════════════════════════
+
+const B_AXES_DEFAULTS = [
+  { key:'desFR',   label:'Désignation FR',       x:45,  y:32,  w:82,  h:12, fs:10 },
+  { key:'desAR',   label:'Désignation AR',        x:45,  y:68,  w:82,  h:12, fs:9  },
+  { key:'ingAR',   label:'Ingrédients AR',        x:294, y:20,  w:198, h:10, fs:7  },
+  { key:'allerFR', label:'Allergènes FR',         x:338, y:6,   w:108, h:9,  fs:7  },
+  { key:'allerAR', label:'Allergènes AR',         x:338, y:60,  w:108, h:9,  fs:7  },
+];
+
+let _bAxes = null; // overrides
+
+function _bAxesLoad() {
+  if (_bAxes) return;
+  try { _bAxes = JSON.parse(localStorage.getItem('balisage_axes') || 'null'); } catch(e) {}
+  if (!_bAxes) _bAxes = {};
+}
+
+function bGetAxeVal(key, prop) {
+  _bAxesLoad();
+  const def = B_AXES_DEFAULTS.find(a => a.key === key);
+  if (!def) return 0;
+  return (_bAxes[key] && _bAxes[key][prop] !== undefined) ? _bAxes[key][prop] : def[prop];
+}
+
+function bSaveAxes() {
+  _bAxesLoad();
+  B_AXES_DEFAULTS.forEach(axis => {
+    const obj = {};
+    ['x','y','w','h','fs'].forEach(prop => {
+      const el = document.getElementById(`baxe_${axis.key}_${prop}`);
+      if (el) obj[prop] = parseFloat(el.value) || axis[prop];
+    });
+    _bAxes[axis.key] = obj;
+  });
+  try { localStorage.setItem('balisage_axes', JSON.stringify(_bAxes)); } catch(e) {}
+  bSyncPreview();
+  bRenderAxesPreview();
+  toast('✅ Axes enregistrés', 'ok');
+}
+
+function bResetAxes() {
+  if (!confirm('Réinitialiser tous les axes aux valeurs par défaut ?')) return;
+  _bAxes = {};
+  try { localStorage.removeItem('balisage_axes'); } catch(e) {}
+  bRenderAxesEditor();
+  bSyncPreview();
+  toast('Axes réinitialisés', 'info');
+}
+
+function bRenderAxesEditor() {
+  _bAxesLoad();
+  const container = document.getElementById('bAxesEditor');
+  if (!container) return;
+  container.innerHTML = B_AXES_DEFAULTS.map(axis => {
+    const vals = {};
+    ['x','y','w','h','fs'].forEach(p => { vals[p] = bGetAxeVal(axis.key, p); });
+    return `
+    <div class="card" style="padding:12px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--amber);margin-bottom:10px">${axis.label}</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+        ${['x','y','w','h','fs'].map(p => `
+          <div>
+            <label class="lbl">${p.toUpperCase()} <span style="color:var(--text4);font-size:9px">${p==='fs'?'px':p==='w'||p==='h'?'largeur/haut':'position'}</span></label>
+            <input id="baxe_${axis.key}_${p}" type="number" value="${vals[p]}" step="${p==='fs'?'1':'1'}" min="0"
+              style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--amber);text-align:center"
+              oninput="bRenderAxesPreview()">
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  bRenderAxesPreview();
+}
+
+function bRenderAxesPreview() {
+  const canvas = document.getElementById('bAxesPreviewCanvas');
+  if (!canvas) return;
+  // Lire les valeurs actuelles des inputs si présents
+  const tmpAxes = {};
+  B_AXES_DEFAULTS.forEach(axis => {
+    const obj = {};
+    ['x','y','w','h','fs'].forEach(prop => {
+      const el = document.getElementById(`baxe_${axis.key}_${prop}`);
+      obj[prop] = el ? (parseFloat(el.value) || axis[prop]) : bGetAxeVal(axis.key, prop);
+    });
+    tmpAxes[axis.key] = obj;
+  });
+  // Dessiner le balisage de démonstration avec overlay des axes
+  const demoData = {
+    gabarit: _bGabarit,
+    desFR: 'Pain de campagne', desAR: 'خبز ريفي',
+    ingFR: 'Farine de BLÉ, eau, sel, levure',
+    ingAR: 'دقيق القمح، ماء، ملح، خميرة',
+    allerFR: 'GLUTEN, LAIT', allerAR: 'الغلوتين، الحليب',
+  };
+  bDrawBalisage(canvas, demoData);
+  // Overlay : dessiner les rectangles des axes en surimpression
+  const ctx = canvas.getContext('2d');
+  const COLORS = { desFR:'#4ade80', desAR:'#60a5fa', ingAR:'#f59e0b', allerFR:'#ef4444', allerAR:'#c084fc' };
+  B_AXES_DEFAULTS.forEach(axis => {
+    const v = tmpAxes[axis.key];
+    const color = COLORS[axis.key] || '#fff';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.strokeRect(v.x - v.w/2, v.y - v.h/2, v.w, v.h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = color;
+    ctx.font = `bold 6px monospace`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(axis.key, v.x - v.w/2 + 1, v.y - v.h/2 + 1);
+  });
 }
 </script>
 
