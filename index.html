@@ -309,6 +309,7 @@ button:hover{ transform: translateY(-1px); }
 .mode-btn.active{background:var(--amber);color:#000;box-shadow:0 2px 8px #f59e0b50}
 .mode-btn:hover:not(.active){color:var(--text2)}
 #a4-mode{display:none}  /* contrôlé via JS setAppMode() */
+#balisage-mode{display:none} /* contrôlé via JS setAppMode() */
 /* ===== A4 GRID ===== */
 .a4-grid{display:grid;grid-template-columns:390px 1fr;gap:16px}
 @media(max-width:860px){.a4-grid{grid-template-columns:1fr}}
@@ -599,7 +600,7 @@ tr:hover td{background:var(--surf3)}
   .nav{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap !important;padding-bottom:4px}
   .nav-btn{min-width:72px;flex-shrink:0}
   /* Grilles en colonne unique */
-  .g2,.g3,.g-saisie,.a4-grid{grid-template-columns:1fr !important}
+  .g2,.g3,.g-saisie,.a4-grid,.balisage-layout{grid-template-columns:1fr !important}
   /* Canvas preview pleine largeur */
   #previewCanvas,#a4PreviewCanvas{width:100% !important;max-width:100% !important}
   /* Modals plein écran sur mobile */
@@ -695,8 +696,15 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <button id="logoutBtn" onclick="logout()" title="Déconnexion"><i class="ri-logout-box-r-line"></i> Déconnexion</button>
       <span id="hdrQueue" class="badge badge-amber">File: 0</span>
       <span id="hdrBase" class="badge badge-red">Base: 0</span>
-      <span id="hdrStorage" class="badge" style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);cursor:pointer" onclick="switchTab('dashboard')" title="Santé du stockage — cliquer pour détails">💾 OK</span>
+      <span id="hdrStorage" class="badge" style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);cursor:pointer" onclick="switchTab('dashboard')" title="IndexedDB actif — stockage illimité — cliquer pour détails">💾 OK</span>
       <button id="installBtn" onclick="installPWA()" title="Installer l'application sur cet appareil" style="display:none;background:var(--amber);color:#000;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700"><i class="ri-download-cloud-2-line"></i> Installer</button>
+      <button id="apiKeyBtn" onclick="openApiKeyModal()" title="Configurer la clé API Anthropic pour la traduction IA"
+        style="background:rgba(11,61,145,.5);border:1px solid rgba(255,222,0,.4);border-radius:8px;
+               padding:5px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;
+               display:flex;align-items:center;gap:4px">
+        <i class="ri-key-2-line" style="font-size:14px"></i>
+        <span id="apiKeyBtnLabel">Clé API</span>
+      </button>
     </div>
   </header>
 
@@ -709,6 +717,9 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       </button>
       <button class="mode-btn" data-mode="a4" onclick="setAppMode('a4')">
         <i class="ri-file-paper-2-line"></i> AFFICHETTE A4
+      </button>
+      <button class="mode-btn" data-mode="balisage" onclick="setAppMode('balisage')">
+        <i class="ri-price-tag-line"></i> BALISAGE
       </button>
     </div>
     <div style="font-size:11px;color:var(--text3)"><i class="ri-user-3-line" style="color:var(--amber)"></i> Mohamed TARABET</div>
@@ -1031,7 +1042,18 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <div class="field"><label class="lbl">Code Article *</label><input id="m_code" placeholder="Ex: 2658179"></div>
     <div class="g2">
       <div class="field"><label class="lbl">Désignation FR *</label><input id="m_desFR" placeholder="Nom français"></div>
-      <div class="field"><label class="lbl">Désignation AR</label><input id="m_desAR" class="ar" placeholder="الاسم بالعربية"></div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label class="lbl" style="margin:0">Désignation AR</label>
+          <button type="button" id="btnTransA7" onclick="translateToArabic('m_desFR','m_desAR','btnTransA7')"
+            style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                   border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s"
+            title="Traduire la désignation FR en arabe commercial (IA)">
+            <i class="ri-translate-2" style="font-size:14px"></i> Traduire IA
+          </button>
+        </div>
+        <input id="m_desAR" class="ar" placeholder="الاسم بالعربية">
+      </div>
     </div>
     <div class="field"><label class="lbl">Ingrédients (FR)</label><textarea id="m_ing" placeholder="Lait, sucre, farine… (allergènes en majuscules)"></textarea></div>
     <div class="field"><label class="lbl">Ingrédients (AR)</label><textarea id="m_ing_ar" class="ar" placeholder="المكونات بالعربية…" style="direction:rtl;text-align:right"></textarea></div>
@@ -1083,8 +1105,18 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
             <h3><i class="ri-text"></i> Désignation</h3>
             <div class="field"><label class="lbl">Désignation FR</label>
               <input id="a4DesFR" placeholder="Nom du produit en français" oninput="this.dataset.manual=this.value?'1':'';a4Sync()"></div>
-            <div class="field"><label class="lbl">الاسم بالعربية</label>
-              <input id="a4DesAR" placeholder="الاسم بالعربية" class="ar" style="direction:rtl;text-align:right" oninput="this.dataset.manual=this.value?'1':'';a4Sync()"></div>
+            <div class="field">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <label class="lbl" style="margin:0">الاسم بالعربية</label>
+                <button type="button" id="btnTransA4" onclick="translateToArabic('a4DesFR','a4DesAR','btnTransA4',true)"
+                  style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                         border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s"
+                  title="Traduire la désignation FR en arabe commercial (IA)">
+                  <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
+                </button>
+              </div>
+              <input id="a4DesAR" placeholder="الاسم بالعربية" class="ar" style="direction:rtl;text-align:right" oninput="this.dataset.manual=this.value?'1':'';a4Sync()">
+            </div>
           </div>
           <div class="a4-form-section">
             <h3><i class="ri-price-tag-3-line"></i> Prix &amp; Secteur</h3>
@@ -1233,6 +1265,184 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     </div>
   </div>
   <!-- /#a4-mode -->
+
+  <!-- ============================================================ -->
+  <!-- ==================== MODE BALISAGE ========================= -->
+  <!-- ============================================================ -->
+  <div id="balisage-mode" style="display:none">
+    <nav class="nav">
+      <button class="nav-btn active" data-btab="saisie" onclick="switchBalisageTab('saisie')"><i class="ri-flashlight-line"></i> SAISIE</button>
+      <button class="nav-btn" data-btab="file" onclick="switchBalisageTab('file')"><i class="ri-printer-line"></i> FILE <span id="balisageFileCount" class="count">0</span></button>
+    </nav>
+
+    <!-- TAB SAISIE BALISAGE -->
+    <div id="btab-saisie" class="tab active">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start" class="balisage-layout">
+
+        <!-- LEFT: FORMULAIRE -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+
+          <!-- Type de balisage -->
+          <div class="card">
+            <div class="card-title"><i class="ri-layout-3-line"></i> Type de gabarit</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <button id="bGabaritBOUL" class="btn btn-amber" onclick="bSetGabarit('BOUL')"
+                style="height:60px;font-size:15px;letter-spacing:1px">
+                <i class="ri-bread-line"></i> BOULANGERIE (Slide1)
+              </button>
+              <button id="bGabaritPAT" class="btn btn-ghost" onclick="bSetGabarit('PAT')"
+                style="height:60px;font-size:15px;letter-spacing:1px">
+                <i class="ri-cake-3-line"></i> PÂTISSERIE (Slide2)
+              </button>
+            </div>
+            <div id="bGabaritBadge" style="margin-top:10px;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;
+              background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--amber);text-align:center">
+              Gabarit : <span id="bGabaritLabel">BOULANGERIE</span>
+              · 150×40 mm · 7 balisages / page A4
+            </div>
+          </div>
+
+          <!-- Données produit -->
+          <div class="card">
+            <div class="card-title"><i class="ri-text"></i> Informations produit</div>
+
+            <!-- Col A: Désignation FR (Rectangle 7) -->
+            <div class="field">
+              <label class="lbl">Désignation FR — <span style="color:var(--amber);font-family:'IBM Plex Mono',monospace;font-size:10px">Rectangle 7</span></label>
+              <input id="bDesFR" placeholder="Ex: Pain de campagne au levain" oninput="bSyncPreview()" autocomplete="off">
+            </div>
+
+            <!-- Col B: Désignation AR (Rectangle 8) -->
+            <div class="field">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <label class="lbl" style="margin:0">الاسم بالعربية — <span style="color:var(--amber);font-family:'IBM Plex Mono',monospace;font-size:10px">Rectangle 8</span></label>
+                <button type="button" onclick="bTranslateAR()" id="bBtnTransAR"
+                  style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                         border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">
+                  <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
+                </button>
+              </div>
+              <input id="bDesAR" class="ar" placeholder="اسم المنتج بالعربية" style="direction:rtl;text-align:right" oninput="bSyncPreview()">
+            </div>
+
+            <!-- Col C: Prix (Rectangle 4) -->
+            <div class="field">
+              <label class="lbl">Prix (DH) — <span style="color:var(--amber);font-family:'IBM Plex Mono',monospace;font-size:10px">Rectangle 4</span></label>
+              <input id="bPrix" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"
+                style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;color:var(--green);text-align:center;height:58px"
+                oninput="bSyncPreview()">
+            </div>
+
+            <!-- Ingrédients FR -->
+            <div class="field">
+              <label class="lbl">Ingrédients (FR)</label>
+              <textarea id="bIngFR" rows="3" placeholder="Farine de blé, eau, sel, levure… (ALLERGÈNES EN MAJUSCULES)" oninput="bSyncPreview()"></textarea>
+            </div>
+
+            <!-- Ingrédients AR -->
+            <div class="field">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <label class="lbl" style="margin:0">المكونات (AR)</label>
+                <button type="button" onclick="bTranslateIngAR()" id="bBtnTransIngAR"
+                  style="display:flex;align-items:center;gap:5px;background:rgba(11,61,145,.45);border:1px solid rgba(255,222,0,.35);
+                         border-radius:8px;padding:4px 10px;color:#ffde00;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">
+                  <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
+                </button>
+              </div>
+              <textarea id="bIngAR" rows="3" class="ar" placeholder="مكونات بالعربية…" style="direction:rtl;text-align:right" oninput="bSyncPreview()"></textarea>
+            </div>
+
+            <!-- Allergènes -->
+            <div class="field">
+              <label class="lbl">Allergènes (FR)</label>
+              <input id="bAllerFR" placeholder="Ex: Gluten, Lait, Œufs…" oninput="bSyncPreview()">
+              <div style="font-size:10px;color:var(--text4);margin-top:3px">Apparaît dans la zone Allergènes (côté droit)</div>
+            </div>
+            <div class="field">
+              <label class="lbl">مسببات الحساسية (AR)</label>
+              <input id="bAllerAR" class="ar" placeholder="مسببات الحساسية بالعربية…" style="direction:rtl;text-align:right" oninput="bSyncPreview()">
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <button class="btn btn-amber btn-full" onclick="bAddToFile()">
+            <i class="ri-add-circle-line"></i> AJOUTER À LA FILE
+          </button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" style="flex:1" onclick="bClearForm()"><i class="ri-eraser-line"></i> Effacer</button>
+            <button class="btn btn-blue" style="flex:1" onclick="bPrintAll()"><i class="ri-file-pdf-line"></i> PDF FILE</button>
+          </div>
+
+          <!-- Import Excel -->
+          <div class="card" style="padding:12px">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;font-weight:700"><i class="ri-file-excel-2-line" style="color:#22c55e"></i> IMPORT EXCEL BALISAGE</div>
+            <div style="font-size:10px;color:var(--text4);margin-bottom:8px;line-height:1.6">
+              Col A = Désig. FR &nbsp;·&nbsp; B = Désig. AR &nbsp;·&nbsp; C = Prix &nbsp;·&nbsp; D = Ingrédients FR &nbsp;·&nbsp; E = Ingrédients AR &nbsp;·&nbsp; F = Allergènes FR &nbsp;·&nbsp; G = Allergènes AR &nbsp;·&nbsp; H = Type (BOUL/PAT)
+            </div>
+            <label class="drop-zone" id="bExcelDrop">
+              <i class="ri-file-excel-2-line" style="font-size:24px;display:block;margin-bottom:4px;color:#22c55e"></i>
+              Déposer ou cliquer (.xlsx/.xls)
+              <input type="file" id="bExcelInput" accept=".xlsx,.xls,.xlsm" style="display:none" onchange="bImportExcel(this)">
+            </label>
+          </div>
+        </div>
+
+        <!-- RIGHT: APERÇU BALISAGE -->
+        <div style="position:sticky;top:8px">
+          <div class="card">
+            <div class="card-title"><i class="ri-eye-line"></i> Aperçu Balisage <span style="font-size:10px;color:var(--text3);font-weight:400">150×40 mm</span></div>
+            <!-- Canvas balisage 150x40mm rendu à 3px/mm = 450x120px -->
+            <div style="overflow:auto;border-radius:10px;border:2px solid var(--border2);background:#f5f0e8">
+              <canvas id="bPreviewCanvas" width="450" height="120"
+                style="display:block;width:100%;border-radius:8px"></canvas>
+            </div>
+            <div style="font-size:10px;color:var(--text4);margin-top:6px;text-align:center">
+              Gabarit : <span id="bPreviewGabaritLabel" style="color:var(--amber);font-weight:700">BOULANGERIE</span>
+              · 150×40 mm · rendu proportionnel
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm" style="flex:1" onclick="bDownloadPNG()"><i class="ri-image-line"></i> PNG</button>
+              <button class="btn btn-amber btn-sm" style="flex:1" onclick="bAddToFile()"><i class="ri-add-line"></i> Ajouter</button>
+            </div>
+          </div>
+          <!-- File count -->
+          <div class="card" style="margin-top:12px;padding:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;color:var(--text3);font-weight:700">BALISAGES EN FILE</span>
+              <span id="bFileCountBadge" style="font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:900;color:var(--amber)">0</span>
+            </div>
+            <div style="font-size:10px;color:var(--text4);margin-top:4px">7 balisages par page A4 portrait</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /#btab-saisie -->
+
+    <!-- TAB FILE BALISAGE -->
+    <div id="btab-file" class="tab">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div class="card-title" style="margin:0"><i class="ri-printer-line"></i> File BALISAGE</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="bClearFile()"><i class="ri-delete-bin-line"></i> Vider</button>
+            <button class="btn btn-amber" onclick="bPrintAll()"><i class="ri-file-pdf-line"></i> Imprimer tout (PDF A4)</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:500px">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Type</th><th>Désig. FR</th><th>الاسم</th><th>Prix</th><th>Ingrédients</th><th>Allergènes</th><th></th>
+            </tr></thead>
+            <tbody id="bFileBody"></tbody>
+          </table>
+          <div id="bFileEmpty" style="padding:32px;text-align:center;color:var(--text4)">
+            <i class="ri-inbox-2-line" style="font-size:36px;display:block;margin-bottom:8px"></i>
+            File vide — saisissez ou importez des balisages
+          </div>
+        </div>
+      </div>
+    </div><!-- /#btab-file -->
+
+  </div><!-- /#balisage-mode -->
 
   <!-- MODAL TEMPLATE A4 -->
   <div id="a4TplModal" class="modal-bg">
@@ -1401,7 +1611,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <div style="display:flex;flex-direction:column;gap:10px">
         <div class="help-step"><span class="help-num">▶</span><div><strong>Gestion des utilisateurs</strong><br><span style="color:var(--text3);font-size:12px">Bouton <em>Admin</em> dans le header → créez des comptes, définissez les rôles et permissions par onglet. Le mot de passe est hashé (FNV-1a).</span></div></div>
         <div class="help-step"><span class="help-num">▶</span><div><strong>Compte administrateur par défaut</strong><br><span style="color:var(--text3);font-size:12px">Login : <code>admin</code> / Mot de passe : <code>marjane2026</code>.</span></div></div>
-        <div class="help-step"><span class="help-num">▶</span><div><strong>Sauvegarde des données</strong><br><span style="color:var(--text3);font-size:12px">Toutes les données (base, file, historique, templates) sont stockées dans le <em>localStorage</em> du navigateur. Exportez régulièrement via CONFIG → Export.</span></div></div>
+        <div class="help-step"><span class="help-num">▶</span><div><strong>Sauvegarde des données</strong><br><span style="color:var(--text3);font-size:12px">Toutes les données (base, historique, templates) sont désormais stockées dans <em>IndexedDB</em> (capacité illimitée, dans le navigateur). La file et la config légère restent dans localStorage. Exportez régulièrement via CONFIG → Export.</span></div></div>
         <div class="help-step"><span class="help-num">▶</span><div><strong>Réinitialisation</strong><br><span style="color:var(--text3);font-size:12px">En cas de problème d'authentification, la page de connexion propose un lien de réinitialisation. Cette action efface tous les comptes.</span></div></div>
       </div>
       <div style="margin-top:14px;background:#2e1a1a;border:1px solid #4a2d2d;border-radius:8px;padding:10px;font-size:12px;color:#e07d7d">
@@ -2127,25 +2337,197 @@ const DEFAULT_TPL_LAYOUT = {
 // ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// INDEXEDDB — Remplacement du localStorage pour la base articles
+// Capacité : plusieurs centaines de MB (vs ~5MB localStorage)
+// ═══════════════════════════════════════════════════════════════
+const IDB_NAME    = 'marjane_db';
+const IDB_VERSION = 1;
+let   _idb        = null;
+
+function openIDB(){
+  return new Promise((resolve, reject)=>{
+    if(_idb){ resolve(_idb); return; }
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = e=>{
+      const db = e.target.result;
+      // Store principal : articles de la base produits
+      if(!db.objectStoreNames.contains('base'))
+        db.createObjectStore('base', {keyPath:'code'});
+      // Store historique A7
+      if(!db.objectStoreNames.contains('history'))
+        db.createObjectStore('history', {autoIncrement:true});
+      // Store historique A4
+      if(!db.objectStoreNames.contains('a4_history'))
+        db.createObjectStore('a4_history', {autoIncrement:true});
+      // Store templates (images base64)
+      if(!db.objectStoreNames.contains('templates'))
+        db.createObjectStore('templates', {keyPath:'name'});
+      // Store clé-valeur générique pour les autres données
+      if(!db.objectStoreNames.contains('kv'))
+        db.createObjectStore('kv');
+    };
+    req.onsuccess = e=>{ _idb = e.target.result; resolve(_idb); };
+    req.onerror   = e=>reject(e.target.error);
+  });
+}
+
+// Lecture d'une clé générique (kv store)
+async function idbGet(key){
+  const db = await openIDB();
+  return new Promise((resolve, reject)=>{
+    const tx  = db.transaction('kv','readonly');
+    const req = tx.objectStore('kv').get(key);
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror   = ()=>reject(req.error);
+  });
+}
+
+// Écriture d'une clé générique (kv store)
+async function idbSet(key, value){
+  const db = await openIDB();
+  return new Promise((resolve, reject)=>{
+    const tx  = db.transaction('kv','readwrite');
+    const req = tx.objectStore('kv').put(value, key);
+    req.onsuccess = ()=>resolve();
+    req.onerror   = ()=>reject(req.error);
+  });
+}
+
+// Lire tous les enregistrements d'un store
+async function idbGetAll(storeName){
+  const db = await openIDB();
+  return new Promise((resolve, reject)=>{
+    const tx  = db.transaction(storeName,'readonly');
+    const req = tx.objectStore(storeName).getAll();
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror   = ()=>reject(req.error);
+  });
+}
+
+// Écrire un tableau complet dans un store (clear + putAll)
+async function idbPutAll(storeName, items){
+  const db = await openIDB();
+  return new Promise((resolve, reject)=>{
+    const tx    = db.transaction(storeName,'readwrite');
+    const store = tx.objectStore(storeName);
+    store.clear();
+    items.forEach(item=>store.put(item));
+    tx.oncomplete = ()=>resolve();
+    tx.onerror    = ()=>reject(tx.error);
+  });
+}
+
+// Upsert d'un seul enregistrement dans un store (sans vider le store)
+async function idbPutOne(storeName, item){
+  const db = await openIDB();
+  return new Promise((resolve, reject)=>{
+    const tx  = db.transaction(storeName,'readwrite');
+    const req = tx.objectStore(storeName).put(item);
+    req.onsuccess = ()=>resolve();
+    req.onerror   = ()=>reject(req.error);
+  });
+}
+
+// Supprimer un enregistrement d'un store
+async function idbDelete(storeName, key){
+  const db = await openIDB();
+  return new Promise((resolve, reject)=>{
+    const tx  = db.transaction(storeName,'readwrite');
+    const req = tx.objectStore(storeName).delete(key);
+    req.onsuccess = ()=>resolve();
+    req.onerror   = ()=>reject(req.error);
+  });
+}
+
+// ── Migration localStorage → IndexedDB (premier lancement v5) ──
+async function migrateFromLocalStorage(){
+  const migDone = await idbGet('_migrated_v5');
+  if(migDone) return;
+  console.log('[IDB] Migration localStorage → IndexedDB…');
+
+  // Base articles
+  try{
+    const raw = localStorage.getItem('a7_base');
+    if(raw){
+      const arr = JSON.parse(raw);
+      if(arr.length) await idbPutAll('base', arr);
+      console.log('[IDB] Base migrée :', arr.length, 'articles');
+    }
+  }catch(e){ console.warn('[IDB] Migration base:', e); }
+
+  // Historique A7
+  try{
+    const raw = localStorage.getItem('a7_history');
+    if(raw){
+      const arr = JSON.parse(raw);
+      if(arr.length){
+        const db = await openIDB();
+        await new Promise((res,rej)=>{
+          const tx    = db.transaction('history','readwrite');
+          const store = tx.objectStore('history');
+          store.clear();
+          arr.forEach(h=>store.put(h));
+          tx.oncomplete=res; tx.onerror=rej;
+        });
+        console.log('[IDB] Historique A7 migré :', arr.length, 'entrées');
+      }
+    }
+  }catch(e){ console.warn('[IDB] Migration hist A7:', e); }
+
+  // Historique A4
+  try{
+    const raw = localStorage.getItem('a4_history');
+    if(raw){
+      const arr = JSON.parse(raw);
+      if(arr.length){
+        const db = await openIDB();
+        await new Promise((res,rej)=>{
+          const tx    = db.transaction('a4_history','readwrite');
+          const store = tx.objectStore('a4_history');
+          store.clear();
+          arr.forEach(h=>store.put(h));
+          tx.oncomplete=res; tx.onerror=rej;
+        });
+        console.log('[IDB] Historique A4 migré :', arr.length, 'entrées');
+      }
+    }
+  }catch(e){ console.warn('[IDB] Migration hist A4:', e); }
+
+  // Templates (images base64) → reste dans kv (volumeux mais unique)
+  try{
+    const raw = localStorage.getItem('a7_templates');
+    if(raw){
+      const obj = JSON.parse(raw);
+      const entries = Object.entries(obj).map(([name,data])=>({name,data}));
+      if(entries.length) await idbPutAll('templates', entries);
+      console.log('[IDB] Templates migrés :', entries.length);
+    }
+  }catch(e){ console.warn('[IDB] Migration templates:', e); }
+
+  await idbSet('_migrated_v5', true);
+  toast('✅ Migration IndexedDB terminée — stockage illimité actif !', 'ok');
+  console.log('[IDB] Migration terminée ✓');
+}
+
+// ── Initialisation de l'état depuis IndexedDB (asynchrone) ──────
 let state = {
-  base:        JSON.parse(localStorage.getItem('a7_base')||'[]'),
-  queue:       JSON.parse(localStorage.getItem('a7_queue')||'[]'),
-  templates:   JSON.parse(localStorage.getItem('a7_templates')||'{}'),
-  mapping:     JSON.parse(localStorage.getItem('a7_mapping')||'null') || JSON.parse(JSON.stringify(DEFAULT_MAPPING)),
-  productTpl:  JSON.parse(localStorage.getItem('a7_product_tpl')||'{}'),
-  history:     JSON.parse(localStorage.getItem('a7_history')||'[]'),
-  tplLayout:   (()=>{
-    // Migration : ancienne clé a7_tpl_layout → a7_tplLayout
+  base:       [],
+  queue:      JSON.parse(localStorage.getItem('a7_queue')||'[]'),
+  templates:  {},
+  mapping:    JSON.parse(localStorage.getItem('a7_mapping')||'null') || JSON.parse(JSON.stringify(DEFAULT_MAPPING)),
+  productTpl: JSON.parse(localStorage.getItem('a7_product_tpl')||'{}'),
+  history:    [],
+  tplLayout:  (()=>{
     const v = localStorage.getItem('a7_tplLayout') || localStorage.getItem('a7_tpl_layout') || '{}';
     const parsed = JSON.parse(v);
-    // Nettoyer l'ancienne clé si elle existe
-    if(localStorage.getItem('a7_tpl_layout')) {
+    if(localStorage.getItem('a7_tpl_layout')){
       localStorage.setItem('a7_tplLayout', v);
       localStorage.removeItem('a7_tpl_layout');
     }
     return parsed;
   })(),
-  textColors:  JSON.parse(localStorage.getItem('a7_text_colors')||'null') || {
+  textColors: JSON.parse(localStorage.getItem('a7_text_colors')||'null') || {
     designation:'#FFFFFF', designationNoBg:'#111111',
     prix:'#8B0000', prixNoBg:'#000000',
     unite:'#F5E6C8', uniteNoBg:'#333333',
@@ -2155,15 +2537,70 @@ let state = {
   },
 };
 
+// Chargement asynchrone base + historique + templates depuis IDB
+async function loadStateFromIDB(){
+  try{
+    await migrateFromLocalStorage();
+
+    // Base articles
+    const base = await idbGetAll('base');
+    state.base = base || [];
+
+    // Historique A7
+    const hist = await idbGetAll('history');
+    state.history = (hist||[]).sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
+
+    // Templates
+    const tplRows = await idbGetAll('templates');
+    state.templates = {};
+    (tplRows||[]).forEach(r=>{ state.templates[r.name] = r.data; });
+
+    updateCounters();
+    if(typeof renderBase==='function') renderBase();
+    await loadA4HistoryFromIDB();
+    console.log('[IDB] État chargé — base:', state.base.length, '| templates:', Object.keys(state.templates).length);
+  }catch(e){
+    console.error('[IDB] loadStateFromIDB:', e);
+    toast('⚠️ Erreur chargement IndexedDB — repli localStorage', 'err');
+    // Repli localStorage si IDB échoue
+    state.base     = JSON.parse(localStorage.getItem('a7_base')||'[]');
+    state.history  = JSON.parse(localStorage.getItem('a7_history')||'[]');
+    state.templates= JSON.parse(localStorage.getItem('a7_templates')||'{}');
+    updateCounters();
+    if(typeof renderBase==='function') renderBase();
+  }
+}
+
+// ── Sauvegarde clé/valeur dans IDB + localStorage pour petites données ──
 function save(key){
-  try {
+  // Base → IDB (grand volume)
+  if(key === 'base'){
+    idbPutAll('base', state.base)
+      .then(()=> console.log('[IDB] Base sauvegardée :', state.base.length, 'articles'))
+      .catch(e=> console.error('[IDB] save base:', e));
+    return;
+  }
+  // Historique A7 → IDB
+  if(key === 'history'){
+    idbPutAll('history', state.history)
+      .catch(e=> console.error('[IDB] save history:', e));
+    return;
+  }
+  // Templates → IDB (images base64 volumineuses)
+  if(key === 'templates'){
+    const entries = Object.entries(state.templates).map(([name,data])=>({name,data}));
+    idbPutAll('templates', entries)
+      .catch(e=> console.error('[IDB] save templates:', e));
+    return;
+  }
+  // Autres clés légères → localStorage (queue, mapping, tplLayout, textColors…)
+  try{
     localStorage.setItem('a7_'+key, JSON.stringify(state[key]));
-  } catch(e) {
-    console.warn('[save] Quota dépassé pour',key,e);
-    toast('⚠️ Stockage presque plein ! Exportez ou nettoyez l\'historique.','err');
+  }catch(e){
+    console.warn('[save] Quota localStorage pour', key, e);
+    toast('⚠️ Stockage léger plein — exportez vos données.','err');
   }
   setTimeout(autoSaveNow, 300);
-  // Mettre à jour le monitor si visible
   if(typeof _updateStorageMonitor==='function') setTimeout(_updateStorageMonitor, 200);
 }
 
@@ -2257,7 +2694,7 @@ async function autoSaveNow(){
       base: state.base, queue: state.queue, templates: state.templates,
       mapping: state.mapping, productTpl: state.productTpl, history: state.history,
       tplLayout: state.tplLayout, textColors: state.textColors,
-      exportDate: new Date().toISOString(), version:'A7-v4-auto'
+      exportDate: new Date().toISOString(), version:'A7-v5-auto'
     };
     const fh = await dir.getFileHandle('A7_auto_backup.json',{create:true});
     const w = await fh.createWritable();
@@ -2281,7 +2718,9 @@ async function autoRestore(){
       state.base = data.base; state.queue=data.queue||[]; state.templates=data.templates||{};
       state.mapping=data.mapping||state.mapping; state.productTpl=data.productTpl||{};
       state.history=data.history||[]; state.tplLayout=data.tplLayout||{}; state.textColors=data.textColors||state.textColors;
-      saveBaseSafe(); ['queue','templates','mapping','productTpl','history','tplLayout','textColors'].forEach(k=>save(k));
+      saveBaseSafe();
+      ['queue','mapping','productTpl','tplLayout','textColors'].forEach(k=>save(k));
+      save('templates'); save('history');
       toast('Restauration automatique réussie ✓ — Rechargez si nécessaire','ok');
       // Ne pas recharger automatiquement pour éviter les boucles
     }
@@ -2299,7 +2738,7 @@ function exportAllData(){
     tplLayout: state.tplLayout,
     textColors: state.textColors,
     exportDate: new Date().toISOString(),
-    version: 'A7-v3'
+    version: 'A7-v5'
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -2327,8 +2766,10 @@ function importAllData(input){
         state.history = data.history||[];
         state.tplLayout = data.tplLayout||{};
         state.textColors = data.textColors||state.textColors;
-        // Sauvegarder tout
-        saveBaseSafe(); ['queue','templates','mapping','productTpl','history','tplLayout','textColors'].forEach(k=>save(k));
+        // Sauvegarder tout dans IDB et localStorage
+        saveBaseSafe();
+        ['queue','mapping','productTpl','tplLayout','textColors'].forEach(k=>save(k));
+        save('templates'); save('history');
         toast('Données restaurées ✓ Rechargez la page','ok');
         setTimeout(()=>location.reload(), 1200);
       }
@@ -2343,6 +2784,315 @@ function importAllData(input){
 // ═══════════════════════════════════════════════════════════════
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
+
+// ═══════════════════════════════════════════════════════════════
+// TRADUCTEUR FR → AR COMMERCIAL (IA — Anthropic API)
+// ═══════════════════════════════════════════════════════════════
+// ─── Gestion clé API Anthropic ───────────────────────────────────
+function _getAnthropicKey(){
+  return localStorage.getItem('marjane_groq_key') || '';
+}
+function _setAnthropicKey(k){
+  if(k) localStorage.setItem('marjane_groq_key', k.trim());
+  else  localStorage.removeItem('marjane_groq_key');
+}
+
+// Modale pour saisir / modifier la clé API
+function openApiKeyModal(callback){
+  const existing = _getAnthropicKey();
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:#0d1f3c;border:1px solid rgba(255,222,0,.4);border-radius:16px;padding:28px 24px;width:100%;max-width:420px">
+      <div style="font-size:20px;font-weight:800;color:#ffde00;margin-bottom:6px">🔑 Clé API Groq</div>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:16px">
+        Gratuit sur
+        <a href="https://console.groq.com/keys" target="_blank" style="color:#60a5fa">console.groq.com/keys</a>
+        → créer un compte → API Keys → Create API Key.
+        Stockée localement sur cet appareil.
+      </div>
+      <input id="_apiKeyInput" type="password" value="${existing}"
+        placeholder="gsk_…"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,222,0,.3);
+               background:rgba(255,255,255,.07);color:#fff;font-size:13px;font-family:monospace;
+               margin-bottom:4px">
+      <div style="display:flex;gap:6px;margin-top:4px;margin-bottom:14px">
+        <button onclick="this.closest('div[id]')||this;document.getElementById('_apiKeyInput').type=document.getElementById('_apiKeyInput').type==='password'?'text':'password'"
+          style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#94a3b8;font-size:11px;cursor:pointer">
+          👁 Afficher / Masquer
+        </button>
+        ${existing ? '<button onclick="_setAnthropicKey(\'\');this.closest(\'div\').previousElementSibling.value=\'\';toast(\'Clé supprimée\',\'ok\')"  style="padding:6px 10px;border-radius:6px;border:1px solid #dc262660;background:#7f1d1d40;color:#f87171;font-size:11px;cursor:pointer">🗑 Supprimer</button>' : ''}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="this.closest('div').parentElement.parentElement.remove()"
+          style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#94a3b8;cursor:pointer;font-weight:700">
+          Annuler
+        </button>
+        <button id="_apiKeySave"
+          style="flex:2;padding:10px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#000;font-weight:800;cursor:pointer">
+          ✅ Enregistrer
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>{ const i=document.getElementById('_apiKeyInput'); if(i){ i.focus(); i.select(); }},100);
+  document.getElementById('_apiKeySave').onclick = function(){
+    const key = (document.getElementById('_apiKeyInput')||{value:''}).value.trim();
+    _setAnthropicKey(key);
+    overlay.remove();
+    // Mettre à jour le label du bouton header
+    const lbl = document.getElementById('apiKeyBtnLabel');
+    const btn = document.getElementById('apiKeyBtn');
+    if(lbl) lbl.textContent = key ? '🔑 API OK' : 'Clé API';
+    if(btn) btn.style.borderColor = key ? 'rgba(74,222,128,.5)' : 'rgba(255,222,0,.4)';
+    if(callback) callback(key);
+    else toast(key ? '🔑 Clé API enregistrée' : '🗑 Clé supprimée', 'ok');
+  };
+}
+
+async function translateToArabic(srcId, dstId, btnId, isA4 = false){
+  const srcEl = document.getElementById(srcId);
+  const dstEl = document.getElementById(dstId);
+  const btnEl = document.getElementById(btnId);
+  if(!srcEl || !dstEl){ toast('Champs introuvables', 'err'); return; }
+
+  const textFR = srcEl.value.trim();
+  if(!textFR){ toast('Saisissez d\'abord la désignation française', 'err'); return; }
+
+  // Vérifier la clé API — si absente, ouvrir la modale de saisie
+  let apiKey = _getAnthropicKey();
+  if(!apiKey){
+    openApiKeyModal(function(key){
+      if(key) translateToArabic(srcId, dstId, btnId, isA4);
+      else toast('🔑 Traduction annulée — clé API requise', 'err');
+    });
+    return;
+  }
+
+  // État chargement
+  const origHTML = btnEl ? btnEl.innerHTML : '';
+  if(btnEl){
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i class="ri-loader-4-line" style="animation:spin .7s linear infinite;display:inline-block"></i> ...';
+  }
+
+  try{
+    const prompt = `Tu es un expert en traduction commerciale pour la grande distribution au Maroc (hypermarché Marjane).
+Ta mission : traduire la désignation de produit française suivante en arabe marocain commercial (darija écrite en arabe standard).
+
+Règles strictes :
+- Utilise la terminologie commerciale standard des étiquettes de supermarché marocain
+- Si un terme technique/marque n'a pas d'équivalent arabe, conserve-le tel quel (translittération ou terme français)
+- Résultat court, adapté pour une étiquette produit (max 60 caractères)
+- Retourne UNIQUEMENT la traduction arabe, sans explication, sans ponctuation superflue
+- Exemple : "BEURRE DE CUISINE 250G" → "زبدة الطهي 250غ"
+- Exemple : "JUS D'ORANGE 1L" → "عصير البرتقال 1ل"
+- Exemple : "FROMAGE FONDU 8 PORTIONS" → "جبن مذاب 8 قطع"
+
+Désignation à traduire : "${textFR.substring(0, 120)}"`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    };
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 120,
+        temperature: 0.3,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if(!response.ok){
+      const err = await response.json().catch(()=>({}));
+      const msg = err.error?.message || 'Erreur API ' + response.status;
+      // Clé invalide → proposer de la corriger
+      if(response.status === 401){
+        if(btnEl){ btnEl.disabled=false; btnEl.innerHTML=origHTML; }
+        openApiKeyModal(function(key){
+          if(key) translateToArabic(srcId, dstId, btnId, isA4);
+        });
+        toast('🔑 Clé API invalide — veuillez la corriger', 'err');
+        return;
+      }
+      throw new Error(msg);
+    }
+
+    const data = await response.json();
+    const translation = (data.choices?.[0]?.message?.content || '').trim();
+
+    if(!translation){ throw new Error('Réponse vide de l\'IA'); }
+
+    dstEl.value = translation;
+    if(isA4){
+      dstEl.dataset.manual = '1';
+      dstEl.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    toast('✅ Traduction arabe générée par IA', 'ok');
+
+  }catch(e){
+    console.error('[Traducteur IA]', e);
+    if(e.message && e.message.includes('network')){
+      toast('📡 Réseau indisponible — vérifiez votre connexion', 'err');
+    } else {
+      toast('❌ Erreur traduction : ' + (e.message || 'inconnue'), 'err');
+    }
+  } finally {
+    if(btnEl){ btnEl.disabled = false; btnEl.innerHTML = origHTML; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TRADUCTEUR EN LOT — pour import Excel (Base / File A7 / File A4)
+// ═══════════════════════════════════════════════════════════════
+
+// Traduit un seul terme FR → AR via l'API Anthropic
+async function _translateOneTerm(textFR){
+  if(!textFR || !textFR.trim()) return '';
+  const apiKey = _getAnthropicKey();
+  if(!apiKey) throw new Error('Clé API manquante');
+  const prompt = `Tu es un expert en traduction commerciale pour la grande distribution au Maroc (hypermarché Marjane).
+Traduis la désignation produit française en arabe marocain commercial (arabe standard adapté étiquette).
+Règles : terminologie supermarché, max 60 caractères, conserve les marques/chiffres/unités, retourne UNIQUEMENT la traduction arabe.
+Désignation : "${textFR.substring(0, 120).trim()}"`;
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 80,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if(!response.ok) throw new Error('API ' + response.status);
+  const data = await response.json();
+  return (data.choices?.[0]?.message?.content || '').trim();
+}
+
+// Affiche une modale de progression pour la traduction en lot
+// Retourne { close, setProgress, setStatus }
+function _createTranslationModal(total){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;
+    display:flex;align-items:center;justify-content:center;padding:16px`;
+  overlay.innerHTML = `
+    <div style="background:#0d1f3c;border:1px solid rgba(255,222,0,.3);border-radius:16px;
+                padding:28px 32px;width:100%;max-width:420px;text-align:center">
+      <div style="font-size:22px;margin-bottom:6px">🌐</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;
+                  color:#ffde00;letter-spacing:1px;margin-bottom:4px">TRADUCTION EN LOT</div>
+      <div id="_tlStatus" style="font-size:12px;color:#94a3b8;margin-bottom:18px">Initialisation…</div>
+      <div style="background:#1e3a5f;border-radius:8px;height:12px;overflow:hidden;margin-bottom:10px">
+        <div id="_tlBar" style="height:100%;background:linear-gradient(90deg,#ffde00,#f59e0b);
+             border-radius:8px;width:0%;transition:width .3s ease"></div>
+      </div>
+      <div id="_tlCount" style="font-size:11px;color:#64748b;margin-bottom:20px">0 / ${total}</div>
+      <div id="_tlLog" style="max-height:120px;overflow-y:auto;text-align:left;font-size:11px;
+           color:#94a3b8;background:#071428;border-radius:8px;padding:8px;margin-bottom:16px;
+           font-family:'IBM Plex Mono',monospace;line-height:1.6"></div>
+      <button id="_tlSkipBtn" onclick="window._tlSkip=true;this.textContent='Arrêt demandé…';this.disabled=true"
+        style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;
+               border-radius:8px;padding:6px 18px;font-size:12px;cursor:pointer">
+        ⏹ Ignorer la traduction
+      </button>
+    </div>`;
+  document.body.appendChild(overlay);
+  window._tlSkip = false;
+
+  const barEl    = overlay.querySelector('#_tlBar');
+  const countEl  = overlay.querySelector('#_tlCount');
+  const statusEl = overlay.querySelector('#_tlStatus');
+  const logEl    = overlay.querySelector('#_tlLog');
+
+  return {
+    setProgress(done, tot, label){
+      const pct = tot > 0 ? Math.round(done / tot * 100) : 0;
+      barEl.style.width    = pct + '%';
+      countEl.textContent  = done + ' / ' + tot;
+      statusEl.textContent = label || '';
+    },
+    addLog(msg){
+      const line = document.createElement('div');
+      line.textContent = msg;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    },
+    close(){
+      window._tlSkip = false;
+      overlay.remove();
+    }
+  };
+}
+
+// ─── Traduction en lot pour un tableau d'articles ────────────────
+// articles : [{designation_fr, designation_ar, ...}]
+// onUpdate(i, arText) : callback appelé après chaque traduction
+// Retourne le nb de termes traduits
+async function translateBatch(articles, onUpdate, delayMs = 300){
+  // Ne traduire que les articles sans désignation arabe
+  const toTranslate = articles
+    .map((a, i) => ({ i, fr: a.designation_fr }))
+    .filter(x => x.fr && !articles[x.i].designation_ar);
+
+  if(toTranslate.length === 0) return 0;
+
+  const modal = _createTranslationModal(toTranslate.length);
+  let done = 0, translated = 0;
+
+  modal.setProgress(0, toTranslate.length, 'Démarrage…');
+
+  for(const { i, fr } of toTranslate){
+    if(window._tlSkip) break;
+
+    modal.setProgress(done, toTranslate.length, `Traduction : ${fr.substring(0,40)}…`);
+
+    try{
+      const ar = await _translateOneTerm(fr);
+      if(ar){
+        onUpdate(i, ar);
+        translated++;
+        modal.addLog('✅ ' + fr.substring(0,30) + ' → ' + ar);
+      } else {
+        modal.addLog('⚠️ Vide : ' + fr.substring(0,30));
+      }
+    }catch(e){
+      modal.addLog('❌ Erreur : ' + fr.substring(0,25) + ' (' + e.message + ')');
+    }
+
+    done++;
+    modal.setProgress(done, toTranslate.length,
+      done < toTranslate.length ? 'Traduction en cours…' : '✅ Terminé !');
+
+    // Délai anti-rate-limit entre chaque appel
+    if(done < toTranslate.length && !window._tlSkip){
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+
+  modal.setProgress(done, toTranslate.length,
+    window._tlSkip ? '⏹ Traduction interrompue' : '✅ Traduction terminée !');
+  await new Promise(r => setTimeout(r, 1800));
+  modal.close();
+  return translated;
+}
+
+// Animation spinner pour le bouton traduction
+(function injectSpinCSS(){
+  if(document.getElementById('spinStyle')) return;
+  const s = document.createElement('style');
+  s.id = 'spinStyle';
+  s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(s);
+})();
 
 function toast(msg, type='ok'){
   const el = document.createElement('div');
@@ -3034,9 +3784,10 @@ function addToQueue(){
   state.queue.unshift(item);
   save('queue');
   // History
-  state.history.unshift({...item, savedAt: new Date().toISOString()});
+  const histItem = {...item, savedAt: new Date().toISOString()};
+  state.history.unshift(histItem);
   if(state.history.length>5000) state.history = state.history.slice(0,5000);
-  save('history');
+  idbPutOne('history', histItem).catch(e=>console.warn('[IDB] hist put:',e));
   updateCounters();
   toast(`Ajouté: ${item.designation_fr||item.code}`,'ok');
   // Reset
@@ -3283,13 +4034,32 @@ function importExcelToQueue(input){
           col_j:prod.col_j, col_k:prod.col_k
         };
         state.queue.push(item);
-        state.history.unshift({...item, savedAt:new Date().toISOString()});
+        const hi = {...item, savedAt:new Date().toISOString()};
+        state.history.unshift(hi);
+        idbPutOne('history', hi).catch(e=>console.warn('[IDB] hist put:',e));
         imported++;
       }
-      save('queue'); save('history');
+      save('queue');
       updateCounters(); renderQueue();
       if(notFound.length) toast(`${notFound.length} code(s) non trouvés: ${notFound.slice(0,3).join(', ')}…`,'err');
       toast(`${imported} article(s) importé(s)`,'ok');
+
+      // Proposer la traduction en lot pour les items de file sans désignation arabe
+      const noAR = state.queue.filter(a => a.designation_fr && !a.designation_ar);
+      if(noAR.length > 0){
+        const go = confirm(
+          `${noAR.length} article(s) de la file n'ont pas de désignation arabe.\n\nLancer la traduction automatique IA ?`
+        );
+        if(go){
+          translateBatch(
+            state.queue,
+            (i, ar) => { state.queue[i].designation_ar = ar; },
+            350
+          ).then(n => {
+            if(n > 0){ save('queue'); renderQueue(); toast(`✅ ${n} désignation(s) arabe(s) générée(s)`, 'ok'); }
+          });
+        }
+      }
     }catch(err){ toast('Erreur lecture Excel: '+err.message,'err'); }
     input.value='';
   };
@@ -3473,6 +4243,23 @@ function importBaseExcel(input){
       renderBase();
       const msg = `✅ Import : ${added} ajoutés, ${updated} mis à jour${skipped ? ', '+skipped+' ignorés' : ''} — Base totale : ${state.base.length} articles`;
       toast(msg, 'ok');
+
+      // Proposer la traduction en lot pour les articles sans désignation arabe
+      const noAR = state.base.filter(a => a.designation_fr && !a.designation_ar);
+      if(noAR.length > 0){
+        const go = confirm(
+          `${noAR.length} article(s) n'ont pas de désignation arabe.\n\nLancer la traduction automatique IA (terminologie commerciale Marjane) ?\n\nDurée estimée : ~${Math.ceil(noAR.length * 0.5)} secondes`
+        );
+        if(go){
+          translateBatch(
+            state.base,
+            (i, ar) => { state.base[i].designation_ar = ar; },
+            350
+          ).then(n => {
+            if(n > 0){ saveBaseSafe(); renderBase(); toast(`✅ ${n} désignation(s) arabe(s) générée(s)`, 'ok'); }
+          });
+        }
+      }
     }catch(err){
       console.error('[importBaseExcel]', err);
       toast('❌ Erreur Excel : '+err.message, 'err');
@@ -3482,41 +4269,16 @@ function importBaseExcel(input){
   reader.readAsArrayBuffer(file);
 }
 
-// Sauvegarde base avec gestion quota localStorage
+// Sauvegarde base via IndexedDB (sans limite de quota)
 function saveBaseSafe(){
-  const json = JSON.stringify(state.base);
-  const sizeKB = Math.round(json.length / 1024);
-  try{
-    localStorage.setItem('a7_base', json);
-    console.log('[Base] Sauvegardée : '+state.base.length+' articles, ~'+sizeKB+' KB');
-  }catch(e){
-    console.warn('[Base] Quota dépassé — purge historique…', e);
-    try{
-      // Purger l'historique pour libérer de la place
-      state.history = state.history.slice(0, 100);
-      localStorage.setItem('a7_history', JSON.stringify(state.history));
-      localStorage.setItem('a7_base', json);
-      console.log('[Base] Sauvegardée après purge historique');
-    }catch(e2){
-      // Sauvegarder uniquement les champs essentiels (sans ingrédients)
-      console.warn('[Base] Toujours plein — sauvegarde allégée…', e2);
-      try{
-        const light = state.base.map(a=>({
-          code: a.code,
-          designation_fr: a.designation_fr,
-          designation_ar: a.designation_ar||'',
-          ingredients_fr: (a.ingredients_fr||'').substring(0,100),
-          ingredients_ar: (a.ingredients_ar||'').substring(0,60),
-          origine: a.origine||'', col_j: a.col_j||'', col_k: a.col_k||''
-        }));
-        localStorage.setItem('a7_base', JSON.stringify(light));
-        toast('⚠️ Base enregistrée mais stockage presque plein. Activez l\'auto-save fichier !', 'warn');
-      }catch(e3){
-        toast('❌ Stockage plein ! Exportez la base et activez l\'auto-save.', 'err');
-        console.error('[Base] Impossible localStorage', e3);
-      }
-    }
-  }
+  idbPutAll('base', state.base)
+    .then(()=>{
+      console.log('[IDB] Base sauvegardée : '+state.base.length+' articles');
+    })
+    .catch(e=>{
+      console.error('[IDB] saveBaseSafe échec:', e);
+      toast('❌ Erreur sauvegarde IndexedDB. Exportez la base en Excel.', 'err');
+    });
   setTimeout(autoSaveNow, 300);
 }
 
@@ -3540,8 +4302,22 @@ const _histPageSize = 100;
 let _histFilter = 'all'; // 'all' | 'a7' | 'a4'
 let _histSearch = '';
 
+// Cache en mémoire pour l'historique A4 (chargé depuis IDB)
+let _a4HistoryCache = null;
+
 function getA4History(){
-  try { return JSON.parse(localStorage.getItem('a4_history')||'[]'); } catch(e){ return []; }
+  // Retourne le cache mémoire (chargé au démarrage par loadStateFromIDB)
+  return _a4HistoryCache || [];
+}
+
+async function loadA4HistoryFromIDB(){
+  try{
+    const items = await idbGetAll('a4_history');
+    _a4HistoryCache = (items||[]).sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
+  }catch(e){
+    console.warn('[IDB] loadA4History:', e);
+    try{ _a4HistoryCache = JSON.parse(localStorage.getItem('a4_history')||'[]'); }catch(_){ _a4HistoryCache=[]; }
+  }
 }
 
 function getAllHistory(){
@@ -3648,8 +4424,11 @@ function clearHistory(){
   const what = _histFilter;
   const msg = what==='a4'?'Effacer l\'historique A4 ?':what==='a7'?'Effacer l\'historique A7 ?':'Effacer TOUT l\'historique (A7 + A4) ?';
   if(!confirm(msg)) return;
-  if(what==='all'||what==='a7'){ state.history=[]; save('history'); }
-  if(what==='all'||what==='a4'){ localStorage.setItem('a4_history','[]'); }
+  if(what==='all'||what==='a7'){ state.history=[]; idbPutAll('history',[]).catch(e=>console.error('[IDB] clear history',e)); }
+  if(what==='all'||what==='a4'){
+    _a4HistoryCache=[];
+    idbPutAll('a4_history',[]).catch(e=>console.error('[IDB] clear a4_history',e));
+  }
   renderHistory(); toast('Historique effacé');
 }
 
@@ -3945,6 +4724,8 @@ async function loadCanvasFonts(){
       applySession(session);
       setTimeout(loadTextColorsUI, 200);
       setTimeout(autoRestore, 500);
+      // Charger base, historique, templates depuis IndexedDB
+      loadStateFromIDB().catch(e=>console.error('[IDB] init load error:', e));
     } catch(e) { console.warn('applySession error:', e); }
   } else {
     $('#app').style.display='none';
@@ -4262,7 +5043,7 @@ function updateDashboard(){
   const weekStart = todayStart - 6*24*60*60*1000;
 
   const a7hist = state.history||[];
-  const a4hist = getA4History ? getA4History() : (JSON.parse(localStorage.getItem('a4_history')||'[]'));
+  const a4hist = getA4History();
 
   const todayA7 = a7hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
   const todayA4 = a4hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
@@ -4386,31 +5167,31 @@ function updateDashboard(){
   _updateStorageMonitor();
 }
 
-// ─── MONITORING STOCKAGE ────────────────────────────────────────
+// ─── MONITORING STOCKAGE (IndexedDB) ────────────────────────────
 function _getLocalStorageUsed(){
   let total=0;
   for(const k in localStorage){ if(localStorage.hasOwnProperty(k)) total += ((localStorage.getItem(k)||'').length + k.length)*2; }
   return total;
 }
 function _updateStorageMonitor(){
-  const used = _getLocalStorageUsed();
-  const maxBytes = 10*1024*1024; // ~10 MB estimé
-  const pct = Math.min(100, Math.round(used/maxBytes*100));
-  const usedMB = (used/1024/1024).toFixed(2);
+  // Badge header : IndexedDB est actif, on affiche l'état de la base en mémoire
+  const articlesCount = (state.base||[]).length;
+  const templatesCount = Object.keys(state.templates||{}).filter(k=>state.templates[k]).length;
+  const histCount = (state.history||[]).length + ((_a4HistoryCache||[]).length);
+
   let storEl = document.getElementById('dashStorageBar');
   if(!storEl){
-    // Injecter la barre de stockage dans le dashboard
     const dashCard = $('#dashTemplates')?.closest('.card') || document.querySelector('#tab-saisie .card');
     const wrap = document.getElementById('dashWrapper') || document.createElement('div');
     wrap.id='dashStorageWrap';
     wrap.style.cssText='margin-top:14px;padding:12px;border-radius:10px;border:1px solid var(--border)';
     wrap.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-size:11px;font-weight:700;color:var(--amber)">💾 STOCKAGE NAVIGATEUR</div>
+        <div style="font-size:11px;font-weight:700;color:#4ade80">🗄️ INDEXEDDB ACTIF — STOCKAGE ILLIMITÉ</div>
         <div id="dashStorageLabel" style="font-size:11px;color:var(--text3)"></div>
       </div>
-      <div style="background:var(--surf3);border-radius:6px;height:10px;overflow:hidden;position:relative">
-        <div id="dashStorageBar" style="height:100%;border-radius:6px;transition:width .5s ease;background:var(--amber);width:0%"></div>
+      <div style="background:var(--surf3);border-radius:6px;height:10px;overflow:hidden">
+        <div id="dashStorageBar" style="height:100%;border-radius:6px;background:#4ade80;width:100%"></div>
       </div>
       <div id="dashStorageTip" style="font-size:10px;color:var(--text4);margin-top:6px"></div>`;
     if(dashCard) dashCard.appendChild(wrap);
@@ -4418,23 +5199,19 @@ function _updateStorageMonitor(){
     storEl = document.getElementById('dashStorageBar');
   }
   if(!storEl) return;
-  const color = pct<60?'var(--amber)':pct<80?'#f59e0b':'#ef4444';
-  storEl.style.width = pct+'%';
-  storEl.style.background = color;
+  storEl.style.width = '100%';
+  storEl.style.background = '#4ade80';
   const lbl = document.getElementById('dashStorageLabel');
-  if(lbl) lbl.textContent = `${usedMB} MB / ~10 MB (${pct}%)`;
+  if(lbl) lbl.textContent = `${articlesCount} articles · ${templatesCount} templates · ${histCount} historique(s)`;
   const tip = document.getElementById('dashStorageTip');
-  if(tip){
-    if(pct>=80) tip.innerHTML='⚠️ <strong style="color:#ef4444">Stockage critique !</strong> Exportez la base et activez l\'auto-save. Les templates (images) consomment le plus d\'espace.';
-    else if(pct>=60) tip.innerHTML='⚡ Stockage à surveiller. Pensez à exporter la sauvegarde régulièrement.';
-    else tip.innerHTML='✅ Stockage en bonne santé. ' + (Object.keys(state.templates||{}).filter(k=>state.templates[k]).length) + ' template(s) image chargé(s).';
-  }
+  if(tip) tip.innerHTML=`✅ <strong style="color:#4ade80">IndexedDB actif</strong> — Aucune limite de quota. Base : ${articlesCount} articles, templates : ${templatesCount} image(s) chargée(s).`;
   // Badge header
   const hdrS = document.getElementById('hdrStorage');
   if(hdrS){
-    if(pct>=80){ hdrS.textContent='💾 '+pct+'%'; hdrS.style.color='#f87171'; hdrS.style.borderColor='rgba(248,113,113,.4)'; hdrS.style.background='rgba(248,113,113,.12)'; }
-    else if(pct>=60){ hdrS.textContent='💾 '+pct+'%'; hdrS.style.color='#fbbf24'; hdrS.style.borderColor='rgba(251,191,36,.4)'; hdrS.style.background='rgba(251,191,36,.12)'; }
-    else { hdrS.textContent='💾 OK'; hdrS.style.color='#4ade80'; hdrS.style.borderColor='rgba(74,222,128,.3)'; hdrS.style.background='rgba(74,222,128,.12)'; }
+    hdrS.textContent='🗄️ IDB OK';
+    hdrS.style.color='#4ade80';
+    hdrS.style.borderColor='rgba(74,222,128,.3)';
+    hdrS.style.background='rgba(74,222,128,.12)';
   }
 }
 
@@ -4447,7 +5224,7 @@ function _injectStorageInConfig(){
   wrap.className='card';
   wrap.style.marginTop='14px';
   wrap.innerHTML=`
-    <div class="card-title"><i class="ri-database-2-line"></i> Santé du stockage localStorage</div>
+    <div class="card-title"><i class="ri-database-2-line"></i> Santé du stockage <span style="color:var(--green);font-size:13px">IndexedDB ✓</span></div>
     <div id="cfgStorageDetails" style="font-size:12px;color:var(--text3)">Calcul en cours…</div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="_cleanStorage()"><i class="ri-delete-bin-3-line"></i> Nettoyer historique ancien</button>
@@ -4461,28 +5238,36 @@ function _injectStorageInConfig(){
 function _refreshConfigStorage(){
   const el = document.getElementById('cfgStorageDetails');
   if(!el) return;
-  const keys = [
-    ['a7_base','Base articles'],['a7_history','Historique A7'],['a4_history','Historique A4'],
-    ['a7_templates','Templates A7 (images)'],['a4_tpls','Templates A4'],['a4_file','File A4'],
-    ['a7_queue','File A7'],['a4_pictos','Pictos A4'],
+  // Stats IndexedDB en mémoire
+  const rows = [
+    ['Base articles (IDB)', (state.base||[]).length + ' articles', '#4ade80'],
+    ['Historique A7 (IDB)', (state.history||[]).length + ' entrées', '#4ade80'],
+    ['Historique A4 (IDB)', ((_a4HistoryCache)||[]).length + ' entrées', '#4ade80'],
+    ['Templates images (IDB)', Object.keys(state.templates||{}).filter(k=>state.templates[k]).length + ' image(s)', '#4ade80'],
+    ['File A7 (RAM)', (state.queue||[]).length + ' articles', '#f59e0b'],
   ];
-  const rows = keys.map(([k,label])=>{
-    const v=localStorage.getItem('a7_'+k.replace('a7_',''))||localStorage.getItem(k)||'';
-    const kb=Math.round(v.length*2/1024);
-    const color=kb>500?'#ef4444':kb>100?'#f59e0b':'#4ade80';
-    return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span>${label}</span><span style="color:${color};font-family:monospace;font-weight:700">${kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB'}</span></div>`;
-  });
-  const total=Math.round(_getLocalStorageUsed()/1024);
-  el.innerHTML=rows.join('')+`<div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:700;color:var(--amber)"><span>TOTAL</span><span>${total>1024?(total/1024).toFixed(1)+' MB':total+' KB'} / ~10 MB</span></div>`;
+  const lsKB = Math.round(_getLocalStorageUsed()/1024);
+  el.innerHTML = rows.map(([label,val,color])=>`
+    <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+      <span>${label}</span><span style="color:${color};font-family:monospace;font-weight:700">${val}</span>
+    </div>`).join('')
+    +`<div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:700;color:#4ade80">
+        <span>🗄️ IndexedDB actif</span><span>Stockage illimité</span>
+      </div>
+      <div style="font-size:10px;color:var(--text4)">LocalStorage (config légère) : ${lsKB} KB</div>`;
 }
 
 function _cleanStorage(){
   const keep=confirm('Garder seulement les 500 derniers historiques A7 et 500 derniers A4 ?');
   if(!keep) return;
-  state.history=(state.history||[]).slice(0,500); save('history');
+  state.history=(state.history||[]).slice(0,500);
+  idbPutAll('history', state.history).catch(e=>console.warn('[IDB] purge history:',e));
   try{
-    const a4h=JSON.parse(localStorage.getItem('a4_history')||'[]').slice(0,500);
-    localStorage.setItem('a4_history',JSON.stringify(a4h));
+    // Purge historique A4 (IDB)
+    if(_a4HistoryCache && _a4HistoryCache.length>500){
+      _a4HistoryCache = _a4HistoryCache.slice(0,500);
+      idbPutAll('a4_history',_a4HistoryCache).catch(e=>console.warn('[IDB] purge a4_hist:',e));
+    }
   }catch(e){}
   toast('Nettoyage effectué ✓','ok');
   _refreshConfigStorage();
@@ -4525,7 +5310,7 @@ const A4_POS_FIELDS = [
   {key:'prixPromo', label:'Prix Promo',  defX:0.50, defY:0.47, defFS:74,   defColor:'#FFFFFF', isPickto:false},
   {key:'diff',      label:'Différence',  defX:0.05, defY:0.58, defFS:22,   defColor:'#22c55e', isPickto:false},
   {key:'fidelite',  label:'Fidélité',    defX:0.05, defY:0.65, defFS:20,   defColor:'#f59e0b', isPickto:false},
-  {key:'gencode',   label:'Gencode',     defX:0.50, defY:0.91, defFS:12,   defColor:'#FFFFFF', isPickto:false},
+  {key:'gencode',   label:'Gencode',     defX:0.50, defY:0.91, defFS:8,    defColor:'#FFFFFF', isPickto:false},
   {key:'picto',     label:'Picto (W)',   defX:0.77, defY:0.27, defFS:0.20, defColor:null,      isPickto:true},
 ];
 // Valeurs par défaut pour les rectangles diff et fidélité A4 (en fraction 0-1 du canvas)
@@ -4544,6 +5329,7 @@ const a4St = {
 };
 
 let a4Tpls    = JSON.parse(localStorage.getItem('a4_tpls') || 'null') || buildDefaultA4Tpls();
+
 let a4Pictos  = JSON.parse(localStorage.getItem('a4_pictos') || '[]');
 let a4Inited  = false;
 let a4EditIdx = -1;
@@ -4595,7 +5381,7 @@ function buildDefaultA4Tpls() {
     prixPromo:{x:0.50, y:0.47, fs:74, color:'#FFFFFF'},
     diff:     {x:0.05, y:0.58, fs:22, color:'#22c55e'},
     fidelite: {x:0.05, y:0.65, fs:20, color:'#f59e0b'},
-    gencode:  {x:0.50, y:0.91, fs:12, color:'#FFFFFF'},
+    gencode:  {x:0.50, y:0.91, fs:8, color:'#FFFFFF'},
     picto:    {x:0.77, y:0.27, w:0.20, h:0.14},
   }; }
   return [
@@ -4614,12 +5400,17 @@ function buildDefaultA4Tpls() {
 function setAppMode(mode) {
   const a7el = document.getElementById('a7-mode');
   const a4el = document.getElementById('a4-mode');
+  const bel  = document.getElementById('balisage-mode');
   if (a7el) a7el.style.display = mode === 'a7' ? 'block' : 'none';
   if (a4el) a4el.style.display = mode === 'a4' ? 'block' : 'none';
+  if (bel)  bel.style.display  = mode === 'balisage' ? 'block' : 'none';
   document.querySelectorAll('.mode-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.mode === mode));
   if (mode === 'a4') {
     initA4Once();
+  }
+  if (mode === 'balisage') {
+    bInitOnce();
   }
 }
 
@@ -4679,7 +5470,7 @@ function a4LookupArticle() {
   // Lire la base unique partagée avec A7
   const base = typeof state !== 'undefined'
     ? state.base
-    : JSON.parse(localStorage.getItem('a7_base') || '[]');
+    : state.base;
 
   const art = base.find(p => p.code === code);
 
@@ -5031,7 +5822,7 @@ function renderA4TplMgr() {
         mgrLabelRow('Fidélité (px)', mgrNumInput(i,'fidelite','fs', fsV('fidelite',20), '1','8','80',0)) +
         mgrLabelRow('Fid décScale', mgrNumInput(i,'fidelite','decScale', dsV('fidelite',0.45), '0.01','0.20','0.80',2)) +
         '<div></div>' +
-        mgrLabelRow('Gencode (px)', mgrNumInput(i,'gencode','fs', fsV('gencode',12), '1','6','40',0)) +
+        mgrLabelRow('Gencode (px)', mgrNumInput(i,'gencode','fs', fsV('gencode',8), '1','1','40',0)) +
         '<div></div><div></div>' +
       '</div>';
 
@@ -5210,7 +6001,7 @@ function mgrBuildTempTpl(i) {
     }
     const x = parseFloat(xEl.value) || f.defX;
     const y = parseFloat(yEl.value) || f.defY;
-    const fs= parseFloat(fsEl.value) || f.defFS;
+    let fs = parseFloat(fsEl.value) || f.defFS;
     if (f.isPickto) {
       els[f.key] = {x, y, w:fs, h:fs*1.45};
     } else {
@@ -5338,12 +6129,13 @@ function a4AddToFile() {
     savedAt: Date.now()
   };
   a4St.file.push(item);
-  // Sauvegarder dans l'historique A4
+  // Sauvegarder dans l'historique A4 (IndexedDB)
   try{
-    const a4hist = JSON.parse(localStorage.getItem('a4_history')||'[]');
-    a4hist.unshift({...item, savedAt: new Date().toISOString(), user: (typeof getCurrentSession==='function'&&getCurrentSession())?getCurrentSession().user:'—'});
-    if(a4hist.length>3000) a4hist.length=3000;
-    localStorage.setItem('a4_history', JSON.stringify(a4hist));
+    const histItem = {...item, savedAt: new Date().toISOString(), user: (typeof getCurrentSession==='function'&&getCurrentSession())?getCurrentSession().user:'—'};
+    _a4HistoryCache = _a4HistoryCache || [];
+    _a4HistoryCache.unshift(histItem);
+    if(_a4HistoryCache.length>3000) _a4HistoryCache.length=3000;
+    idbPutOne('a4_history', histItem).catch(e=>console.warn('[IDB] a4_hist put:',e));
   }catch(e){ console.warn('[A4 hist] save error',e); }
   a4Save();
   renderA4File();
@@ -5466,7 +6258,7 @@ function importExcelToA4File(input) {
         // Lookup désignation dans la base A7
         const base = typeof state !== 'undefined'
           ? state.base
-          : JSON.parse(localStorage.getItem('a7_base') || '[]');
+          : state.base;
         const art = base.find(p => p.code === gencode);
         const desFR = art ? (art.designation_fr || '') : '';
         const desAR = art ? (art.designation_ar || '') : '';
@@ -5488,14 +6280,15 @@ function importExcelToA4File(input) {
       if (bar)  bar.style.width  = '100%';
 
       a4Save();
-      // Sauvegarder dans l'historique A4
+      // Sauvegarder dans l'historique A4 (IndexedDB)
       try{
-        const a4hist = JSON.parse(localStorage.getItem('a4_history')||'[]');
+        _a4HistoryCache = _a4HistoryCache || [];
         a4St.file.slice(-added).forEach(item=>{
-          a4hist.unshift({...item, savedAt: new Date().toISOString(), user: (typeof getCurrentSession==='function'&&getCurrentSession())?getCurrentSession().user:'—'});
+          const histItem = {...item, savedAt: new Date().toISOString(), user: (typeof getCurrentSession==='function'&&getCurrentSession())?getCurrentSession().user:'—'};
+          _a4HistoryCache.unshift(histItem);
+          idbPutOne('a4_history', histItem).catch(e=>console.warn('[IDB] a4_hist put:',e));
         });
-        if(a4hist.length>3000) a4hist.length=3000;
-        localStorage.setItem('a4_history', JSON.stringify(a4hist));
+        if(_a4HistoryCache.length>3000) _a4HistoryCache.length=3000;
       }catch(e){ console.warn('[A4 hist] save error',e); }
       renderA4File();
 
@@ -5510,6 +6303,29 @@ function importExcelToA4File(input) {
 
       if (info) info.textContent = msg;
       setTimeout(() => { if (progWrap) progWrap.style.display = 'none'; }, 3000);
+
+      // Proposer traduction en lot pour les items A4 sans désignation arabe
+      const noAR = a4St.file.filter(a => a.desFR && !a.desAR);
+      if(noAR.length > 0){
+        setTimeout(()=>{
+          const go = confirm(
+            `${noAR.length} affiche(s) n'ont pas de désignation arabe.\n\nLancer la traduction automatique IA (terminologie commerciale Marjane) ?\n\nDurée estimée : ~${Math.ceil(noAR.length * 0.5)} secondes`
+          );
+          if(go){
+            // Construire un tableau proxy pour translateBatch (désignation_fr → desFR)
+            const proxy = a4St.file.map(a => ({ designation_fr: a.desFR, designation_ar: a.desAR }));
+            translateBatch(
+              proxy,
+              (i, ar) => {
+                a4St.file[i].desAR = ar;
+              },
+              350
+            ).then(n => {
+              if(n > 0){ a4Save(); renderA4File(); toast(`✅ ${n} désignation(s) arabe(s) générée(s) pour la file A4`, 'ok'); }
+            });
+          }
+        }, 400);
+      }
 
       // Switcher vers la file si on a ajouté des articles
       if (added > 0) {
@@ -5813,18 +6629,63 @@ function a4RenderEls(ctx, W, H, data, els) {
     ctx.textBaseline = 'middle';
   }
 
-  // ── Gencode ─────────────────────────────────────────────────────
+  // ── Gencode — ID-39 (Code 39) natif — taille fixe 5×2 cm ────────
   if (data.code && els.gencode) {
     const e = els.gencode;
-    const gx = e.x * W;
-    const gy = e.y * H;
-    const color = e.color || '#FFF';
-    // Dessiner uniquement le texte du gencode (propre, sans barres parasites)
-    ctx.fillStyle = color;
-    ctx.font = 'bold ' + (e.fs * sc) + 'px "IBM Plex Mono",monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(data.code, gx, gy);
+
+    // Dimensions fixes : 5cm × 2cm sur A4 (canvas 420×594 = 210×297mm)
+    // 5cm / 210mm * 420px = 100px   ;   2cm / 297mm * 594px = 40px
+    const MAX_W_PX  = W * (50 / 210);   // 5 cm en px canvas
+    const MAX_H_PX  = H * (20 / 297);   // 2 cm en px canvas (zone totale barres+texte)
+
+    // Sanitize
+    const codeStr = (typeof sanitizeCode39 === 'function')
+      ? sanitizeCode39(String(data.code))
+      : String(data.code).replace(/[^0-9A-Z\-. $\/+%]/gi, '').toUpperCase();
+
+    if (codeStr) {
+      // ── Calcul exact largeur Code 39 en unités ────────────────────
+      const _P39 = {
+        '0':'NNNWWNWNN','1':'WNNWNNNNW','2':'NNWWNNNNW','3':'WNWWNNNNN',
+        '4':'NNNWWNNNW','5':'WNNWWNNNN','6':'NNWWWNNNN','7':'NNNWNNWNW',
+        '8':'WNNWNNWNN','9':'NNWWNNWNN','A':'WNNNNWNNW','B':'NNWNNWNNW',
+        'C':'WNWNNWNNN','D':'NNNNNWWNW','E':'WNNNNWWNN','F':'NNWNNWWNN',
+        'G':'NNNWNWWNW','H':'WNNWNWNNN','I':'NNWWNWNNN','J':'NNNNNWWNN',
+        'K':'WNNNNNNWW','L':'NNWNNNNWW','M':'WNWNNNNWN','N':'NNNNNWNNW',
+        'O':'WNNNNWNWN','P':'NNWNNWNWN','Q':'NNNWNWNNW','R':'WNNWNWNNW',
+        'S':'NNWWNWNNW','T':'NNNWNWWNN','U':'WWNNNNNNW','V':'NWWNNNNNN',
+        'W':'WWWNNNNNN','X':'NWNNWNNNW','Y':'WWNNWNNNN','Z':'NWWNWNNNN',
+        '-':'NWNNNNWNW','.':'WWNNNNWNN',' ':'NWWNNNWNN','$':'NWNWNWNNN',
+        '/':'NWNNNWNWN','+':'NNNWNWNWN','%':'NWNWNNNWN','*':'NWNNWNWNN'
+      };
+      function _charUnits(ch){ const p=_P39[ch]; if(!p) return 15; let u=0; for(const b of p) u+=(b==='W'?3:1); return u; }
+      const enc39 = '*' + codeStr + '*';
+      let totalUnits = 0;
+      for(const ch of enc39) totalUnits += _charUnits(ch) + 1;
+      totalUnits = Math.max(1, totalUnits - 1);
+
+      // ── unitPx : ajusté pour tenir dans MAX_W_PX, jamais plus large ──
+      const unitPx  = Math.min(MAX_W_PX / totalUnits, MAX_H_PX / 44); // 44 = 40 barres + 4 texte
+      const realW   = totalUnits * unitPx;
+      const barH    = unitPx * 40;
+      const textH   = unitPx * 4;
+      const totalH  = barH + textH + 4;
+
+      // ── Position ──────────────────────────────────────────────────
+      const cx = Math.min(Math.max(e.x * W, realW / 2 + 6), W - realW / 2 - 6);
+      const cy = Math.min(e.y * H, H - totalH / 2 - 4);
+
+      // ── Fond blanc plein pour contraste scan ─────────────────────
+      ctx.save();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.roundRect(cx - realW / 2 - 4, cy - barH / 2 - 3, realW + 8, totalH + 2, 3);
+      ctx.fill();
+      ctx.restore();
+
+      // ── Barres Code 39 en noir sur blanc ─────────────────────────
+      a4DrawCode39(ctx, String(data.code), cx, cy, barH, textH, '#000000');
+    }
   }
 
   // ── Picto (image uploadée 5×3 cm) ───────────────────────────────
@@ -5862,7 +6723,119 @@ function a4WrapText(ctx, text, x, y, maxW, lineH, maxLines) {
   lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
 }
 
-// a4DrawBarcode supprimée — rendu gencode simplifié (texte seul, sans barres parasites)
+// ─── ID-39 (Code 39) — Implémentation native canvas ─────────────
+// Norme ISO/IEC 16388 — Code 3 de 9 — ID-39
+// Chaque caractère = 5 barres + 4 espaces (9 éléments, 3 larges)
+// Séparateur inter-caractères = 1 espace étroit
+// Caractères supportés : 0-9, A-Z, - . ESPACE $ / + %  et * (start/stop)
+(function(){
+  const N = 1; // largeur barre étroite (unité de base)
+  const W = 3; // largeur barre large
+
+  // Table d'encodage ID-39 officielle (ISO/IEC 16388)
+  // Alternance : Barre Espace Barre Espace Barre Espace Barre Espace Barre
+  // N=étroit W=large
+  const C39 = {
+    '0':'NNNWWNWNN','1':'WNNWNNNNW','2':'NNWWNNNNW','3':'WNWWNNNNN',
+    '4':'NNNWWNNNW','5':'WNNWWNNNN','6':'NNWWWNNNN','7':'NNNWNNWNW',
+    '8':'WNNWNNWNN','9':'NNWWNNWNN',
+    'A':'WNNNNWNNW','B':'NNWNNWNNW','C':'WNWNNWNNN','D':'NNNNNWWNW',
+    'E':'WNNNNWWNN','F':'NNWNNWWNN','G':'NNNWNWWNW','H':'WNNWNWNNN',
+    'I':'NNWWNWNNN','J':'NNNNNWWNN','K':'WNNNNNNWW','L':'NNWNNNNWW',
+    'M':'WNWNNNNWN','N':'NNNNNWNNW','O':'WNNNNWNWN','P':'NNWNNWNWN',
+    'Q':'NNNWNWNNW','R':'WNNWNWNNW','S':'NNWWNWNNW','T':'NNNWNWWNN',
+    'U':'WWNNNNNNW','V':'NWWNNNNNN','W':'WWWNNNNNN','X':'NWNNWNNNW',
+    'Y':'WWNNWNNNN','Z':'NWWNWNNNN',
+    '-':'NWNNNNWNW','.':'WWNNNNWNN',' ':'NWWNNNWNN',
+    '$':'NWNWNWNNN','/':'NWNNNWNWN','+':'NNNWNWNWN','%':'NWNWNNNWN',
+    '*':'NWNNWNWNN'  // caractère start/stop uniquement
+  };
+
+  // Sanitize : convertit en majuscules, filtre les caractères non supportés ID-39
+  // Les chiffres EAN (0-9) sont tous supportés nativement
+  function sanitize39(str){
+    return str.toUpperCase().split('').filter(c => c !== '*' && C39[c] !== undefined).join('');
+  }
+
+  // Calcule la largeur totale en unités (y compris start/stop *)
+  function calcWidth39(clean){
+    const encoded = '*' + clean + '*';
+    let units = 0;
+    for(const ch of encoded){
+      const p = C39[ch];
+      if(!p) continue;
+      for(const bit of p) units += (bit === 'W' ? W : N);
+      units += N; // inter-character gap
+    }
+    return Math.max(1, units - N); // retirer le dernier gap
+  }
+
+  // Dessine un code-barres ID-39 sur le canvas
+  // cx, cy : centre du code-barres
+  // barH   : hauteur des barres en pixels
+  // textH  : taille du texte sous le code (0 = pas de texte)
+  // color  : couleur des barres (ex: '#FFFFFF' ou '#000000')
+  window.a4DrawCode39 = function(ctx, text, cx, cy, barH, textH, color){
+    if(!text) return;
+    const clean = sanitize39(String(text));
+    if(!clean){ 
+      // Aucun caractère valide ID-39 → afficher un message d'erreur discret
+      ctx.save();
+      ctx.fillStyle = '#ef4444';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ID-39: caractères invalides', cx, cy);
+      ctx.restore();
+      return;
+    }
+    const encoded = '*' + clean + '*';
+
+    // Calcul de la largeur totale pour centrer le code
+    const totalUnits = calcWidth39(clean);
+    // unitPx : largeur d'une unité étroite en pixels
+    // Formule : on veut que les barres soient bien proportionnées à la hauteur
+    const unitPx = Math.max(1.0, barH / 40);
+    const totalW = totalUnits * unitPx;
+
+    // Point de départ (bord gauche du code, centré sur cx)
+    let x = Math.round(cx - totalW / 2);
+    const yTop = Math.round(cy - barH / 2);
+
+    ctx.save();
+    for(let ci = 0; ci < encoded.length; ci++){
+      const ch = encoded[ci];
+      const pattern = C39[ch];
+      if(!pattern) continue;
+
+      for(let i = 0; i < 9; i++){
+        const wide = pattern[i] === 'W';
+        const w = (wide ? W : N) * unitPx;
+        if(i % 2 === 0){
+          // Index pair = barre (dessinée)
+          ctx.fillStyle = color;
+          ctx.fillRect(x, yTop, Math.max(1, Math.round(w)), barH);
+        }
+        // Index impair = espace (fond, rien à dessiner)
+        x += w;
+      }
+      x += N * unitPx; // gap inter-caractère
+    }
+
+    // Texte sous le code-barres (affiche le code original sans les * start/stop)
+    if(textH > 4){
+      ctx.fillStyle = color;
+      ctx.font = 'bold ' + Math.round(textH) + 'px "IBM Plex Mono",monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(clean, cx, Math.round(cy + barH / 2 + 3));
+    }
+    ctx.restore();
+  };
+
+  // Expose sanitize pour usage externe (validation formulaire)
+  window.sanitizeCode39 = sanitize39;
+})();
 
 function a4DarkenHex(hex, amt) {
   try {
@@ -6263,19 +7236,507 @@ window.__exportPDF = async function(){
 document.documentElement.classList.add('dark');
 
 // Vérification périodique du stockage (toutes les 2 minutes)
+// IndexedDB actif : pas de limite de quota, juste mise à jour du monitor
 setInterval(()=>{
   try{
-    const used = _getLocalStorageUsed ? _getLocalStorageUsed() : 0;
-    const pct = Math.min(100, Math.round(used/(10*1024*1024)*100));
-    if(pct >= 85 && typeof toast==='function'){
-      toast('⚠️ Stockage presque plein ('+pct+'%) ! Exportez la sauvegarde ou nettoyez l\'historique.','err');
-    }
-    // Mettre à jour les barres si elles existent
     if(typeof _updateStorageMonitor==='function') _updateStorageMonitor();
   }catch(e){}
 }, 120000); // 2 minutes
 </script>
 
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                    MODULE BALISAGE                               ║
+// ║  Format: 150×40 mm  |  7 balisages / page A4 portrait           ║
+// ║  Gabarit BOULANGERIE (Slide1) / PÂTISSERIE (Slide2)             ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// ─── State ────────────────────────────────────────────────────────
+let _bInited = false;
+let _bGabarit = 'BOUL'; // 'BOUL' | 'PAT'
+let _bFile = []; // Array of balisage items
+
+// Proportions physiques : 150mm × 40mm
+// Canvas rendu : 450px × 120px (3px/mm)
+const B_W = 450, B_H = 120;
+const B_MM2PX = 3; // 3 pixels par mm
+
+// Layout zones (en px sur canvas 450×120)
+// ┌─────────┬─────────────────────┬──┬─────────────────────┐
+// │ Zone    │  INGREDIENTS ARABE  │bar│  Zone ALLERGEN/INGR  │
+// │ désig   │  (centre)           │   │  (droite)            │
+// └─────────┴─────────────────────┴──┴─────────────────────┘
+const B_ZONES = {
+  leftPanel:  { x: 0,   y: 0,   w: 90,  h: 120 }, // ~30mm désig FR+AR + barre المكونات
+  midPanel:   { x: 90,  y: 0,   w: 210, h: 120 }, // ~70mm ingrédients arabes
+  barVert:    { x: 300, y: 0,   w: 18,  h: 120 }, // barre verticale texte tournant
+  rightPanel: { x: 318, y: 0,   w: 132, h: 120 }, // ~44mm allergènes / ingrédients FR
+};
+
+// ─── Couleurs gabarits ────────────────────────────────────────────
+const B_THEME = {
+  BOUL: {
+    barColor: '#5c2d0a',   // brun boulangerie
+    barTextTop: 'المكونات',
+    barTextRight: 'Allergènes',
+    barTextRightAR: 'مسببات الحساسية',
+    bgLeft: '#f5efe0',
+    bgMid: '#fff8ee',
+    bgRight: '#fff8ee',
+    accentBorder: '#8B5E3C',
+  },
+  PAT: {
+    barColor: '#5c2d0a',   // même structure, même brun
+    barTextTop: 'المكونات',
+    barTextRight: 'Ingrédients',
+    barTextRightAR: 'المكونات',
+    bgLeft: '#f5efe0',
+    bgMid: '#fff8ee',
+    bgRight: '#fff8ee',
+    accentBorder: '#8B5E3C',
+  }
+};
+
+// ─── Init ─────────────────────────────────────────────────────────
+function bInitOnce() {
+  if (_bInited) return;
+  _bInited = true;
+  // Charger la file depuis localStorage
+  try {
+    const saved = localStorage.getItem('balisage_file');
+    if (saved) _bFile = JSON.parse(saved) || [];
+  } catch(e) { _bFile = []; }
+  bSyncPreview();
+  bRenderFile();
+  bUpdateFileCounts();
+}
+
+// ─── Gabarit toggle ───────────────────────────────────────────────
+function bSetGabarit(type) {
+  _bGabarit = type;
+  const btnBOUL = document.getElementById('bGabaritBOUL');
+  const btnPAT  = document.getElementById('bGabaritPAT');
+  if (btnBOUL) btnBOUL.className = type === 'BOUL' ? 'btn btn-amber' : 'btn btn-ghost';
+  if (btnPAT)  btnPAT.className  = type === 'PAT'  ? 'btn btn-amber' : 'btn btn-ghost';
+  const lbl = document.getElementById('bGabaritLabel');
+  if (lbl) lbl.textContent = type === 'BOUL' ? 'BOULANGERIE' : 'PÂTISSERIE';
+  const pvLbl = document.getElementById('bPreviewGabaritLabel');
+  if (pvLbl) pvLbl.textContent = type === 'BOUL' ? 'BOULANGERIE' : 'PÂTISSERIE';
+  bSyncPreview();
+}
+
+// ─── Tab switch Balisage ──────────────────────────────────────────
+function switchBalisageTab(name) {
+  document.querySelectorAll('#balisage-mode .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#balisage-mode .nav-btn').forEach(b => b.classList.remove('active'));
+  const tab = document.getElementById('btab-' + name);
+  const btn = document.querySelector('#balisage-mode .nav-btn[data-btab="' + name + '"]');
+  if (tab) tab.classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'file') bRenderFile();
+}
+
+// ─── Form helpers ─────────────────────────────────────────────────
+function bClearForm() {
+  ['bDesFR','bDesAR','bPrix','bIngFR','bIngAR','bAllerFR','bAllerAR'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  bSyncPreview();
+  toast('Formulaire effacé', 'info');
+}
+
+function bGetFormData() {
+  return {
+    gabarit: _bGabarit,
+    desFR:   (document.getElementById('bDesFR')?.value || '').trim(),
+    desAR:   (document.getElementById('bDesAR')?.value || '').trim(),
+    prix:    (document.getElementById('bPrix')?.value  || '').trim(),
+    ingFR:   (document.getElementById('bIngFR')?.value || '').trim(),
+    ingAR:   (document.getElementById('bIngAR')?.value || '').trim(),
+    allerFR: (document.getElementById('bAllerFR')?.value || '').trim(),
+    allerAR: (document.getElementById('bAllerAR')?.value || '').trim(),
+  };
+}
+
+// ─── Preview Canvas ───────────────────────────────────────────────
+function bSyncPreview() {
+  const data = bGetFormData();
+  bDrawBalisage(document.getElementById('bPreviewCanvas'), data);
+}
+
+function bDrawBalisage(canvas, data) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const theme = B_THEME[data.gabarit] || B_THEME.BOUL;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // ── Fond général ──
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Panneau gauche : décoration marocaine + désignations ──
+  const lp = B_ZONES.leftPanel;
+  // Motif fond arabesque (simulation: rectangle avec motif géo)
+  ctx.fillStyle = theme.bgLeft;
+  ctx.fillRect(lp.x, lp.y, lp.w, lp.h);
+  // Bordure droite panneau gauche
+  ctx.strokeStyle = theme.accentBorder;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(lp.x + lp.w, lp.y); ctx.lineTo(lp.x + lp.w, lp.y + lp.h); ctx.stroke();
+
+  // Motif géométrique décoratif simple (cercles+losanges en coin)
+  _bDrawArabesquePattern(ctx, lp.x, lp.y, lp.w, lp.h, theme.accentBorder);
+
+  // Désignation FR (Rectangle 7)
+  ctx.fillStyle = '#1a0a00';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const desFRFont = data.desFR.length > 18 ? 8 : 10;
+  ctx.font = `700 ${desFRFont}px 'Barlow Condensed', sans-serif`;
+  _bWrapText(ctx, data.desFR || 'Désignation FR', lp.x + lp.w/2, lp.y + 32, lp.w - 8, 12);
+
+  // Désignation AR (Rectangle 8)
+  ctx.fillStyle = '#3d1c00';
+  ctx.font = `600 9px 'IBM Plex Sans Arabic', sans-serif`;
+  _bWrapText(ctx, data.desAR || 'الاسم بالعربية', lp.x + lp.w/2, lp.y + 68, lp.w - 8, 12);
+
+  // Prix (Rectangle 4) — coin bas gauche
+  if (data.prix) {
+    ctx.fillStyle = theme.barColor;
+    ctx.fillRect(lp.x, H - 30, lp.w, 30);
+    ctx.fillStyle = '#fff';
+    ctx.font = `800 15px 'IBM Plex Mono', monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(parseFloat(data.prix).toFixed(2) + ' DH', lp.x + lp.w/2, H - 15);
+  }
+
+  // ── Panneau milieu : ingrédients arabes ──
+  const mp = B_ZONES.midPanel;
+  ctx.fillStyle = theme.bgMid;
+  ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
+
+  // En-tête "Zone INGREDIENTS ARABE"
+  ctx.fillStyle = '#5c4030';
+  ctx.font = `600 7.5px 'IBM Plex Sans Arabic', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('المكونات', mp.x + mp.w/2, 5);
+
+  // Ingrédients AR
+  ctx.fillStyle = '#2a1500';
+  ctx.font = `400 7.5px 'IBM Plex Sans Arabic', sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  _bWrapTextMulti(ctx, data.ingAR || '', mp.x + mp.w - 6, 20, mp.w - 12, 10, 5);
+
+  // ── Barre verticale centrale avec texte tourné ──
+  const bv = B_ZONES.barVert;
+  ctx.fillStyle = theme.barColor;
+  ctx.fillRect(bv.x, bv.y, bv.w, bv.h);
+
+  // Texte المكونات vertical
+  ctx.save();
+  ctx.translate(bv.x + bv.w/2, bv.y + bv.h/2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `700 9px 'IBM Plex Sans Arabic', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('المكونات', 0, 0);
+  ctx.restore();
+
+  // ── Panneau droit : allergènes / ingrédients FR ──
+  const rp = B_ZONES.rightPanel;
+  ctx.fillStyle = theme.bgRight;
+  ctx.fillRect(rp.x, rp.y, rp.w, rp.h);
+
+  // Barre verticale droite (Allergènes label)
+  const barRight = { x: rp.x, y: rp.y, w: 15, h: rp.h };
+  ctx.fillStyle = theme.barColor;
+  ctx.fillRect(barRight.x, barRight.y, barRight.w, barRight.h);
+
+  ctx.save();
+  ctx.translate(barRight.x + barRight.w/2, barRight.y + barRight.h/2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `700 8px 'Barlow Condensed', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(data.gabarit === 'BOUL' ? 'Allergènes' : 'Ingrédients', 0, 0);
+  ctx.restore();
+
+  // Contenu zone droite (allergènes FR + AR)
+  const rxStart = rp.x + 20;
+  const rxW = rp.w - 24;
+
+  ctx.fillStyle = '#3d0000';
+  ctx.font = `700 7.5px 'Barlow Condensed', sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  if (data.allerFR) {
+    _bWrapTextMulti(ctx, data.allerFR, rxStart, 6, rxW, 9, 5);
+  } else {
+    ctx.fillStyle = '#ccc';
+    ctx.fillText('Allergènes FR', rxStart, 6);
+  }
+
+  if (data.allerAR) {
+    ctx.fillStyle = '#3d0010';
+    ctx.font = `600 7px 'IBM Plex Sans Arabic', sans-serif`;
+    ctx.textAlign = 'right';
+    _bWrapTextMulti(ctx, data.allerAR, rxStart + rxW, 60, rxW, 9, 5);
+  }
+
+  // ── Bordure générale ──
+  ctx.strokeStyle = theme.accentBorder;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, W - 2, H - 2);
+}
+
+// Helper: dessin arabesques simplifiées (motif géo répétitif)
+function _bDrawArabesquePattern(ctx, x, y, w, h, color) {
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 0.8;
+  const step = 12;
+  for (let i = 0; i < w; i += step) {
+    for (let j = 0; j < h; j += step) {
+      // Losange simple
+      ctx.beginPath();
+      ctx.moveTo(x + i + step/2, y + j);
+      ctx.lineTo(x + i + step, y + j + step/2);
+      ctx.lineTo(x + i + step/2, y + j + step);
+      ctx.lineTo(x + i, y + j + step/2);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+// Helper: wrap texte sur plusieurs lignes centré
+function _bWrapText(ctx, text, cx, cy, maxW, lineH) {
+  if (!text) return;
+  const words = text.split(' ');
+  let line = '';
+  const lines = [];
+  for (const w of words) {
+    const test = line + (line ? ' ' : '') + w;
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line);
+      line = w;
+    } else { line = test; }
+  }
+  if (line) lines.push(line);
+  const totalH = lines.length * lineH;
+  let startY = cy - totalH / 2 + lineH / 2;
+  for (const l of lines) {
+    ctx.fillText(l, cx, startY);
+    startY += lineH;
+  }
+}
+
+// Helper: wrap texte multi-lignes (non-centré, depuis x/y)
+function _bWrapTextMulti(ctx, text, x, y, maxW, lineH, maxLines) {
+  if (!text) return;
+  // Gérer la direction RTL pour l'arabe: x est le bord droit
+  const words = text.split(/\s+/);
+  let line = '';
+  const lines = [];
+  for (const w of words) {
+    const test = line + (line ? ' ' : '') + w;
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line);
+      line = w;
+      if (lines.length >= maxLines) break;
+    } else { line = test; }
+  }
+  if (line && lines.length < maxLines) lines.push(line);
+  lines.forEach((l, i) => {
+    ctx.fillText(l, x, y + i * lineH);
+  });
+}
+
+// ─── Add to file ──────────────────────────────────────────────────
+function bAddToFile() {
+  const data = bGetFormData();
+  if (!data.desFR && !data.desAR) {
+    toast('⚠️ Saisir au moins la désignation FR ou AR', 'err');
+    return;
+  }
+  data.id = Date.now();
+  data.ts = new Date().toLocaleString('fr-FR');
+  _bFile.push(data);
+  bSaveFile();
+  bUpdateFileCounts();
+  bRenderFile();
+  toast('✅ Balisage ajouté à la file', 'ok');
+}
+
+function bSaveFile() {
+  try { localStorage.setItem('balisage_file', JSON.stringify(_bFile)); } catch(e) {}
+}
+
+function bUpdateFileCounts() {
+  const n = _bFile.length;
+  const el1 = document.getElementById('balisageFileCount');
+  const el2 = document.getElementById('bFileCountBadge');
+  if (el1) el1.textContent = n;
+  if (el2) el2.textContent = n;
+}
+
+function bClearFile() {
+  if (!confirm('Vider toute la file BALISAGE ?')) return;
+  _bFile = [];
+  bSaveFile();
+  bUpdateFileCounts();
+  bRenderFile();
+  toast('File vidée', 'info');
+}
+
+function bRemoveItem(id) {
+  _bFile = _bFile.filter(x => x.id !== id);
+  bSaveFile();
+  bUpdateFileCounts();
+  bRenderFile();
+}
+
+// ─── Render file table ────────────────────────────────────────────
+function bRenderFile() {
+  const tbody = document.getElementById('bFileBody');
+  const empty = document.getElementById('bFileEmpty');
+  if (!tbody) return;
+  if (_bFile.length === 0) {
+    tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  tbody.innerHTML = _bFile.map((item, i) => `
+    <tr>
+      <td class="mono" style="color:var(--amber);font-weight:700">${i+1}</td>
+      <td><span style="background:${item.gabarit==='BOUL'?'rgba(139,94,60,.3)':'rgba(92,45,10,.3)'};
+        padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;color:var(--amber)">${item.gabarit}</span></td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.desFR||'—'}</td>
+      <td class="ar" style="direction:rtl;text-align:right;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.desAR||'—'}</td>
+      <td class="mono" style="color:var(--green);font-weight:700">${item.prix?parseFloat(item.prix).toFixed(2)+' DH':'—'}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--text3)">${item.ingFR||'—'}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--red)">${item.allerFR||'—'}</td>
+      <td><button class="btn btn-red btn-sm" onclick="bRemoveItem(${item.id})" title="Supprimer"><i class="ri-delete-bin-line"></i></button></td>
+    </tr>
+  `).join('');
+}
+
+// ─── PDF Export (7 balisages par page A4 portrait) ───────────────
+async function bPrintAll() {
+  if (_bFile.length === 0) {
+    toast('⚠️ File vide — rien à imprimer', 'err');
+    return;
+  }
+  const {jsPDF} = window.jspdf || {};
+  if (!jsPDF) { toast('❌ jsPDF non chargé', 'err'); return; }
+
+  // A4 portrait : 210×297 mm
+  // 7 balisages × 40mm = 280mm + marges
+  const marginLeft = 1; // mm
+  const marginTop  = 3; // mm
+  const spacing    = 0.5; // mm entre balisages
+  const bW = 150, bH = 40; // mm
+
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Canvas offscreen pour le rendu
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width  = B_W;
+  offCanvas.height = B_H;
+
+  let pageIdx = 0;
+
+  for (let i = 0; i < _bFile.length; i++) {
+    const posOnPage = i % 7;
+    if (posOnPage === 0 && i > 0) {
+      pdf.addPage();
+      pageIdx++;
+    }
+    const yPos = marginTop + posOnPage * (bH + spacing);
+
+    bDrawBalisage(offCanvas, _bFile[i]);
+    const imgData = offCanvas.toDataURL('image/png', 1.0);
+    pdf.addImage(imgData, 'PNG', marginLeft, yPos, bW, bH);
+  }
+
+  const fname = `BALISAGE_${new Date().toISOString().slice(0,10)}.pdf`;
+  pdf.save(fname);
+  toast(`✅ PDF généré — ${_bFile.length} balisage(s)`, 'ok');
+}
+
+// ─── PNG individuel ───────────────────────────────────────────────
+function bDownloadPNG() {
+  const canvas = document.getElementById('bPreviewCanvas');
+  if (!canvas) return;
+  canvas.toBlob(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'balisage.png';
+    a.click();
+  }, 'image/png', 1.0);
+}
+
+// ─── Traduction IA (réutilise la fonction existante) ──────────────
+function bTranslateAR() {
+  translateToArabic('bDesFR', 'bDesAR', 'bBtnTransAR');
+}
+
+function bTranslateIngAR() {
+  translateToArabic('bIngFR', 'bIngAR', 'bBtnTransIngAR');
+}
+
+// ─── Import Excel ─────────────────────────────────────────────────
+function bImportExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (typeof XLSX === 'undefined') { toast('❌ XLSX non chargé', 'err'); return; }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      let added = 0;
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const desFR   = String(r[0] || '').trim();
+        const desAR   = String(r[1] || '').trim();
+        const prix    = String(r[2] || '').trim();
+        const ingFR   = String(r[3] || '').trim();
+        const ingAR   = String(r[4] || '').trim();
+        const allerFR = String(r[5] || '').trim();
+        const allerAR = String(r[6] || '').trim();
+        const gabarit = String(r[7] || 'BOUL').trim().toUpperCase() === 'PAT' ? 'PAT' : 'BOUL';
+        if (!desFR && !desAR) continue;
+        _bFile.push({ id: Date.now() + i, ts: new Date().toLocaleString('fr-FR'),
+          gabarit, desFR, desAR, prix, ingFR, ingAR, allerFR, allerAR });
+        added++;
+      }
+      bSaveFile();
+      bUpdateFileCounts();
+      bRenderFile();
+      toast(`✅ ${added} balisage(s) importé(s)`, 'ok');
+    } catch(err) {
+      toast('❌ Erreur import: ' + err.message, 'err');
+    }
+    input.value = '';
+  };
+  reader.readAsBinaryString(file);
+}
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -6291,6 +7752,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.querySelectorAll('.hdr-title').forEach(h=>{
     h.innerHTML = '<span style="color:#fff">MARJANE</span> <span style="color:var(--marjane-yellow,#ffde00)">ÉTIQUETTES</span>';
   });
+  // Mise à jour du label bouton clé API
+  (function(){
+    const lbl = document.getElementById('apiKeyBtnLabel');
+    if(!lbl) return;
+    const k = localStorage.getItem('marjane_groq_key');
+    lbl.textContent = k ? '🔑 API OK' : 'Clé API';
+    if(k){ const btn=document.getElementById('apiKeyBtn'); if(btn) btn.style.borderColor='rgba(74,222,128,.5)'; }
+  })();
 });
 </script>
 
