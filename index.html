@@ -1499,13 +1499,21 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
         <div id="bTplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
       </div>
     
-        <div class="card">
+                <div class="card">
           <div class="card-title" style="margin-bottom:10px"><i class="ri-text"></i> Réglages par template (taille police)</div>
-          <p style="font-size:12px;color:var(--text4);margin-bottom:8px">Les réglages sont enregistrés pour chaque gabarit sélectionné.</p>
-          <div id="bAxesEditor" style="display:flex;flex-direction:column;gap:10px"></div>
-          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-            <button class="btn btn-amber" onclick="bSaveAxes()"><i class="ri-save-line"></i> Enregistrer</button>
-            <button class="btn btn-ghost btn-sm" onclick="bResetAxes()"><i class="ri-refresh-line"></i> Réinitialiser</button>
+          <p style="font-size:12px;color:var(--text4);margin-bottom:8px">Les réglages sont enregistrés pour chaque gabarit sélectionné. Aperçu en temps réel ci-dessous.</p>
+          <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start">
+            <div>
+              <div id="bAxesEditor" style="display:flex;flex-direction:column;gap:10px"></div>
+              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+                <button class="btn btn-amber" onclick="bSaveAxes()"><i class="ri-save-line"></i> Enregistrer</button>
+                <button class="btn btn-ghost btn-sm" onclick="bResetAxes()"><i class="ri-refresh-line"></i> Réinitialiser</button>
+              </div>
+            </div>
+            <div>
+              <canvas id="bAxesPreviewCanvas" width="300" height="80" style="width:100%;background:#111;border-radius:8px;border:1px solid var(--border2)"></canvas>
+              <p style="font-size:11px;color:var(--text4);margin-top:6px">Aperçu 150×40 mm – textes avec bf.maejane</p>
+            </div>
           </div>
         </div>
 </div><!-- /#btab-templates -->
@@ -8196,42 +8204,66 @@ function bRenderAxesEditor() {
 function bRenderAxesPreview() {
   const canvas = document.getElementById('bAxesPreviewCanvas');
   if (!canvas) return;
-  // Lire les valeurs actuelles des inputs si présents
-  const tmpAxes = {};
-  B_AXES_DEFAULTS.forEach(axis => {
-    const obj = {};
-    ['x','y','w','h','fs'].forEach(prop => {
-      const el = document.getElementById(`baxe_${axis.key}_${prop}`);
-      obj[prop] = el ? (parseFloat(el.value) || axis[prop]) : bGetAxeVal(axis.key, prop);
-    });
-    tmpAxes[axis.key] = obj;
-  });
-  // Dessiner le balisage de démonstration avec overlay des axes
-  const demoData = {
-    gabarit: _bGabarit,
-    desFR: 'Pain de campagne', desAR: 'خبز ريفي',
-    ingFR: 'Farine de BLÉ, eau, sel, levure',
-    ingAR: 'دقيق القمح، ماء، ملح، خميرة',
-    allerFR: 'GLUTEN, LAIT', allerAR: 'الغلوتين، الحليب',
-  };
-  bDrawBalisage(canvas, demoData);
-  // Overlay : dessiner les rectangles des axes en surimpression
   const ctx = canvas.getContext('2d');
-  const COLORS = { desFR:'#4ade80', desAR:'#60a5fa', ingAR:'#f59e0b', allerFR:'#ef4444', allerAR:'#c084fc' };
-  B_AXES_DEFAULTS.forEach(axis => {
-    const v = tmpAxes[axis.key];
-    const color = COLORS[axis.key] || '#fff';
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3,3]);
-    ctx.strokeRect(v.x - v.w/2, v.y - v.h/2, v.w, v.h);
-    ctx.setLineDash([]);
-    ctx.fillStyle = color;
-    ctx.font = `bold 6px monospace`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(axis.key, v.x - v.w/2 + 1, v.y - v.h/2 + 1);
-  });
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
+  _bTplsLoad();
+  const tpl = _bTpls.find(t=>t.id===gab);
+  
+  // Draw template background if exists (scaled)
+  if (tpl && tpl.img) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.globalAlpha = 0.3;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1;
+      drawTexts();
+    };
+    img.src = tpl.img;
+  } else {
+    drawTexts();
+  }
+  
+  function drawTexts() {
+    // Get current axes from inputs
+    const tmpAxes = {};
+    B_AXES_DEFAULTS.forEach(axis => {
+      const obj = {};
+      ['x','y','w','h','fs'].forEach(p => {
+        const el = document.getElementById(`baxe_${axis.key}_${p}`);
+        obj[p] = el ? parseInt(el.value,10) : axis[p];
+      });
+      tmpAxes[axis.key] = obj;
+    });
+    // Scale from 450x120 to canvas 300x80
+    const sx = canvas.width / 450;
+    const sy = canvas.height / 120;
+    
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    // desFR
+    let a = tmpAxes.desFR; ctx.font = `700 ${a.fs*sy}px ${BALISAGE_FONT}`; ctx.fillStyle = '#FFE600'; ctx.textAlign='center';
+    ctx.fillText('Désignation FR', a.x*sx, a.y*sy);
+    // desAR
+    a = tmpAxes.desAR; ctx.font = `600 ${a.fs*sy}px ${BALISAGE_FONT_AR}`; ctx.fillStyle = '#FFA500'; ctx.direction='rtl'; ctx.textAlign='center';
+    ctx.fillText('التسمية', a.x*sx, a.y*sy); ctx.direction='ltr';
+    // ingAR
+    a = tmpAxes.ingAR; ctx.font = `400 ${a.fs*sy}px ${BALISAGE_FONT_AR}`; ctx.fillStyle = '#7CFC00'; ctx.textAlign='right'; ctx.direction='rtl';
+    ctx.fillText('المكونات', (a.x+a.w/2)*sx, a.y*sy); ctx.direction='ltr';
+    // ingFR
+    a = tmpAxes.ingFR; ctx.font = `400 ${a.fs*sy}px ${BALISAGE_FONT}`; ctx.fillStyle = '#00D1FF'; ctx.textAlign='left';
+    ctx.fillText('Ingrédients', (a.x-a.w/2)*sx, a.y*sy);
+    ctx.restore();
+    
+    // Draw boxes
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth=1;
+    B_AXES_DEFAULTS.forEach(axis=>{
+      const v = tmpAxes[axis.key];
+      ctx.strokeRect((v.x-v.w/2)*sx, (v.y-v.h/2)*sy, v.w*sx, v.h*sy);
+    });
+  }
 }
 </script>
 
