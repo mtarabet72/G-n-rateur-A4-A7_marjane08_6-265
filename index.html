@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
+<head><!-- PLAYABLE_TOUCH_PATCH_V1 --><script>
+(function() {
+  if (window.__playableTouchPatchInstalled) return;
+  window.__playableTouchPatchInstalled = true;
+  var origAdd = EventTarget.prototype.addEventListener;
+  var blockedTypes = { touchstart: 1, touchmove: 1, wheel: 1 };
+  EventTarget.prototype.addEventListener = function(type, listener, options) {
+    if (blockedTypes[type]) {
+      if (options === undefined || options === null) {
+        options = { passive: true };
+      } else if (typeof options === 'boolean') {
+        options = { capture: options, passive: true };
+      } else {
+        options = Object.assign({}, options, { passive: true });
+      }
+    }
+    return origAdd.call(this, type, listener, options);
+  };
+})();
+</script>
 <!-- Playables SDK -->
 <script>// Playables SDK v1.0.0
 // Game lifecycle bridge: rAF-based game-ready detection + event communication
@@ -1305,14 +1324,23 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
 
           <!-- ── Type de gabarit ── -->
           <div class="card" style="padding:12px">
-            <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Gabarit</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <button id="bGabaritBOUL" class="btn btn-amber" onclick="bSetGabarit('BOUL')"
-                style="height:48px;font-size:13px;letter-spacing:1px">
+            <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Gabarit / Template</div>
+            <!-- Select dynamique peuplé depuis les templates sauvegardés -->
+            <select id="bGabarit" onchange="bSetGabarit(this.value)"
+              style="width:100%;height:48px;font-family:'Barlow Condensed',sans-serif;font-size:16px;
+                     font-weight:800;color:var(--amber);background:var(--surf3);border:1.5px solid var(--border2);
+                     border-radius:10px;padding:0 14px;letter-spacing:.5px;cursor:pointer">
+              <option value="BOUL">🍞 BOULANGERIE</option>
+              <option value="PAT">🎂 PÂTISSERIE</option>
+            </select>
+            <!-- Boutons rapides toujours visibles -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <button id="bGabaritBOUL" class="btn btn-amber" onclick="bSetGabaritQuick('BOUL')"
+                style="height:40px;font-size:12px;letter-spacing:1px">
                 <i class="ri-bread-line"></i> BOULANGERIE
               </button>
-              <button id="bGabaritPAT" class="btn btn-ghost" onclick="bSetGabarit('PAT')"
-                style="height:48px;font-size:13px;letter-spacing:1px">
+              <button id="bGabaritPAT" class="btn btn-ghost" onclick="bSetGabaritQuick('PAT')"
+                style="height:40px;font-size:12px;letter-spacing:1px">
                 <i class="ri-cake-3-line"></i> PÂTISSERIE
               </button>
             </div>
@@ -1479,24 +1507,92 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
         <!-- Grid: BOULANGERIE / PÂTISSERIE + slots custom -->
         <div id="bTplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
       </div>
-    
-                <div class="card">
-          <div class="card-title" style="margin-bottom:10px"><i class="ri-text"></i> Réglages par template (taille police)</div>
-          <p style="font-size:12px;color:var(--text4);margin-bottom:8px">Les réglages sont enregistrés pour chaque gabarit sélectionné. Aperçu en temps réel ci-dessous.</p>
-          <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start">
-            <div>
-              <div id="bAxesEditor" style="display:flex;flex-direction:column;gap:10px"></div>
-              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-                <button class="btn btn-amber" onclick="bSaveAxes()"><i class="ri-save-line"></i> Enregistrer</button>
-                <button class="btn btn-ghost btn-sm" onclick="bResetAxes()"><i class="ri-refresh-line"></i> Réinitialiser</button>
-              </div>
+
+      <!-- ════════════ RÉGLAGES AXES + COULEURS PAR TEMPLATE ════════════ -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-title" style="margin-bottom:6px"><i class="ri-settings-3-line"></i> Réglages par template — Axes, Taille police &amp; Couleurs</div>
+        <p style="font-size:12px;color:var(--text4);margin-bottom:12px">Sélectionnez un gabarit ci-dessous. Les réglages sont enregistrés indépendamment pour chaque gabarit.</p>
+
+        <!-- Sélecteur gabarit pour réglages -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <label class="lbl" style="margin:0;white-space:nowrap">Gabarit à configurer :</label>
+          <select id="bGabaritAxes" onchange="bRenderAxesEditor();bRenderTplAxesPreview();"
+            style="flex:1;min-width:180px;height:40px;font-family:'Barlow Condensed',sans-serif;font-size:15px;
+                   font-weight:800;color:var(--amber);background:var(--surf3);border:1.5px solid var(--border2);
+                   border-radius:10px;padding:0 12px;cursor:pointer">
+            <option value="BOUL">🍞 BOULANGERIE</option>
+            <option value="PAT">🎂 PÂTISSERIE</option>
+          </select>
+        </div>
+
+        <!-- Grille axes + préview -->
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+          <div>
+            <!-- En-têtes colonnes -->
+            <div style="display:grid;grid-template-columns:130px repeat(5,1fr);gap:6px;margin-bottom:6px;padding:0 2px">
+              <div style="font-size:10px;font-weight:700;color:var(--text4);letter-spacing:.5px">ZONE</div>
+              <div style="font-size:10px;font-weight:700;color:var(--amber);text-align:center">X (px)</div>
+              <div style="font-size:10px;font-weight:700;color:var(--amber);text-align:center">Y (px)</div>
+              <div style="font-size:10px;font-weight:700;color:var(--amber);text-align:center">W (px)</div>
+              <div style="font-size:10px;font-weight:700;color:var(--amber);text-align:center">H (px)</div>
+              <div style="font-size:10px;font-weight:700;color:var(--amber);text-align:center">FS (px)</div>
             </div>
-            <div>
-              <canvas id="bAxesPreviewCanvas" width="300" height="80" style="width:100%;background:#111;border-radius:8px;border:1px solid var(--border2)"></canvas>
-              <p style="font-size:11px;color:var(--text4);margin-top:6px">Aperçu 150×40 mm – textes avec bf.maejane</p>
+            <div id="bAxesEditor" style="display:flex;flex-direction:column;gap:8px"></div>
+
+            <!-- Séparateur -->
+            <div class="sep" style="margin:14px 0"></div>
+
+            <!-- ── Couleurs des textes ── -->
+            <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              <i class="ri-palette-line" style="color:var(--amber)"></i> Couleurs des textes
+              <span style="font-size:10px;color:var(--text4);font-weight:400">(ignoré si l'image couvre le fond)</span>
+            </div>
+            <div id="bColorEditor" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <!-- Injecté par bRenderColorEditor() -->
+            </div>
+
+            <!-- Boutons action -->
+            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+              <button class="btn btn-amber" onclick="bSaveAxes()"><i class="ri-save-line"></i> Enregistrer</button>
+              <button class="btn btn-ghost btn-sm" onclick="bResetAxes()"><i class="ri-refresh-line"></i> Réinitialiser</button>
+            </div>
+          </div>
+
+          <!-- Aperçu canvas -->
+          <div style="position:sticky;top:8px">
+            <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">
+              <i class="ri-eye-line" style="color:var(--amber)"></i> Aperçu temps réel
+            </div>
+            <canvas id="bAxesPreviewCanvas" width="450" height="120"
+              style="width:100%;background:#111;border-radius:10px;border:2px solid var(--border2);display:block"></canvas>
+            <p style="font-size:10px;color:var(--text4);margin-top:6px;text-align:center">150×40 mm — Échelle 1:1 à 450×120px</p>
+            <!-- Données test pour l'aperçu -->
+            <div style="margin-top:12px;background:var(--surf3);border-radius:8px;padding:10px;border:1px solid var(--border)">
+              <div style="font-size:10px;font-weight:700;color:var(--amber);margin-bottom:8px">🧪 Données test aperçu</div>
+              <div class="field" style="margin-bottom:6px">
+                <label class="lbl">Désig. FR test</label>
+                <input id="bPrevTestDesFR" value="PAIN COMPLET AU SÉSAME" oninput="bRenderTplAxesPreview()"
+                  style="font-size:12px;height:32px">
+              </div>
+              <div class="field" style="margin-bottom:6px">
+                <label class="lbl">Désig. AR test</label>
+                <input id="bPrevTestDesAR" value="خبز كامل بالسمسم" class="ar" oninput="bRenderTplAxesPreview()"
+                  style="font-size:12px;height:32px;direction:rtl;text-align:right">
+              </div>
+              <div class="field" style="margin-bottom:6px">
+                <label class="lbl">Ingr. FR test (majuscules = allergènes)</label>
+                <input id="bPrevTestIngFR" value="Farine de BLÉ, eau, sel, levure, SÉSAME" oninput="bRenderTplAxesPreview()"
+                  style="font-size:12px;height:32px">
+              </div>
+              <div class="field">
+                <label class="lbl">Ingr. AR test</label>
+                <input id="bPrevTestIngAR" value="دقيق القمح، ماء، ملح، خميرة، سمسم" class="ar" oninput="bRenderTplAxesPreview()"
+                  style="font-size:12px;height:32px;direction:rtl;text-align:right">
+              </div>
             </div>
           </div>
         </div>
+      </div>
 </div><!-- /#btab-templates -->
 
     </div><!-- /#balisage-mode -->
@@ -7363,6 +7459,7 @@ function bInitOnce() {
   bSyncPreview();
   bRenderFile();
   bUpdateFileCounts();
+  bPopulateGabaritSelect();
   // Keyboard: Enter sur codeInput → ajouter à la file
   const ci = document.getElementById('bCodeInput');
   if (ci) {
@@ -7462,15 +7559,46 @@ function bUpdatePvMeta(code, found) {
 // ─── Gabarit toggle ───────────────────────────────────────────────
 function bSetGabarit(type) {
   _bGabarit = type;
+  // Sync select
+  const sel = document.getElementById('bGabarit');
+  if (sel && sel.value !== type) sel.value = type;
+  // Sync quick buttons (BOUL/PAT uniquement)
   const btnBOUL = document.getElementById('bGabaritBOUL');
   const btnPAT  = document.getElementById('bGabaritPAT');
   if (btnBOUL) btnBOUL.className = type === 'BOUL' ? 'btn btn-amber' : 'btn btn-ghost';
   if (btnPAT)  btnPAT.className  = type === 'PAT'  ? 'btn btn-amber' : 'btn btn-ghost';
-  const lbl = document.getElementById('bGabaritLabel');
-  if (lbl) lbl.textContent = type === 'BOUL' ? 'BOULANGERIE' : 'PÂTISSERIE';
+  // Label
+  _bTplsLoad();
+  const tpl = _bTpls.find(t => t.id === type);
+  const lbl = tpl ? tpl.name : (type === 'BOUL' ? 'BOULANGERIE' : type === 'PAT' ? 'PÂTISSERIE' : type);
+  const lblEl = document.getElementById('bGabaritLabel');
+  if (lblEl) lblEl.textContent = lbl;
   const pvLbl = document.getElementById('bPreviewGabaritLabel');
-  if (pvLbl) pvLbl.textContent = type === 'BOUL' ? 'BOULANGERIE' : 'PÂTISSERIE';
+  if (pvLbl) pvLbl.textContent = lbl;
   bSyncPreview();
+  if (typeof bRenderAxesEditor === 'function') bRenderAxesEditor();
+}
+
+// Boutons rapides BOUL/PAT
+function bSetGabaritQuick(type) {
+  const sel = document.getElementById('bGabarit');
+  if (sel) sel.value = type;
+  bSetGabarit(type);
+}
+
+// Peuple le <select> bGabarit depuis les templates sauvegardés
+function bPopulateGabaritSelect() {
+  _bTplsLoad();
+  const sel = document.getElementById('bGabarit');
+  if (!sel) return;
+  const cur = sel.value || _bGabarit || 'BOUL';
+  sel.innerHTML = _bTpls.map(t =>
+    `<option value="${t.id}">${t.id === 'BOUL' ? '🍞' : t.id === 'PAT' ? '🎂' : '📋'} ${t.name}</option>`
+  ).join('');
+  // Restaurer la sélection
+  if ([...sel.options].find(o => o.value === cur)) sel.value = cur;
+  else sel.value = _bTpls[0]?.id || 'BOUL';
+  _bGabarit = sel.value;
 }
 
 // ─── Tab switch Balisage ──────────────────────────────────────────
@@ -7487,7 +7615,25 @@ function switchBalisageTab(name) {
   if (name === 'saisie') setTimeout(() => { try { document.getElementById('bCodeInput').focus(); } catch(e){} }, 50);
 }
 const _origSwitchBalisageTab = switchBalisageTab;
-switchBalisageTab = function(n){_origSwitchBalisageTab(n);if(n==='templates')setTimeout(initBalisageColors,50);};
+switchBalisageTab = function(n){
+  _origSwitchBalisageTab(n);
+  if(n==='templates'){
+    setTimeout(()=>{
+      initBalisageColors();
+      bRenderAxesEditor();
+      bRenderTplAxesPreview();
+      // Peupler le sélecteur d'axes
+      _bTplsLoad();
+      const selAxes = document.getElementById('bGabaritAxes');
+      if(selAxes){
+        const cur = selAxes.value || _bGabarit || 'BOUL';
+        selAxes.innerHTML = _bTpls.map(t=>`<option value="${t.id}">${t.id==='BOUL'?'🍞':t.id==='PAT'?'🎂':'📋'} ${t.name}</option>`).join('');
+        if([...selAxes.options].find(o=>o.value===cur)) selAxes.value=cur;
+      }
+    },50);
+  }
+  if(n==='saisie') bPopulateGabaritSelect();
+};
 
 
 // ─── Form helpers ─────────────────────────────────────────────────
@@ -7505,8 +7651,12 @@ function bClearForm() {
 }
 
 function bGetFormData() {
+  // Lire le gabarit depuis le select dynamique (priorité) ou depuis _bGabarit
+  const gabEl = document.getElementById('bGabarit');
+  const gabarit = gabEl ? gabEl.value : _bGabarit;
+  _bGabarit = gabarit; // Sync state
   return {
-    gabarit: _bGabarit,
+    gabarit,
     code:    (document.getElementById('bCodeInput')?.value || '').trim(),
     desFR:   (document.getElementById('bDesFR')?.value || '').trim(),
     desAR:   (document.getElementById('bDesAR')?.value || '').trim(),
@@ -7523,125 +7673,215 @@ function bSyncPreview() {
   bDrawBalisage(document.getElementById('bPreviewCanvas'), data);
 }
 
+// ── Helpers allergènes : détecte les mots MAJUSCULES comme allergènes ──
+function _bIsAllergenWord(word) {
+  // Un mot allergène : au moins 3 lettres, 100% majuscules (ignorer ponctuation)
+  const clean = word.replace(/[^A-Za-zÀ-ÿ]/g, '');
+  return clean.length >= 3 && clean === clean.toUpperCase() && /[A-ZÀ-Ý]/.test(clean);
+}
+
+// Découpe le texte d'ingrédients en segments {text, isAllergen}
+function _bTokenizeIngredients(text) {
+  if (!text) return [];
+  const tokens = [];
+  // Séparer sur les séparateurs tout en les conservant
+  const parts = text.split(/(\s+|,|;|\(|\))/);
+  for (const part of parts) {
+    const clean = part.replace(/[^A-Za-zÀ-ÿ]/g, '');
+    const isAlg = clean.length >= 3 && clean === clean.toUpperCase() && /[A-ZÀ-Ý]/.test(clean);
+    tokens.push({ text: part, isAllergen: isAlg });
+  }
+  return tokens;
+}
+
+// Dessine du texte multilignes avec allergènes en rouge+gras sur canvas
+function _bDrawIngredientsWithAllergens(ctx, text, x, y, maxW, lineH, maxLines, baseFontSize, baseFontFamily, baseColor, isRTL) {
+  if (!text) return;
+  const tokens = _bTokenizeIngredients(text);
+  const lines = [];
+  let currentLine = [];
+  let currentLineW = 0;
+
+  // Construire les lignes mot par mot
+  for (const tok of tokens) {
+    const fs = tok.isAllergen ? `700 ${baseFontSize}px ${baseFontFamily}` : `400 ${baseFontSize}px ${baseFontFamily}`;
+    ctx.save(); ctx.font = fs;
+    const w = ctx.measureText(tok.text).width;
+    ctx.restore();
+    if (currentLineW + w > maxW && currentLine.length > 0 && tok.text.trim()) {
+      lines.push(currentLine);
+      if (lines.length >= maxLines) break;
+      currentLine = [tok];
+      currentLineW = w;
+    } else {
+      currentLine.push({ ...tok, w });
+      currentLineW += w;
+    }
+  }
+  if (currentLine.length && lines.length < maxLines) lines.push(currentLine);
+
+  // Dessiner chaque ligne
+  lines.forEach((line, li) => {
+    const lineY = y + li * lineH;
+    // Calculer la largeur totale de la ligne pour l'alignement
+    const totalW = line.reduce((s, t) => s + (t.w || 0), 0);
+    let curX = isRTL ? x - totalW : x;
+    for (const tok of line) {
+      const fs = tok.isAllergen
+        ? `700 ${baseFontSize}px ${baseFontFamily}`
+        : `400 ${baseFontSize}px ${baseFontFamily}`;
+      ctx.font = fs;
+      ctx.fillStyle = tok.isAllergen ? '#cc0000' : baseColor;
+      ctx.fillText(tok.text, curX, lineY);
+      curX += (tok.w || ctx.measureText(tok.text).width);
+    }
+  });
+}
+
 function bDrawBalisage(canvas, data) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  const CW = canvas.width, CH = canvas.height;
+
+  ctx.clearRect(0, 0, CW, CH);
+
+  // ── Récupérer le template actif (image de fond + axes) ──
+  _bTplsLoad();
+  const tpl = _bTpls.find(t => t.id === data.gabarit) || _bTpls[0];
+  const hasImg = !!(tpl && tpl.img);
   const theme = B_THEME[data.gabarit] || B_THEME.BOUL;
 
-  ctx.clearRect(0, 0, W, H);
-
-  // ── Fond général ──
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, W, H);
-
-  // ── Panneau gauche : décoration marocaine + désignations ──
-  const lp = B_ZONES.leftPanel;
-  // Motif fond arabesque (simulation: rectangle avec motif géo)
-  ctx.fillStyle = theme.bgLeft;
-  ctx.fillRect(lp.x, lp.y, lp.w, lp.h);
-  // Bordure droite panneau gauche
-  ctx.strokeStyle = theme.accentBorder;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(lp.x + lp.w, lp.y); ctx.lineTo(lp.x + lp.w, lp.y + lp.h); ctx.stroke();
-
-  // Motif géométrique décoratif simple (cercles+losanges en coin)
-  _bDrawArabesquePattern(ctx, lp.x, lp.y, lp.w, lp.h, theme.accentBorder);
-
-  // Désignation FR (Rectangle 7)
-  ctx.fillStyle = '#1a0a00';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const desFRFont = data.desFR.length > 18 ? 8 : 10;
-  ctx.font = `700 ${desFRFont}px 'Barlow Condensed', sans-serif`;
-  _bWrapText(ctx, data.desFR || 'Désignation FR', lp.x + lp.w/2, lp.y + 32, lp.w - 8, 12);
-
-  // Désignation AR (Rectangle 8)
-  ctx.fillStyle = '#3d1c00';
-  ctx.font = `600 9px ${BALISAGE_FONT_AR}`;
-  _bWrapText(ctx, data.desAR || 'الاسم بالعربية', lp.x + lp.w/2, lp.y + 68, lp.w - 8, 12);
-
-  // ── Panneau milieu : ingrédients arabes ──
-  const mp = B_ZONES.midPanel;
-  ctx.fillStyle = theme.bgMid;
-  ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
-
-  // En-tête "Zone INGREDIENTS ARABE"
-  ctx.fillStyle = '#5c4030';
-  ctx.font = `600 7.5px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillText('المكونات', mp.x + mp.w/2, 5);
-
-  // Ingrédients AR
-  ctx.fillStyle = '#2a1500';
-  ctx.font = `400 7.5px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'top';
-  _bWrapTextMulti(ctx, data.ingAR || '', mp.x + mp.w - 6, 20, mp.w - 12, 10, 5);
-
-  // ── Barre verticale centrale avec texte tourné ──
-  const bv = B_ZONES.barVert;
-  ctx.fillStyle = theme.barColor;
-  ctx.fillRect(bv.x, bv.y, bv.w, bv.h);
-
-  // Texte المكونات vertical
-  ctx.save();
-  ctx.translate(bv.x + bv.w/2, bv.y + bv.h/2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `700 9px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('المكونات', 0, 0);
-  ctx.restore();
-
-  // ── Panneau droit : allergènes / ingrédients FR ──
-  const rp = B_ZONES.rightPanel;
-  ctx.fillStyle = theme.bgRight;
-  ctx.fillRect(rp.x, rp.y, rp.w, rp.h);
-
-  // Barre verticale droite (Allergènes label)
-  const barRight = { x: rp.x, y: rp.y, w: 15, h: rp.h };
-  ctx.fillStyle = theme.barColor;
-  ctx.fillRect(barRight.x, barRight.y, barRight.w, barRight.h);
-
-  ctx.save();
-  ctx.translate(barRight.x + barRight.w/2, barRight.y + barRight.h/2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `700 8px 'Barlow Condensed', sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(data.gabarit === 'BOUL' ? 'Allergènes' : 'Ingrédients', 0, 0);
-  ctx.restore();
-
-  // Contenu zone droite (allergènes FR + AR)
-  const rxStart = rp.x + 20;
-  const rxW = rp.w - 24;
-
-  ctx.fillStyle = '#3d0000';
-  ctx.font = `700 7.5px 'Barlow Condensed', sans-serif`;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  if (data.allerFR) {
-    _bWrapTextMulti(ctx, data.allerFR, rxStart, 6, rxW, 9, 5);
+  // ── Fond : image ou couleur ──
+  if (hasImg) {
+    // Dessiner l'image de fond du template
+    const bgImg = new Image();
+    bgImg.onload = () => {
+      ctx.drawImage(bgImg, 0, 0, CW, CH);
+      _bDrawBalisageTexts(ctx, data, tpl, hasImg, CW, CH, theme);
+    };
+    bgImg.src = tpl.img;
+    return; // L'affichage texte sera fait dans le callback onload
   } else {
-    ctx.fillStyle = '#ccc';
-    ctx.fillText('Allergènes FR', rxStart, 6);
+    // Fond dessiné par code
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, CW, CH);
+    const lp = B_ZONES.leftPanel;
+    ctx.fillStyle = theme.bgLeft;
+    ctx.fillRect(lp.x, lp.y, lp.w, lp.h);
+    ctx.strokeStyle = theme.accentBorder;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(lp.x + lp.w, lp.y); ctx.lineTo(lp.x + lp.w, lp.y + lp.h); ctx.stroke();
+    _bDrawArabesquePattern(ctx, lp.x, lp.y, lp.w, lp.h, theme.accentBorder);
+    const mp = B_ZONES.midPanel;
+    ctx.fillStyle = theme.bgMid;
+    ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
+    const bv = B_ZONES.barVert;
+    ctx.fillStyle = theme.barColor;
+    ctx.fillRect(bv.x, bv.y, bv.w, bv.h);
+    ctx.save();
+    ctx.translate(bv.x + bv.w/2, bv.y + bv.h/2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 9px 'IBM Plex Sans Arabic', sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('المكونات', 0, 0);
+    ctx.restore();
+    const rp = B_ZONES.rightPanel;
+    ctx.fillStyle = theme.bgRight;
+    ctx.fillRect(rp.x, rp.y, rp.w, rp.h);
+    const barRight = { x: rp.x, y: rp.y, w: 15, h: rp.h };
+    ctx.fillStyle = theme.barColor;
+    ctx.fillRect(barRight.x, barRight.y, barRight.w, barRight.h);
+    ctx.save();
+    ctx.translate(barRight.x + barRight.w/2, barRight.y + barRight.h/2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#ffffff'; ctx.font = `700 8px 'Barlow Condensed', sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(data.gabarit === 'BOUL' ? 'Allergènes' : 'Ingrédients', 0, 0);
+    ctx.restore();
+    ctx.strokeStyle = theme.accentBorder; ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, CW - 2, CH - 2);
+    _bDrawBalisageTexts(ctx, data, tpl, hasImg, CW, CH, theme);
+  }
+}
+
+// ── Dessin des textes sur le canvas balisage (axes + couleurs configurables) ──
+function _bDrawBalisageTexts(ctx, data, tpl, hasImg, CW, CH, theme) {
+  const axes = (tpl && tpl.axes) || {};
+  const DEFS = {};
+  B_AXES_DEFAULTS.forEach(a => { DEFS[a.key] = a; });
+
+  function getAxe(key) {
+    const saved = axes[key];
+    const def = DEFS[key];
+    if (!def) return null;
+    return {
+      x:  saved?.x  !== undefined ? saved.x  : def.x,
+      y:  saved?.y  !== undefined ? saved.y  : def.y,
+      w:  saved?.w  !== undefined ? saved.w  : def.w,
+      h:  saved?.h  !== undefined ? saved.h  : def.h,
+      fs: saved?.fs !== undefined ? saved.fs : def.fs,
+    };
   }
 
-  if (data.allerAR) {
-    ctx.fillStyle = '#3d0010';
-    ctx.font = `600 7px 'IBM Plex Sans Arabic', sans-serif`;
+  ctx.save();
+  ctx.textBaseline = 'middle';
+
+  // ── Désignation FR ──
+  const aDesFR = getAxe('desFR');
+  if (aDesFR) {
+    ctx.font = `700 ${aDesFR.fs}px ${BALISAGE_FONT}`;
+    ctx.fillStyle = getBalisageTextColor('desFR', hasImg);
+    ctx.textAlign = 'center';
+    _bWrapText(ctx, data.desFR || (hasImg ? '' : 'Désignation FR'), aDesFR.x, aDesFR.y, aDesFR.w, aDesFR.fs + 2);
+  }
+
+  // ── Désignation AR ──
+  const aDesAR = getAxe('desAR');
+  if (aDesAR) {
+    ctx.font = `600 ${aDesAR.fs}px ${BALISAGE_FONT_AR}`;
+    ctx.fillStyle = getBalisageTextColor('desAR', hasImg);
+    ctx.textAlign = 'center';
+    ctx.direction = 'rtl';
+    _bWrapText(ctx, data.desAR || (hasImg ? '' : 'الاسم بالعربية'), aDesAR.x, aDesAR.y, aDesAR.w, aDesAR.fs + 2);
+    ctx.direction = 'ltr';
+  }
+
+  // ── Ingrédients AR (avec allergènes en rouge+gras) ──
+  const aIngAR = getAxe('ingAR');
+  if (aIngAR && data.ingAR) {
+    ctx.textBaseline = 'top';
     ctx.textAlign = 'right';
-    _bWrapTextMulti(ctx, data.allerAR, rxStart + rxW, 60, rxW, 9, 5);
+    ctx.direction = 'rtl';
+    _bDrawIngredientsWithAllergens(
+      ctx, data.ingAR,
+      aIngAR.x + aIngAR.w / 2, aIngAR.y - aIngAR.h / 2,
+      aIngAR.w, aIngAR.fs + 2, 5,
+      aIngAR.fs, BALISAGE_FONT_AR,
+      getBalisageTextColor('ingAR', hasImg),
+      true
+    );
+    ctx.direction = 'ltr';
+    ctx.textBaseline = 'middle';
   }
 
-  // ── Bordure générale ──
-  ctx.strokeStyle = theme.accentBorder;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1, 1, W - 2, H - 2);
+  // ── Ingrédients FR (avec allergènes en rouge+gras) ──
+  const aIngFR = getAxe('ingFR');
+  if (aIngFR && data.ingFR) {
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    _bDrawIngredientsWithAllergens(
+      ctx, data.ingFR,
+      aIngFR.x - aIngFR.w / 2, aIngFR.y - aIngFR.h / 2,
+      aIngFR.w, aIngFR.fs + 2, 5,
+      aIngFR.fs, BALISAGE_FONT,
+      getBalisageTextColor('ingFR', hasImg),
+      false
+    );
+    ctx.textBaseline = 'middle';
+  }
+
+  ctx.restore();
 }
 
 // Helper: dessin arabesques simplifiées (motif géo répétitif)
@@ -7780,6 +8020,52 @@ function bRenderFile() {
   `).join('');
 }
 
+// Version async de bDrawBalisage pour le PDF (attend le chargement de l'image)
+async function bDrawBalisageAsync(canvas, data) {
+  if (!canvas) return;
+  _bTplsLoad();
+  const tpl = _bTpls.find(t => t.id === data.gabarit) || _bTpls[0];
+  const hasImg = !!(tpl && tpl.img);
+  const theme = B_THEME[data.gabarit] || B_THEME.BOUL;
+  const ctx = canvas.getContext('2d');
+  const CW = canvas.width, CH = canvas.height;
+  ctx.clearRect(0, 0, CW, CH);
+
+  if (hasImg) {
+    await new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, CW, CH);
+        _bDrawBalisageTexts(ctx, data, tpl, hasImg, CW, CH, theme);
+        resolve();
+      };
+      img.onerror = resolve;
+      img.src = tpl.img;
+    });
+  } else {
+    // Fond code
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, CW, CH);
+    const lp = B_ZONES.leftPanel;
+    ctx.fillStyle = theme.bgLeft; ctx.fillRect(lp.x,lp.y,lp.w,lp.h);
+    ctx.strokeStyle=theme.accentBorder;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(lp.x+lp.w,lp.y);ctx.lineTo(lp.x+lp.w,lp.y+lp.h);ctx.stroke();
+    _bDrawArabesquePattern(ctx,lp.x,lp.y,lp.w,lp.h,theme.accentBorder);
+    const mp=B_ZONES.midPanel;ctx.fillStyle=theme.bgMid;ctx.fillRect(mp.x,mp.y,mp.w,mp.h);
+    const bv=B_ZONES.barVert;ctx.fillStyle=theme.barColor;ctx.fillRect(bv.x,bv.y,bv.w,bv.h);
+    ctx.save();ctx.translate(bv.x+bv.w/2,bv.y+bv.h/2);ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='#fff';ctx.font=`700 9px 'IBM Plex Sans Arabic',sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('المكونات',0,0);ctx.restore();
+    const rp=B_ZONES.rightPanel;ctx.fillStyle=theme.bgRight;ctx.fillRect(rp.x,rp.y,rp.w,rp.h);
+    const br={x:rp.x,y:rp.y,w:15,h:rp.h};ctx.fillStyle=theme.barColor;ctx.fillRect(br.x,br.y,br.w,br.h);
+    ctx.save();ctx.translate(br.x+br.w/2,br.y+br.h/2);ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='#fff';ctx.font=`700 8px 'Barlow Condensed',sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(data.gabarit==='BOUL'?'Allergènes':'Ingrédients',0,0);ctx.restore();
+    ctx.strokeStyle=theme.accentBorder;ctx.lineWidth=2;ctx.strokeRect(1,1,CW-2,CH-2);
+    _bDrawBalisageTexts(ctx, data, tpl, false, CW, CH, theme);
+  }
+}
+
 // ─── PDF Export (7 balisages par page A4 portrait) ───────────────
 async function bPrintAll() {
   if (_bFile.length === 0) {
@@ -7813,7 +8099,7 @@ async function bPrintAll() {
     }
     const yPos = marginTop + posOnPage * (bH + spacing);
 
-    bDrawBalisage(offCanvas, _bFile[i]);
+    await bDrawBalisageAsync(offCanvas, _bFile[i]);
     const imgData = offCanvas.toDataURL('image/png', 1.0);
     pdf.addImage(imgData, 'PNG', marginLeft, yPos, bW, bH);
   }
@@ -8006,6 +8292,14 @@ function bTplUploadImg(input, idx) {
     _bTpls[idx].img = e.target.result;
     _bTplsSave();
     bRenderTplGrid();
+    bPopulateGabaritSelect();
+    // Refresh axes select aussi
+    const selAxes = document.getElementById('bGabaritAxes');
+    if(selAxes){
+      const cur = selAxes.value;
+      selAxes.innerHTML = _bTpls.map(t=>`<option value="${t.id}">${t.id==='BOUL'?'🍞':t.id==='PAT'?'🎂':'📋'} ${t.name}</option>`).join('');
+      if([...selAxes.options].find(o=>o.value===cur)) selAxes.value=cur;
+    }
     toast(`✅ Image uploadée — ${_bTpls[idx].name}`, 'ok');
     // Rafraîchir le canvas si gabarit actif
     bSyncPreview();
@@ -8050,6 +8344,14 @@ function bTplAddCustom() {
   _bTpls.push({ id, name: name.trim().toUpperCase(), img: null, axes:{} });
   _bTplsSave();
   bRenderTplGrid();
+  bPopulateGabaritSelect();
+  // Rafraîchir le select axes
+  const selAxes = document.getElementById('bGabaritAxes');
+  if(selAxes){
+    selAxes.innerHTML = _bTpls.map(t=>`<option value="${t.id}">${t.id==='BOUL'?'🍞':t.id==='PAT'?'🎂':'📋'} ${t.name}</option>`).join('');
+    selAxes.value = id;
+    bRenderAxesEditor();
+  }
   toast(`Gabarit "${name.trim()}" ajouté`, 'ok');
 }
 
@@ -8114,7 +8416,19 @@ const B_TEXT_COLOR_DEFAULTS = {desFR:'#5c2d0a',desAR:'#3d1c00',ingFR:'#2a1500',i
 const BALISAGE_FONT = "'bf-maejane', 'Barlow Condensed', sans-serif";
 const BALISAGE_FONT_AR = "'bf-maejane', 'IBM Plex Sans Arabic', sans-serif";
 function getBalisageTextColor(k,hasImg){if(hasImg)return '#ffffff';try{const c=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');return c[k]||B_TEXT_COLOR_DEFAULTS[k]||'#000000'}catch(e){return B_TEXT_COLOR_DEFAULTS[k]||'#000000'}}
-function setBalisageTextColor(k,c){const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');o[k]=c;localStorage.setItem('balisage_text_colors',JSON.stringify(o));const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=c;const ip=document.getElementById('bInp_'+k);if(ip)ip.value=c;if(typeof bRenderTplAxesPreview==='function')bRenderTplAxesPreview();if(typeof bSyncPreview==='function')bSyncPreview();}
+function setBalisageTextColor(k,c){
+  const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');
+  o[k]=c;
+  localStorage.setItem('balisage_text_colors',JSON.stringify(o));
+  const pv=document.getElementById('bPrev_'+k);
+  if(pv)pv.style.background=c;
+  const ip=document.getElementById('bInp_'+k);
+  if(ip)ip.value=c;
+  const hx=document.getElementById('bHex_'+k);
+  if(hx)hx.textContent=c;
+  if(typeof bRenderTplAxesPreview==='function')bRenderTplAxesPreview();
+  if(typeof bSyncPreview==='function')bSyncPreview();
+}
 function initBalisageColors(){const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');['desFR','desAR','ingFR','ingAR'].forEach(k=>{const pv=document.getElementById('bPrev_'+k);if(pv)pv.style.background=o[k]||B_TEXT_COLOR_DEFAULTS[k];const ip=document.getElementById('bInp_'+k);if(ip)ip.value=o[k]||B_TEXT_COLOR_DEFAULTS[k];});}
 
 let _bAxes = null;
@@ -8126,16 +8440,22 @@ function _bAxesLoad() {
 }
 
 function bGetAxeVal(key, prop) {
-  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
-  const tpl = (_bTpls||[]).find(t=>t.id===gab);
-  const axes = tpl?.axes || {};
+  // Lire depuis le sélecteur de réglages (bGabaritAxes) ou depuis saisie (_bGabarit)
+  const gab = document.getElementById('bGabaritAxes')?.value
+           || document.getElementById('bGabarit')?.value
+           || _bGabarit || 'BOUL';
+  _bTplsLoad();
+  const tpl = _bTpls.find(t=>t.id===gab) || {};
+  const axes = tpl.axes || {};
   const def = B_AXES_DEFAULTS.find(a => a.key === key);
   if (!def) return 0;
   return (axes[key] && axes[key][prop] !== undefined) ? axes[key][prop] : def[prop];
 }
 
 function bSaveAxes() {
-  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
+  const gab = document.getElementById('bGabaritAxes')?.value
+           || document.getElementById('bGabarit')?.value
+           || _bGabarit || 'BOUL';
   _bTplsLoad();
   const tpl = _bTpls.find(t=>t.id===gab);
   if(!tpl) return;
@@ -8150,101 +8470,182 @@ function bSaveAxes() {
   });
   _bTplsSave();
   bSyncPreview();
+  bRenderTplAxesPreview();
   toast('✅ Axes enregistrés pour '+gab, 'ok');
 }
 
 function bResetAxes() {
   if (!confirm('Réinitialiser les axes du gabarit actuel ?')) return;
-  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
+  const gab = document.getElementById('bGabaritAxes')?.value
+           || document.getElementById('bGabarit')?.value
+           || _bGabarit || 'BOUL';
   _bTplsLoad();
   const tpl = _bTpls.find(t=>t.id===gab);
   if(tpl) delete tpl.axes;
   _bTplsSave();
   bRenderAxesEditor();
   bSyncPreview();
+  bRenderTplAxesPreview();
   toast('Axes réinitialisés', 'info');
 }
 
 function bRenderAxesEditor() {
   const container = document.getElementById('bAxesEditor');
   if (!container) return;
-  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
+  const gab = document.getElementById('bGabaritAxes')?.value
+           || document.getElementById('bGabarit')?.value
+           || _bGabarit || 'BOUL';
   _bTplsLoad();
   const tpl = _bTpls.find(t=>t.id===gab) || {};
   const axes = tpl.axes || {};
   container.innerHTML = B_AXES_DEFAULTS.map(axis => {
     const vals = {};
-    ['x','y','w','h','fs'].forEach(p => { vals[p] = (axes[axis.key] && axes[axis.key][p] !== undefined) ? axes[axis.key][p] : axis[p]; });
-    return `<div style="display:grid;grid-template-columns:120px repeat(5,1fr);gap:6px;align-items:center">
-      <div style="font-size:12px;color:var(--text2)">${axis.label}</div>
-      ${['x','y','w','h','fs'].map(p=>`<input id="baxe_${axis.key}_${p}" type="number" value="${vals[p]}" style="width:100%;padding:4px;font-size:12px">`).join('')}
+    ['x','y','w','h','fs'].forEach(p => {
+      vals[p] = (axes[axis.key] && axes[axis.key][p] !== undefined) ? axes[axis.key][p] : axis[p];
+    });
+    return `<div style="background:var(--surf3);border:1px solid var(--border2);border-radius:10px;padding:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block"></span>
+        ${axis.label}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+        ${['x','y','w','h','fs'].map(p=>`
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="font-size:9px;font-weight:700;color:var(--text4);text-transform:uppercase;text-align:center">${p.toUpperCase()}</label>
+            <input id="baxe_${axis.key}_${p}" type="number" value="${vals[p]}"
+              style="width:100%;padding:5px 4px;font-size:13px;font-weight:700;color:var(--amber);
+                     background:var(--surf2);border:1px solid var(--border2);border-radius:6px;text-align:center"
+              oninput="bRenderTplAxesPreview()">
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  // Rendre aussi l'éditeur de couleurs
+  bRenderColorEditor(gab);
+}
+
+// ── Éditeur de couleurs des textes par gabarit ──
+const B_COLOR_LABELS = {
+  desFR: { label: 'Désignation FR', icon: '🇫🇷' },
+  desAR: { label: 'Désignation AR', icon: '🇲🇦' },
+  ingFR: { label: 'Ingrédients FR', icon: '📝' },
+  ingAR: { label: 'Ingrédients AR', icon: '📋' },
+};
+
+const BALISAGE_QUICK_COLORS = [
+  '#1a0a00','#3d1c00','#5c2d0a','#8B5E3C',
+  '#ffffff','#000000','#ffde00','#cc0000',
+  '#0b3d91','#2a1500','#333333','#f5efe0',
+];
+
+function bRenderColorEditor(gab) {
+  const container = document.getElementById('bColorEditor');
+  if (!container) return;
+  // Charger les couleurs sauvegardées (globales pour l'instant)
+  let savedColors = {};
+  try { savedColors = JSON.parse(localStorage.getItem('balisage_text_colors') || '{}'); } catch(e) {}
+
+  container.innerHTML = Object.entries(B_COLOR_LABELS).map(([key, info]) => {
+    const cur = savedColors[key] || B_TEXT_COLOR_DEFAULTS[key] || '#000000';
+    return `<div style="background:var(--surf3);border:1px solid var(--border2);border-radius:10px;padding:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">
+        ${info.icon} ${info.label}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
+        ${BALISAGE_QUICK_COLORS.map(c => `
+          <button type="button" onclick="setBalisageTextColor('${key}','${c}')"
+            style="width:22px;height:22px;border-radius:5px;background:${c};cursor:pointer;
+                   border:${cur===c?'2px solid var(--amber)':'2px solid transparent'};
+                   transition:transform .1s" id="bSwBtnOld"
+            title="${c}"></button>`).join('')}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="bPrev_${key}" style="width:28px;height:28px;border-radius:6px;border:1.5px solid var(--border2);
+          background:${cur};flex-shrink:0"></div>
+        <input type="color" id="bInp_${key}" value="${cur}"
+          style="width:100%;height:30px;border:none;border-radius:6px;cursor:pointer;padding:0"
+          oninput="setBalisageTextColor('${key}',this.value)">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3)" id="bHex_${key}">${cur}</span>
+      </div>
     </div>`;
   }).join('');
 }
 
-function bRenderAxesPreview() {
+// ── Aperçu live axes (canvas bAxesPreviewCanvas) avec données test ──
+function bRenderTplAxesPreview() {
   const canvas = document.getElementById('bAxesPreviewCanvas');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  
-  const gab = document.getElementById('bGabarit')?.value || 'BOUL';
+
+  const gab = document.getElementById('bGabaritAxes')?.value
+           || document.getElementById('bGabarit')?.value
+           || _bGabarit || 'BOUL';
+
+  // Lire les données test
+  const testData = {
+    gabarit: gab,
+    desFR: document.getElementById('bPrevTestDesFR')?.value || 'PAIN COMPLET',
+    desAR: document.getElementById('bPrevTestDesAR')?.value || 'خبز كامل',
+    ingFR: document.getElementById('bPrevTestIngFR')?.value || 'Farine de BLÉ, eau, sel',
+    ingAR: document.getElementById('bPrevTestIngAR')?.value || 'دقيق القمح، ماء، ملح',
+    allerFR: '', allerAR: '', code: '',
+  };
+
+  // Lire les axes depuis les inputs de l'éditeur
+  const tmpAxes = {};
+  B_AXES_DEFAULTS.forEach(axis => {
+    const obj = {};
+    ['x','y','w','h','fs'].forEach(p => {
+      const el = document.getElementById(`baxe_${axis.key}_${p}`);
+      obj[p] = el ? parseInt(el.value,10) : axis[p];
+    });
+    tmpAxes[axis.key] = obj;
+  });
+
   _bTplsLoad();
-  const tpl = _bTpls.find(t=>t.id===gab);
-  
-  // Draw template background if exists (scaled)
-  if (tpl && tpl.img) {
-    const img = new Image();
-    img.onload = () => {
-      ctx.globalAlpha = 0.3;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const tpl = { ...(_bTpls.find(t=>t.id===gab) || {}), axes: tmpAxes };
+  const hasImg = !!tpl.img;
+  const theme = B_THEME[gab] || B_THEME.BOUL;
+  const ctx = canvas.getContext('2d');
+  const CW = canvas.width, CH = canvas.height;
+
+  ctx.clearRect(0, 0, CW, CH);
+
+  if (hasImg) {
+    const img2 = new Image();
+    img2.onload = () => {
+      ctx.globalAlpha = 0.4;
+      ctx.drawImage(img2, 0, 0, CW, CH);
       ctx.globalAlpha = 1;
-      drawTexts();
+      _bDrawBalisageTexts(ctx, testData, tpl, hasImg, CW, CH, theme);
+      _bDrawAxesBoxes(ctx, tmpAxes, CW, CH);
     };
-    img.src = tpl.img;
+    img2.src = tpl.img;
   } else {
-    drawTexts();
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, CW, CH);
+    _bDrawBalisageTexts(ctx, testData, tpl, false, CW, CH, theme);
+    _bDrawAxesBoxes(ctx, tmpAxes, CW, CH);
   }
-  
-  function drawTexts() {
-    // Get current axes from inputs
-    const tmpAxes = {};
-    B_AXES_DEFAULTS.forEach(axis => {
-      const obj = {};
-      ['x','y','w','h','fs'].forEach(p => {
-        const el = document.getElementById(`baxe_${axis.key}_${p}`);
-        obj[p] = el ? parseInt(el.value,10) : axis[p];
-      });
-      tmpAxes[axis.key] = obj;
-    });
-    // Scale from 450x120 to canvas 300x80
-    const sx = canvas.width / 450;
-    const sy = canvas.height / 120;
-    
-    ctx.save();
-    ctx.textBaseline = 'middle';
-    // desFR
-    let a = tmpAxes.desFR; ctx.font = `700 ${a.fs*sy}px ${BALISAGE_FONT}`; ctx.fillStyle = '#FFE600'; ctx.textAlign='center';
-    ctx.fillText('Désignation FR', a.x*sx, a.y*sy);
-    // desAR
-    a = tmpAxes.desAR; ctx.font = `600 ${a.fs*sy}px ${BALISAGE_FONT_AR}`; ctx.fillStyle = '#FFA500'; ctx.direction='rtl'; ctx.textAlign='center';
-    ctx.fillText('التسمية', a.x*sx, a.y*sy); ctx.direction='ltr';
-    // ingAR
-    a = tmpAxes.ingAR; ctx.font = `400 ${a.fs*sy}px ${BALISAGE_FONT_AR}`; ctx.fillStyle = '#7CFC00'; ctx.textAlign='right'; ctx.direction='rtl';
-    ctx.fillText('المكونات', (a.x+a.w/2)*sx, a.y*sy); ctx.direction='ltr';
-    // ingFR
-    a = tmpAxes.ingFR; ctx.font = `400 ${a.fs*sy}px ${BALISAGE_FONT}`; ctx.fillStyle = '#00D1FF'; ctx.textAlign='left';
-    ctx.fillText('Ingrédients', (a.x-a.w/2)*sx, a.y*sy);
-    ctx.restore();
-    
-    // Draw boxes
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth=1;
-    B_AXES_DEFAULTS.forEach(axis=>{
-      const v = tmpAxes[axis.key];
-      ctx.strokeRect((v.x-v.w/2)*sx, (v.y-v.h/2)*sy, v.w*sx, v.h*sy);
-    });
-  }
+}
+
+// Dessine les rectangles de délimitation des axes (pour réglages)
+function _bDrawAxesBoxes(ctx, tmpAxes, CW, CH) {
+  const COLORS = { desFR:'#FFE600', desAR:'#FFA500', ingAR:'#7CFC00', ingFR:'#00D1FF' };
+  ctx.save();
+  ctx.lineWidth = 1;
+  B_AXES_DEFAULTS.forEach(axis => {
+    const v = tmpAxes[axis.key];
+    if (!v) return;
+    ctx.strokeStyle = COLORS[axis.key] || 'rgba(255,255,255,0.5)';
+    ctx.setLineDash([3,3]);
+    ctx.strokeRect(v.x - v.w/2, v.y - v.h/2, v.w, v.h);
+    ctx.setLineDash([]);
+    // Label de l'axe
+    ctx.font = '9px sans-serif';
+    ctx.fillStyle = COLORS[axis.key] || '#fff';
+    ctx.textAlign = 'left';
+    ctx.fillText(axis.key, v.x - v.w/2 + 2, v.y - v.h/2 + 9);
+  });
+  ctx.restore();
 }
 </script>
 
