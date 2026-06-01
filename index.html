@@ -7582,137 +7582,144 @@ function bSyncPreview() {
   bDrawBalisage(document.getElementById('bPreviewCanvas'), data);
 }
 
+// Point d'entrée principal : si une image est définie pour ce gabarit,
+// l'afficher comme fond puis dessiner le texte par-dessus.
+// Sinon, dessiner le fond vectoriel puis le texte.
 function bDrawBalisage(canvas, data) {
+  if (!canvas) return;
+  _bTplsLoad();
+  const tpl = _bTpls.find(t => t.id === data.gabarit);
+  if (tpl && tpl.img) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      _bDrawBalisageText(canvas, data, true);
+    };
+    img.onerror = () => { _bDrawBalisageText(canvas, data, false); };
+    img.src = tpl.img;
+  } else {
+    _bDrawBalisageText(canvas, data, false);
+  }
+}
+
+// Dessine le fond vectoriel (si !hasImg) puis tout le texte
+function _bDrawBalisageText(canvas, data, hasImg) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const theme = B_THEME[data.gabarit] || B_THEME.BOUL;
 
-  ctx.clearRect(0, 0, W, H);
+  if (!hasImg) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+  }
 
-  // ── Fond général ──
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, W, H);
-
-  // ── Panneau gauche : décoration marocaine + désignations ──
   const lp = B_ZONES.leftPanel;
-  // Motif fond arabesque (simulation: rectangle avec motif géo)
-  ctx.fillStyle = theme.bgLeft;
-  ctx.fillRect(lp.x, lp.y, lp.w, lp.h);
-  // Bordure droite panneau gauche
-  ctx.strokeStyle = theme.accentBorder;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(lp.x + lp.w, lp.y); ctx.lineTo(lp.x + lp.w, lp.y + lp.h); ctx.stroke();
+  const mp = B_ZONES.midPanel;
+  const bv = B_ZONES.barVert;
+  const rp = B_ZONES.rightPanel;
 
-  // Motif géométrique décoratif simple (cercles+losanges en coin)
-  _bDrawArabesquePattern(ctx, lp.x, lp.y, lp.w, lp.h, theme.accentBorder);
+  // ── Éléments de fond vectoriel (seulement si pas d'image) ──
+  if (!hasImg) {
+    ctx.fillStyle = theme.bgLeft;
+    ctx.fillRect(lp.x, lp.y, lp.w, lp.h);
+    ctx.strokeStyle = theme.accentBorder;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(lp.x + lp.w, lp.y); ctx.lineTo(lp.x + lp.w, lp.y + lp.h); ctx.stroke();
+    _bDrawArabesquePattern(ctx, lp.x, lp.y, lp.w, lp.h, theme.accentBorder);
 
-  // Désignation FR (Rectangle 7)
-  ctx.fillStyle = '#1a0a00';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const desFRFont = data.desFR.length > 18 ? 8 : 10;
+    ctx.fillStyle = theme.bgMid;
+    ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
+
+    ctx.fillStyle = theme.barColor;
+    ctx.fillRect(bv.x, bv.y, bv.w, bv.h);
+    ctx.save();
+    ctx.translate(bv.x + bv.w/2, bv.y + bv.h/2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 9px 'IBM Plex Sans Arabic', sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('المكونات', 0, 0);
+    ctx.restore();
+
+    ctx.fillStyle = theme.bgRight;
+    ctx.fillRect(rp.x, rp.y, rp.w, rp.h);
+    const barRight = { x: rp.x, y: rp.y, w: 15, h: rp.h };
+    ctx.fillStyle = theme.barColor;
+    ctx.fillRect(barRight.x, barRight.y, barRight.w, barRight.h);
+    ctx.save();
+    ctx.translate(barRight.x + barRight.w/2, barRight.y + barRight.h/2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 8px 'Barlow Condensed', sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(data.gabarit === 'BOUL' ? 'Allergènes' : 'Ingrédients', 0, 0);
+    ctx.restore();
+  }
+
+  // ── Texte : Désignation FR ──
+  ctx.fillStyle = hasImg ? '#ffffff' : '#1a0a00';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const desFRFont = (data.desFR || '').length > 18 ? 8 : 10;
   ctx.font = `700 ${desFRFont}px 'Barlow Condensed', sans-serif`;
   _bWrapText(ctx, data.desFR || 'Désignation FR', lp.x + lp.w/2, lp.y + 32, lp.w - 8, 12);
 
-  // Désignation AR (Rectangle 8) — RTL
-  ctx.fillStyle = '#3d1c00';
+  // ── Texte : Désignation AR — RTL ──
+  ctx.fillStyle = hasImg ? '#fff8ee' : '#3d1c00';
   ctx.font = `600 9px 'IBM Plex Sans Arabic', sans-serif`;
   ctx.direction = 'rtl';
   _bWrapText(ctx, data.desAR || 'الاسم بالعربية', lp.x + lp.w/2, lp.y + 68, lp.w - 8, 12);
   ctx.direction = 'ltr';
 
-  // ── Panneau milieu : ingrédients arabes ──
-  const mp = B_ZONES.midPanel;
-  ctx.fillStyle = theme.bgMid;
-  ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
+  // ── Texte : En-tête المكونات ──
+  if (!hasImg) {
+    ctx.fillStyle = '#5c4030';
+    ctx.font = `600 7.5px 'IBM Plex Sans Arabic', sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('المكونات', mp.x + mp.w/2, 5);
+  }
 
-  // En-tête "Zone INGREDIENTS ARABE"
-  ctx.fillStyle = '#5c4030';
-  ctx.font = `600 7.5px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillText('المكونات', mp.x + mp.w/2, 5);
-
-  // Ingrédients AR — RTL
-  ctx.fillStyle = '#2a1500';
+  // ── Texte : Ingrédients AR — RTL ──
+  ctx.fillStyle = hasImg ? '#ffffff' : '#2a1500';
   ctx.font = `400 7.5px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'top';
-  ctx.direction = 'rtl';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.direction = 'rtl';
   _bWrapTextMulti(ctx, data.ingAR || '', mp.x + mp.w - 6, 20, mp.w - 12, 10, 5);
   ctx.direction = 'ltr';
 
-  // ── Barre verticale centrale avec texte tourné ──
-  const bv = B_ZONES.barVert;
-  ctx.fillStyle = theme.barColor;
-  ctx.fillRect(bv.x, bv.y, bv.w, bv.h);
-
-  // Texte المكونات vertical
-  ctx.save();
-  ctx.translate(bv.x + bv.w/2, bv.y + bv.h/2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `700 9px 'IBM Plex Sans Arabic', sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('المكونات', 0, 0);
-  ctx.restore();
-
-  // ── Panneau droit : allergènes / ingrédients FR ──
-  const rp = B_ZONES.rightPanel;
-  ctx.fillStyle = theme.bgRight;
-  ctx.fillRect(rp.x, rp.y, rp.w, rp.h);
-
-  // Barre verticale droite (Allergènes label)
-  const barRight = { x: rp.x, y: rp.y, w: 15, h: rp.h };
-  ctx.fillStyle = theme.barColor;
-  ctx.fillRect(barRight.x, barRight.y, barRight.w, barRight.h);
-
-  ctx.save();
-  ctx.translate(barRight.x + barRight.w/2, barRight.y + barRight.h/2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `700 8px 'Barlow Condensed', sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(data.gabarit === 'BOUL' ? 'Allergènes' : 'Ingrédients', 0, 0);
-  ctx.restore();
-
-  // Contenu zone droite (allergènes FR + AR)
+  // ── Texte : Allergènes FR (rouge gras) ──
   const rxStart = rp.x + 20;
   const rxW = rp.w - 24;
-
-  // ── Allergènes FR : mots détectés en ROUGE GRAS, autres en normal ──
   if (data.allerFR) {
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    // Rendu mot à mot avec coloration allergènes
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     _bWrapTextAllergen(ctx, data.allerFR, rxStart, 6, rxW, 9, 5,
       `700 7.5px 'Barlow Condensed', sans-serif`,
       `700 7.5px 'Barlow Condensed', sans-serif`,
-      '#ef4444', '#3d0000');
-  } else {
+      '#ef4444', hasImg ? '#ffffff' : '#3d0000');
+  } else if (!hasImg) {
     ctx.fillStyle = '#ccc';
     ctx.font = `700 7.5px 'Barlow Condensed', sans-serif`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.fillText('Allergènes FR', rxStart, 6);
   }
 
+  // ── Texte : Allergènes AR — RTL ──
   if (data.allerAR) {
-    ctx.fillStyle = '#3d0010';
+    ctx.fillStyle = hasImg ? '#ffdddd' : '#3d0010';
     ctx.font = `600 7px 'IBM Plex Sans Arabic', sans-serif`;
-    ctx.textAlign = 'right';
-    ctx.direction = 'rtl';
+    ctx.textAlign = 'right'; ctx.direction = 'rtl';
     _bWrapTextMulti(ctx, data.allerAR, rxStart + rxW, 60, rxW, 9, 5);
     ctx.direction = 'ltr';
   }
 
-  // ── Bordure générale ──
-  ctx.strokeStyle = theme.accentBorder;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1, 1, W - 2, H - 2);
+  // ── Bordure générale (seulement sans image) ──
+  if (!hasImg) {
+    ctx.strokeStyle = theme.accentBorder;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, W - 2, H - 2);
+  }
 }
 
 // Helper: dessin arabesques simplifiées (motif géo répétitif)
@@ -8286,46 +8293,24 @@ function bRenderTplAxesPreview() {
     tmpAxes[axis.key] = obj;
   });
 
-  // Overlay axes sur le canvas
-  function _drawAxesOverlay() {
-    const ctx = canvas.getContext('2d');
-    const COLORS = { desFR:'#4ade80', desAR:'#60a5fa', ingAR:'#f59e0b', allerFR:'#ef4444', allerAR:'#c084fc' };
-    B_AXES_DEFAULTS.forEach(axis => {
-      const v = tmpAxes[axis.key];
-      const color = COLORS[axis.key] || '#fff';
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3,3]);
-      ctx.strokeRect(v.x - v.w/2, v.y - v.h/2, v.w, v.h);
-      ctx.setLineDash([]);
-      ctx.fillStyle = color;
-      ctx.font = `bold 6px monospace`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.fillText(axis.key, v.x - v.w/2 + 1, v.y - v.h/2 + 1);
-    });
-  }
-
   // Chercher si ce gabarit a une image uploadée
   _bTplsLoad();
   const tpl = _bTpls.find(t => t.id === gabarit);
 
   if (tpl && tpl.img) {
-    // Afficher l'image comme fond PUIS superposer le texte + les axes
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const img = new Image();
     img.onload = () => {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      // Superposer le texte du balisage par-dessus l'image
-      bDrawBalisageTextOnly(canvas, demoData, tmpAxes);
-      _drawAxesOverlay();
+      _bDrawBalisageText(canvas, demoData, true);
+      _bDrawAxesOverlay(canvas, tmpAxes);
     };
+    img.onerror = () => { _bDrawBalisageText(canvas, demoData, false); _bDrawAxesOverlay(canvas, tmpAxes); };
     img.src = tpl.img;
   } else {
-    // Pas d'image : rendu normal
-    bDrawBalisage(canvas, demoData);
-    _drawAxesOverlay();
+    _bDrawBalisageText(canvas, demoData, false);
+    _bDrawAxesOverlay(canvas, tmpAxes);
   }
 }
 
@@ -8475,29 +8460,7 @@ function bRenderAxesEditor() {
   bRenderAxesPreview();
 }
 
-function bRenderAxesPreview() {
-  const canvas = document.getElementById('bAxesPreviewCanvas');
-  if (!canvas) return;
-  // Lire les valeurs actuelles des inputs si présents
-  const tmpAxes = {};
-  B_AXES_DEFAULTS.forEach(axis => {
-    const obj = {};
-    ['x','y','w','h','fs'].forEach(prop => {
-      const el = document.getElementById(`baxe_${axis.key}_${prop}`);
-      obj[prop] = el ? (parseFloat(el.value) || axis[prop]) : bGetAxeVal(axis.key, prop);
-    });
-    tmpAxes[axis.key] = obj;
-  });
-  // Dessiner le balisage de démonstration avec overlay des axes
-  const demoData = {
-    gabarit: _bGabarit,
-    desFR: 'Pain de campagne', desAR: 'خبز ريفي',
-    ingFR: 'Farine de BLÉ, eau, sel, levure',
-    ingAR: 'دقيق القمح، ماء، ملح، خميرة',
-    allerFR: 'GLUTEN, LAIT', allerAR: 'الغلوتين، الحليب',
-  };
-  bDrawBalisage(canvas, demoData);
-  // Overlay : dessiner les rectangles des axes en surimpression
+function _bDrawAxesOverlay(canvas, tmpAxes) {
   const ctx = canvas.getContext('2d');
   const COLORS = { desFR:'#4ade80', desAR:'#60a5fa', ingAR:'#f59e0b', allerFR:'#ef4444', allerAR:'#c084fc' };
   B_AXES_DEFAULTS.forEach(axis => {
@@ -8509,11 +8472,51 @@ function bRenderAxesPreview() {
     ctx.strokeRect(v.x - v.w/2, v.y - v.h/2, v.w, v.h);
     ctx.setLineDash([]);
     ctx.fillStyle = color;
-    ctx.font = `bold 6px monospace`;
+    ctx.font = 'bold 6px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText(axis.key, v.x - v.w/2 + 1, v.y - v.h/2 + 1);
   });
+}
+
+function bRenderAxesPreview() {
+  const canvas = document.getElementById('bAxesPreviewCanvas');
+  if (!canvas) return;
+  const tmpAxes = {};
+  B_AXES_DEFAULTS.forEach(axis => {
+    const obj = {};
+    ['x','y','w','h','fs'].forEach(prop => {
+      const el = document.getElementById(`baxe_${axis.key}_${prop}`);
+      obj[prop] = el ? (parseFloat(el.value) || axis[prop]) : bGetAxeVal(axis.key, prop);
+    });
+    tmpAxes[axis.key] = obj;
+  });
+  const demoData = {
+    gabarit: _bGabarit,
+    desFR: (document.getElementById('bDesFR')?.value || '').trim() || 'Pain de campagne',
+    desAR: (document.getElementById('bDesAR')?.value || '').trim() || 'خبز ريفي',
+    ingFR: 'Farine de BLÉ, eau, sel, levure',
+    ingAR: (document.getElementById('bIngAR')?.value || '').trim() || 'دقيق القمح، ماء، ملح، خميرة',
+    allerFR: 'GLUTEN, LAIT', allerAR: 'الغلوتين، الحليب',
+  };
+  // Vérifier si template a une image
+  _bTplsLoad();
+  const tpl = _bTpls.find(t => t.id === demoData.gabarit);
+  if (tpl && tpl.img) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      _bDrawBalisageText(canvas, demoData, true);
+      _bDrawAxesOverlay(canvas, tmpAxes);
+    };
+    img.onerror = () => { _bDrawBalisageText(canvas, demoData, false); _bDrawAxesOverlay(canvas, tmpAxes); };
+    img.src = tpl.img;
+  } else {
+    _bDrawBalisageText(canvas, demoData, false);
+    _bDrawAxesOverlay(canvas, tmpAxes);
+  }
 }
 </script>
 
