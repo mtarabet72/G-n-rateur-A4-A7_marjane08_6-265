@@ -7675,21 +7675,24 @@ function bSyncPreview() {
 
 // ── Détection allergènes FR : même logique que A7 (liste ALLERGEN_FLAT) ──
 function _bIsAllergenFR(word) {
-  const w = word.toUpperCase().replace(/[^A-ZÉÀÈÊÎÔÛÙÏÜ]/g, '');
+  if (!word) return false;
+  // Normaliser : supprimer accents (NFD puis strip diacritiques), passer en majuscules,
+  // ne garder que les lettres latines — identique à ce que fait le A7
+  const w = word.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z]/g,'');
   if (!w || w.length < 3) return false;
   if (typeof ALLERGEN_FLAT !== 'undefined') {
     return ALLERGEN_FLAT.some(a => w === a || w.startsWith(a));
   }
-  // Fallback majuscules
-  const clean = word.replace(/[^A-Za-zÀ-ÖØ-ÝŒÆ]/g, '');
-  return clean.length >= 3 && clean === clean.toUpperCase();
+  // Fallback : jamais déclenché si ALLERGEN_FLAT disponible
+  return false;
 }
 // ── Détection allergènes AR : même liste que A7 ──
 function _bIsAllergenAR(word) {
   const w = word.trim();
-  if (!w) return false;
+  if (!w || w.length < 2) return false;
   if (typeof ALLERGEN_FLAT_AR !== 'undefined') {
-    return ALLERGEN_FLAT_AR.some(a => w === a || w.includes(a) || a.includes(w));
+    // Correspondance exacte ou le mot contient un terme allergène (pas l'inverse pour éviter faux positifs)
+    return ALLERGEN_FLAT_AR.some(a => w === a || w.includes(a));
   }
   return false;
 }
@@ -7831,7 +7834,7 @@ function bDrawBalisage(canvas, data) {
     ctx.translate(bv.x + bv.w/2, bv.y + bv.h/2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillStyle = '#ffffff';
-    ctx.font = `700 9px 'IBM Plex Sans Arabic', sans-serif`;
+    ctx.font = `700 9px 'BFMarjane', 'IBM Plex Sans Arabic', sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('المكونات', 0, 0);
     ctx.restore();
@@ -7844,7 +7847,7 @@ function bDrawBalisage(canvas, data) {
     ctx.save();
     ctx.translate(barRight.x + barRight.w/2, barRight.y + barRight.h/2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = '#ffffff'; ctx.font = `700 8px 'Barlow Condensed', sans-serif`;
+    ctx.fillStyle = '#ffffff'; ctx.font = `700 8px 'BFMarjane', 'Barlow Condensed', sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(data.gabarit === 'BOUL' ? 'Allergènes' : 'Ingrédients', 0, 0);
     ctx.restore();
@@ -7899,36 +7902,40 @@ function _bDrawBalisageTexts(ctx, data, tpl, hasImg, CW, CH, theme) {
     ctx.restore();
   }
 
-  // ── Ingrédients AR (RTL, allergènes pas cherchés en AR) ──
+  // ── Ingrédients AR (RTL, allergènes en rouge) ──
   const aIngAR = getAxe('ingAR');
   if (aIngAR) {
     const textAR = data.ingAR || (hasImg ? '' : '');
     if (textAR) {
+      const lineH = aIngAR.fs * 1.35;
+      const maxLines = Math.max(1, Math.floor(aIngAR.h / lineH));
       _bDrawIngredientsWithAllergens(
         ctx, textAR,
-        aIngAR.x + aIngAR.w / 2,  // bord droit (RTL)
-        aIngAR.y - aIngAR.h / 2,  // haut de la zone
-        aIngAR.w, aIngAR.fs + 3, 5,
+        aIngAR.x + aIngAR.w,
+        aIngAR.y,
+        aIngAR.w, lineH, maxLines,
         aIngAR.fs, BALISAGE_FONT_AR,
         getBalisageTextColor('ingAR', hasImg),
-        true  // isRTL
+        true
       );
     }
   }
 
-  // ── Ingrédients FR (LTR, allergènes MAJUSCULES en rouge+gras) ──
+  // ── Ingrédients FR (LTR, allergènes ALLERGEN_FLAT en rouge+gras) ──
   const aIngFR = getAxe('ingFR');
   if (aIngFR) {
     const textFR = data.ingFR || (hasImg ? '' : '');
     if (textFR) {
+      const lineH = aIngFR.fs * 1.35;
+      const maxLines = Math.max(1, Math.floor(aIngFR.h / lineH));
       _bDrawIngredientsWithAllergens(
         ctx, textFR,
-        aIngFR.x - aIngFR.w / 2,  // bord gauche (LTR)
-        aIngFR.y - aIngFR.h / 2,  // haut de la zone
-        aIngFR.w, aIngFR.fs + 3, 5,
+        aIngFR.x,
+        aIngFR.y,
+        aIngFR.w, lineH, maxLines,
         aIngFR.fs, BALISAGE_FONT,
         getBalisageTextColor('ingFR', hasImg),
-        false  // isLTR
+        false
       );
     }
   }
@@ -8463,8 +8470,8 @@ const B_AXES_DEFAULTS = [
 
 // ─── Couleurs et police balisage ───
 const B_TEXT_COLOR_DEFAULTS = {desFR:'#5c2d0a',desAR:'#3d1c00',ingFR:'#2a1500',ingAR:'#2a1500'};
-const BALISAGE_FONT = "'bf-maejane', 'Barlow Condensed', sans-serif";
-const BALISAGE_FONT_AR = "'bf-maejane', 'IBM Plex Sans Arabic', sans-serif";
+const BALISAGE_FONT = "'BFMarjane', 'Barlow Condensed', sans-serif";
+const BALISAGE_FONT_AR = "'BFMarjane', 'IBM Plex Sans Arabic', sans-serif";
 function getBalisageTextColor(k,hasImg){try{const c=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');if(c[k])return c[k];return B_TEXT_COLOR_DEFAULTS[k]||'#000000';}catch(e){return B_TEXT_COLOR_DEFAULTS[k]||'#000000';}}
 function setBalisageTextColor(k,c){
   const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');
