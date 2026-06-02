@@ -7885,7 +7885,8 @@ function _bDrawBalisageTexts(ctx, data, tpl, hasImg, CW, CH, theme) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.direction = 'ltr';
-    _bWrapText(ctx, data.desFR || (hasImg ? '' : 'Désignation FR'), aDesFR.x, aDesFR.y, aDesFR.w, aDesFR.fs + 2);
+    // cx = centre horizontal, cy = centre vertical de la zone
+    _bWrapText(ctx, data.desFR || (hasImg ? '' : 'Désignation FR'), aDesFR.x + aDesFR.w/2, aDesFR.y + aDesFR.h/2, aDesFR.w, aDesFR.fs + 2);
     ctx.restore();
   }
 
@@ -7898,7 +7899,7 @@ function _bDrawBalisageTexts(ctx, data, tpl, hasImg, CW, CH, theme) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.direction = 'rtl';
-    _bWrapText(ctx, data.desAR || (hasImg ? '' : 'الاسم بالعربية'), aDesAR.x, aDesAR.y, aDesAR.w, aDesAR.fs + 2);
+    _bWrapText(ctx, data.desAR || (hasImg ? '' : 'الاسم بالعربية'), aDesAR.x + aDesAR.w/2, aDesAR.y + aDesAR.h/2, aDesAR.w, aDesAR.fs + 2);
     ctx.restore();
   }
 
@@ -8461,10 +8462,10 @@ function bGetTplImg(gabarit) {
 // ══════════════════════════════════════════════════════════════════
 
 const B_AXES_DEFAULTS = [
-  { key:'desFR',   label:'Désignation FR',       x:45,  y:32,  w:82,  h:12, fs:10 },
-  { key:'desAR',   label:'Désignation AR',        x:45,  y:68,  w:82,  h:12, fs:9  },
-  { key:'ingAR',   label:'Ingrédients AR',        x:294, y:20,  w:198, h:10, fs:7  },
-  { key:'ingFR',   label:'Ingrédients FR',        x:294, y:40,  w:198, h:10, fs:7  },
+  { key:'desFR',   label:'Désignation FR',       x:5,   y:8,   w:130, h:55, fs:10 },
+  { key:'desAR',   label:'Désignation AR',        x:5,   y:68,  w:130, h:46, fs:9  },
+  { key:'ingAR',   label:'Ingrédients AR',        x:300, y:4,   w:145, h:112, fs:7  },
+  { key:'ingFR',   label:'Ingrédients FR',        x:150, y:4,   w:145, h:112, fs:7  },
 ];
 
 
@@ -8694,7 +8695,8 @@ function _bDrawAxesBoxes(ctx, tmpAxes, CW, CH) {
     if (!v) return;
     ctx.strokeStyle = COLORS[axis.key] || 'rgba(255,255,255,0.5)';
     ctx.setLineDash([3,3]);
-    ctx.strokeRect(v.x - v.w/2, v.y - v.h/2, v.w, v.h);
+    // x,y = coin supérieur gauche (même repère que _bDrawBalisageTexts)
+    ctx.strokeRect(v.x, v.y, v.w, v.h);
     ctx.setLineDash([]);
     // Label de l'axe
     ctx.font = '9px sans-serif';
