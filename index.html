@@ -7673,69 +7673,118 @@ function bSyncPreview() {
   bDrawBalisage(document.getElementById('bPreviewCanvas'), data);
 }
 
-// ── Helpers allergènes : détecte les mots MAJUSCULES comme allergènes ──
-function _bIsAllergenWord(word) {
-  // Un mot allergène : au moins 3 lettres, 100% majuscules (ignorer ponctuation)
-  const clean = word.replace(/[^A-Za-zÀ-ÿ]/g, '');
-  return clean.length >= 3 && clean === clean.toUpperCase() && /[A-ZÀ-Ý]/.test(clean);
-}
-
-// Découpe le texte d'ingrédients en segments {text, isAllergen}
-function _bTokenizeIngredients(text) {
-  if (!text) return [];
-  const tokens = [];
-  // Séparer sur les séparateurs tout en les conservant
-  const parts = text.split(/(\s+|,|;|\(|\))/);
-  for (const part of parts) {
-    const clean = part.replace(/[^A-Za-zÀ-ÿ]/g, '');
-    const isAlg = clean.length >= 3 && clean === clean.toUpperCase() && /[A-ZÀ-Ý]/.test(clean);
-    tokens.push({ text: part, isAllergen: isAlg });
+// ── Détection allergènes FR : même logique que A7 (liste ALLERGEN_FLAT) ──
+function _bIsAllergenFR(word) {
+  const w = word.toUpperCase().replace(/[^A-ZÉÀÈÊÎÔÛÙÏÜ]/g, '');
+  if (!w || w.length < 3) return false;
+  if (typeof ALLERGEN_FLAT !== 'undefined') {
+    return ALLERGEN_FLAT.some(a => w === a || w.startsWith(a));
   }
-  return tokens;
+  // Fallback majuscules
+  const clean = word.replace(/[^A-Za-zÀ-ÖØ-ÝŒÆ]/g, '');
+  return clean.length >= 3 && clean === clean.toUpperCase();
+}
+// ── Détection allergènes AR : même liste que A7 ──
+function _bIsAllergenAR(word) {
+  const w = word.trim();
+  if (!w) return false;
+  if (typeof ALLERGEN_FLAT_AR !== 'undefined') {
+    return ALLERGEN_FLAT_AR.some(a => w === a || w.includes(a) || a.includes(w));
+  }
+  return false;
 }
 
-// Dessine du texte multilignes avec allergènes en rouge+gras sur canvas
+// ── Dessin texte multi-lignes avec allergènes en rouge+gras ──
+// FR : liste ALLERGEN_FLAT (même que A7) | AR : liste ALLERGEN_FLAT_AR (mot par mot RTL)
 function _bDrawIngredientsWithAllergens(ctx, text, x, y, maxW, lineH, maxLines, baseFontSize, baseFontFamily, baseColor, isRTL) {
   if (!text) return;
-  const tokens = _bTokenizeIngredients(text);
-  const lines = [];
-  let currentLine = [];
-  let currentLineW = 0;
+  const baseFont = `400 ${baseFontSize}px ${baseFontFamily}`;
+  const boldFont = `bold ${baseFontSize}px ${baseFontFamily}`;
+  ctx.font = baseFont;
+  const spaceW = ctx.measureText(' ').width;
 
-  // Construire les lignes mot par mot
-  for (const tok of tokens) {
-    const fs = tok.isAllergen ? `700 ${baseFontSize}px ${baseFontFamily}` : `400 ${baseFontSize}px ${baseFontFamily}`;
-    ctx.save(); ctx.font = fs;
-    const w = ctx.measureText(tok.text).width;
+  // ── ARABE (RTL) : mot par mot de droite à gauche, allergènes en rouge ──
+  if (isRTL) {
+    ctx.save();
+    ctx.textBaseline = 'top';
+    const rawWords = text.split(/[\s،,;]+/).filter(w => w.length > 0);
+    // Construire lignes
+    const linesAR = [];
+    let curLine = [];
+    let curLineW = 0;
+    ctx.font = baseFont;
+    for (const word of rawWords) {
+      const ww = ctx.measureText(word).width;
+      if (curLine.length > 0 && curLineW + spaceW + ww > maxW) {
+        linesAR.push(curLine);
+        if (linesAR.length >= maxLines) break;
+        curLine = [{ word, ww }];
+        curLineW = ww;
+      } else {
+        if (curLine.length > 0) curLineW += spaceW;
+        curLine.push({ word, ww });
+        curLineW += ww;
+      }
+    }
+    if (curLine.length > 0 && linesAR.length < maxLines) linesAR.push(curLine);
+    // Dessiner mot par mot RTL (x = bord droit)
+    let cyAR = y;
+    for (const line of linesAR) {
+      let px = x;
+      for (const { word, ww } of line) {
+        const isAlg = _bIsAllergenAR(word);
+        ctx.font = isAlg ? boldFont : baseFont;
+        ctx.fillStyle = isAlg ? '#FF0000' : baseColor;
+        ctx.textAlign = 'right';
+        ctx.fillText(word, px, cyAR);
+        px -= (ww + spaceW);
+      }
+      cyAR += lineH;
+    }
     ctx.restore();
-    if (currentLineW + w > maxW && currentLine.length > 0 && tok.text.trim()) {
-      lines.push(currentLine);
+    return;
+  }
+
+  // ── FRANÇAIS (LTR) : tokenisation avec allergènes en rouge+gras ──
+  const parts = text.split(/([,;\s()/]+)/);
+  const tokens = parts
+    .filter(p => p)
+    .map(part => ({
+      text: part,
+      isAllergen: !/^[,;\s()/]+$/.test(part) && _bIsAllergenFR(part)
+    }));
+  // Construire lignes
+  const lines = [];
+  let curLine = [];
+  let curW = 0;
+  for (const tok of tokens) {
+    ctx.font = tok.isAllergen ? boldFont : baseFont;
+    const tw = ctx.measureText(tok.text).width;
+    if (curW + tw > maxW && curLine.length > 0 && tok.text.trim() !== '') {
+      lines.push(curLine);
       if (lines.length >= maxLines) break;
-      currentLine = [tok];
-      currentLineW = w;
+      curLine = [{ ...tok, w: tw }];
+      curW = tw;
     } else {
-      currentLine.push({ ...tok, w });
-      currentLineW += w;
+      curLine.push({ ...tok, w: tw });
+      curW += tw;
     }
   }
-  if (currentLine.length && lines.length < maxLines) lines.push(currentLine);
-
-  // Dessiner chaque ligne
+  if (curLine.length && lines.length < maxLines) lines.push(curLine);
+  // Dessiner
+  ctx.save();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
   lines.forEach((line, li) => {
-    const lineY = y + li * lineH;
-    // Calculer la largeur totale de la ligne pour l'alignement
-    const totalW = line.reduce((s, t) => s + (t.w || 0), 0);
-    let curX = isRTL ? x - totalW : x;
+    let cx = x;
     for (const tok of line) {
-      const fs = tok.isAllergen
-        ? `700 ${baseFontSize}px ${baseFontFamily}`
-        : `400 ${baseFontSize}px ${baseFontFamily}`;
-      ctx.font = fs;
-      ctx.fillStyle = tok.isAllergen ? '#cc0000' : baseColor;
-      ctx.fillText(tok.text, curX, lineY);
-      curX += (tok.w || ctx.measureText(tok.text).width);
+      ctx.font = tok.isAllergen ? boldFont : baseFont;
+      ctx.fillStyle = tok.isAllergen ? '#FF0000' : baseColor;
+      ctx.fillText(tok.text, cx, y + li * lineH);
+      cx += tok.w;
     }
   });
+  ctx.restore();
 }
 
 function bDrawBalisage(canvas, data) {
@@ -7816,72 +7865,73 @@ function _bDrawBalisageTexts(ctx, data, tpl, hasImg, CW, CH, theme) {
     const def = DEFS[key];
     if (!def) return null;
     return {
-      x:  saved?.x  !== undefined ? saved.x  : def.x,
-      y:  saved?.y  !== undefined ? saved.y  : def.y,
-      w:  saved?.w  !== undefined ? saved.w  : def.w,
-      h:  saved?.h  !== undefined ? saved.h  : def.h,
-      fs: saved?.fs !== undefined ? saved.fs : def.fs,
+      x:  (saved && saved.x  !== undefined) ? saved.x  : def.x,
+      y:  (saved && saved.y  !== undefined) ? saved.y  : def.y,
+      w:  (saved && saved.w  !== undefined) ? saved.w  : def.w,
+      h:  (saved && saved.h  !== undefined) ? saved.h  : def.h,
+      fs: (saved && saved.fs !== undefined) ? saved.fs : def.fs,
     };
   }
-
-  ctx.save();
-  ctx.textBaseline = 'middle';
 
   // ── Désignation FR ──
   const aDesFR = getAxe('desFR');
   if (aDesFR) {
+    ctx.save();
     ctx.font = `700 ${aDesFR.fs}px ${BALISAGE_FONT}`;
     ctx.fillStyle = getBalisageTextColor('desFR', hasImg);
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.direction = 'ltr';
     _bWrapText(ctx, data.desFR || (hasImg ? '' : 'Désignation FR'), aDesFR.x, aDesFR.y, aDesFR.w, aDesFR.fs + 2);
+    ctx.restore();
   }
 
   // ── Désignation AR ──
   const aDesAR = getAxe('desAR');
   if (aDesAR) {
+    ctx.save();
     ctx.font = `600 ${aDesAR.fs}px ${BALISAGE_FONT_AR}`;
     ctx.fillStyle = getBalisageTextColor('desAR', hasImg);
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.direction = 'rtl';
     _bWrapText(ctx, data.desAR || (hasImg ? '' : 'الاسم بالعربية'), aDesAR.x, aDesAR.y, aDesAR.w, aDesAR.fs + 2);
-    ctx.direction = 'ltr';
+    ctx.restore();
   }
 
-  // ── Ingrédients AR (avec allergènes en rouge+gras) ──
+  // ── Ingrédients AR (RTL, allergènes pas cherchés en AR) ──
   const aIngAR = getAxe('ingAR');
-  if (aIngAR && data.ingAR) {
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'right';
-    ctx.direction = 'rtl';
-    _bDrawIngredientsWithAllergens(
-      ctx, data.ingAR,
-      aIngAR.x + aIngAR.w / 2, aIngAR.y - aIngAR.h / 2,
-      aIngAR.w, aIngAR.fs + 2, 5,
-      aIngAR.fs, BALISAGE_FONT_AR,
-      getBalisageTextColor('ingAR', hasImg),
-      true
-    );
-    ctx.direction = 'ltr';
-    ctx.textBaseline = 'middle';
+  if (aIngAR) {
+    const textAR = data.ingAR || (hasImg ? '' : '');
+    if (textAR) {
+      _bDrawIngredientsWithAllergens(
+        ctx, textAR,
+        aIngAR.x + aIngAR.w / 2,  // bord droit (RTL)
+        aIngAR.y - aIngAR.h / 2,  // haut de la zone
+        aIngAR.w, aIngAR.fs + 3, 5,
+        aIngAR.fs, BALISAGE_FONT_AR,
+        getBalisageTextColor('ingAR', hasImg),
+        true  // isRTL
+      );
+    }
   }
 
-  // ── Ingrédients FR (avec allergènes en rouge+gras) ──
+  // ── Ingrédients FR (LTR, allergènes MAJUSCULES en rouge+gras) ──
   const aIngFR = getAxe('ingFR');
-  if (aIngFR && data.ingFR) {
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    _bDrawIngredientsWithAllergens(
-      ctx, data.ingFR,
-      aIngFR.x - aIngFR.w / 2, aIngFR.y - aIngFR.h / 2,
-      aIngFR.w, aIngFR.fs + 2, 5,
-      aIngFR.fs, BALISAGE_FONT,
-      getBalisageTextColor('ingFR', hasImg),
-      false
-    );
-    ctx.textBaseline = 'middle';
+  if (aIngFR) {
+    const textFR = data.ingFR || (hasImg ? '' : '');
+    if (textFR) {
+      _bDrawIngredientsWithAllergens(
+        ctx, textFR,
+        aIngFR.x - aIngFR.w / 2,  // bord gauche (LTR)
+        aIngFR.y - aIngFR.h / 2,  // haut de la zone
+        aIngFR.w, aIngFR.fs + 3, 5,
+        aIngFR.fs, BALISAGE_FONT,
+        getBalisageTextColor('ingFR', hasImg),
+        false  // isLTR
+      );
+    }
   }
-
-  ctx.restore();
 }
 
 // Helper: dessin arabesques simplifiées (motif géo répétitif)
@@ -8415,7 +8465,7 @@ const B_AXES_DEFAULTS = [
 const B_TEXT_COLOR_DEFAULTS = {desFR:'#5c2d0a',desAR:'#3d1c00',ingFR:'#2a1500',ingAR:'#2a1500'};
 const BALISAGE_FONT = "'bf-maejane', 'Barlow Condensed', sans-serif";
 const BALISAGE_FONT_AR = "'bf-maejane', 'IBM Plex Sans Arabic', sans-serif";
-function getBalisageTextColor(k,hasImg){if(hasImg)return '#ffffff';try{const c=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');return c[k]||B_TEXT_COLOR_DEFAULTS[k]||'#000000'}catch(e){return B_TEXT_COLOR_DEFAULTS[k]||'#000000'}}
+function getBalisageTextColor(k,hasImg){try{const c=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');if(c[k])return c[k];return B_TEXT_COLOR_DEFAULTS[k]||'#000000';}catch(e){return B_TEXT_COLOR_DEFAULTS[k]||'#000000';}}
 function setBalisageTextColor(k,c){
   const o=JSON.parse(localStorage.getItem('balisage_text_colors')||'{}');
   o[k]=c;
