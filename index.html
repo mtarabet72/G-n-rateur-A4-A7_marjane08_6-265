@@ -3291,34 +3291,29 @@ Désignation : "${textFR.substring(0, 120)}"`;
 // VIDER LA BASE DE DONNÉES — double confirmation
 // ═══════════════════════════════════════════════════════════════
 function clearBaseConfirm() {
+  if (!state.base || state.base.length === 0) {
+    toast('La base est déjà vide', 'err');
+    return;
+  }
   // 1ère confirmation
-  if (!confirm('⚠️ Voulez-vous vraiment vider toute la base de données ?\n\nCette action supprimera tous les articles.')) return;
+  if (!confirm(`⚠️ Voulez-vous vraiment vider toute la base de données ?\n\n${state.base.length} article(s) seront supprimés.`)) return;
   // 2ème confirmation
   if (!confirm('🚨 DERNIÈRE CONFIRMATION\n\nToute la base sera supprimée définitivement.\nCela ne peut pas être annulé.\n\nCliquez OK pour confirmer.')) return;
-  // Suppression effective
-  _dbReady.then(db => {
-    const tx = db.transaction('articles', 'readwrite');
-    tx.objectStore('articles').clear();
+  // Suppression effective via openIDB
+  openIDB().then(db => {
+    const tx = db.transaction('base', 'readwrite');
+    tx.objectStore('base').clear();
     tx.oncomplete = () => {
-      _dbArticles = [];
+      state.base = [];
+      // Vider aussi localStorage legacy
+      localStorage.removeItem('a7_base');
       renderBase();
       updateCounters();
       toast('🗑 Base de données vidée', 'ok');
+      setTimeout(autoSaveNow, 300);
     };
-    tx.onerror = () => toast('Erreur lors de la suppression', 'err');
-  }).catch(() => {
-    // Fallback localStorage
-    try {
-      localStorage.removeItem('marjane_articles');
-      localStorage.removeItem('marjane_base');
-      _dbArticles = [];
-      renderBase();
-      updateCounters();
-      toast('🗑 Base de données vidée', 'ok');
-    } catch(e) {
-      toast('Erreur : ' + e.message, 'err');
-    }
-  });
+    tx.onerror = () => toast('Erreur IDB lors de la suppression', 'err');
+  }).catch(e => toast('Erreur : ' + e.message, 'err'));
 }
 
 // ═══════════════════════════════════════════════════════════════
