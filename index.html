@@ -901,6 +901,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           <i class="ri-upload-2-line"></i> Importer Excel
           <input type="file" accept=".xlsx,.xls,.xlsm" style="display:none" onchange="importBaseExcel(this)">
         </label>
+        <button class="btn btn-sm" onclick="clearBaseConfirm()" style="background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.4);color:#fca5a5;font-weight:700" title="Vider toute la base de données"><i class="ri-delete-bin-2-line"></i> Vider la base</button>
       </div>
       <div class="card" style="padding:0">
         <div class="tbl-wrap" style="max-height:480px">
@@ -1060,7 +1061,18 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <button class="modal-close" onclick="closeArticleModal()"><i class="ri-close-line"></i></button>
     <div class="field"><label class="lbl">Code Article *</label><input id="m_code" placeholder="Ex: 2658179"></div>
     <div class="g2">
-      <div class="field"><label class="lbl">Désignation FR *</label><input id="m_desFR" placeholder="Nom français"></div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label class="lbl" style="margin:0">Désignation FR *</label>
+          <button type="button" id="btnSpellA7" onclick="spellCheckFR('m_desFR','m_desAR','btnSpellA7')"
+            style="display:flex;align-items:center;gap:5px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);
+                   border-radius:8px;padding:4px 10px;color:#6ee7b7;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s"
+            title="Corriger l'orthographe FR et générer la traduction arabe (IA)">
+            <i class="ri-spell-check-line" style="font-size:13px"></i> ✓ Ortho + AR
+          </button>
+        </div>
+        <input id="m_desFR" placeholder="Nom français">
+      </div>
       <div class="field">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <label class="lbl" style="margin:0">Désignation AR</label>
@@ -1122,8 +1134,18 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
             </div>         </div>
           <div class="a4-form-section">
             <h3><i class="ri-text"></i> Désignation</h3>
-            <div class="field"><label class="lbl">Désignation FR</label>
-              <input id="a4DesFR" placeholder="Nom du produit en français" oninput="this.dataset.manual=this.value?'1':'';a4Sync()"></div>
+            <div class="field">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <label class="lbl" style="margin:0">Désignation FR</label>
+                <button type="button" id="btnSpellA4" onclick="spellCheckFR('a4DesFR','a4DesAR','btnSpellA4',true)"
+                  style="display:flex;align-items:center;gap:5px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);
+                         border-radius:8px;padding:4px 10px;color:#6ee7b7;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s"
+                  title="Corriger l'orthographe FR et générer la traduction arabe (IA)">
+                  <i class="ri-spell-check-line" style="font-size:13px"></i> ✓ Ortho + AR
+                </button>
+              </div>
+              <input id="a4DesFR" placeholder="Nom du produit en français" oninput="this.dataset.manual=this.value?'1':'';a4Sync()">
+            </div>
             <div class="field">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
                 <label class="lbl" style="margin:0">الاسم بالعربية</label>
@@ -3097,6 +3119,137 @@ Désignation à traduire : "${textFR.substring(0, 120)}"`;
   } finally {
     if(btnEl){ btnEl.disabled = false; btnEl.innerHTML = origHTML; }
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CORRECTION ORTHOGRAPHIQUE FR + TRADUCTION AR (IA Groq)
+// ═══════════════════════════════════════════════════════════════
+async function spellCheckFR(srcId, dstId, btnId, isA4 = false) {
+  const srcEl = document.getElementById(srcId);
+  const dstEl = document.getElementById(dstId);
+  const btnEl = document.getElementById(btnId);
+  if (!srcEl) { toast('Champ source introuvable', 'err'); return; }
+
+  const textFR = srcEl.value.trim();
+  if (!textFR) { toast('Saisissez d\'abord la désignation française', 'err'); return; }
+
+  let apiKey = _getAnthropicKey();
+  if (!apiKey) {
+    openApiKeyModal(function(key) {
+      if (key) spellCheckFR(srcId, dstId, btnId, isA4);
+      else toast('🔑 Clé API requise', 'err');
+    });
+    return;
+  }
+
+  const origHTML = btnEl ? btnEl.innerHTML : '';
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i class="ri-loader-4-line" style="animation:spin .7s linear infinite;display:inline-block"></i> ...';
+  }
+
+  try {
+    const prompt = `Tu es un expert en rédaction commerciale pour la grande distribution au Maroc (hypermarché Marjane).
+Ta mission : corriger l'orthographe et la typographie de la désignation produit française ci-dessous, puis fournir sa traduction en arabe marocain commercial (arabe standard, adapté étiquette supermarché).
+
+Règles :
+- Corriger les fautes d'orthographe, de casse et de typographie uniquement (ne change pas le sens)
+- Désignation corrigée : courte, adaptée étiquette, en MAJUSCULES si elle l'était à l'origine
+- Traduction arabe : max 60 caractères, conserve marques/chiffres/unités, retourne uniquement l'arabe
+- Retourner UNIQUEMENT un JSON valide sans aucun texte autour :
+{"fr":"désignation corrigée","ar":"ترجمة عربية"}
+
+Désignation : "${textFR.substring(0, 120)}"`;
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 150,
+        temperature: 0.2,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = origHTML; }
+        openApiKeyModal(function(key) { if (key) spellCheckFR(srcId, dstId, btnId, isA4); });
+        toast('🔑 Clé API invalide', 'err');
+        return;
+      }
+      throw new Error(err.error?.message || 'Erreur API ' + response.status);
+    }
+
+    const data = await response.json();
+    let raw = (data.choices?.[0]?.message?.content || '').trim();
+    // Nettoyer les backticks éventuels
+    raw = raw.replace(/```json|```/g, '').trim();
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch(e) { throw new Error('Réponse IA invalide : ' + raw.substring(0, 60)); }
+
+    const corrFR = (parsed.fr || '').trim();
+    const transAR = (parsed.ar || '').trim();
+
+    if (corrFR) {
+      srcEl.value = corrFR;
+      if (isA4) { srcEl.dataset.manual = '1'; srcEl.dispatchEvent(new Event('input', { bubbles: true })); }
+    }
+    if (dstEl && transAR) {
+      dstEl.value = transAR;
+      if (isA4) { dstEl.dataset.manual = '1'; dstEl.dispatchEvent(new Event('input', { bubbles: true })); }
+    }
+
+    // Déclencher a4Sync/renderPreview selon le contexte
+    if (isA4) { if (typeof a4Sync === 'function') a4Sync(); }
+    else { if (typeof updatePreview === 'function') updatePreview(); }
+
+    toast('✅ Orthographe corrigée + traduction arabe générée', 'ok');
+  } catch(e) {
+    console.error('[SpellCheck IA]', e);
+    toast('❌ Erreur : ' + (e.message || 'inconnue'), 'err');
+  } finally {
+    if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = origHTML; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIDER LA BASE DE DONNÉES — double confirmation
+// ═══════════════════════════════════════════════════════════════
+function clearBaseConfirm() {
+  // 1ère confirmation
+  if (!confirm('⚠️ Voulez-vous vraiment vider toute la base de données ?\n\nCette action supprimera tous les articles.')) return;
+  // 2ème confirmation
+  if (!confirm('🚨 DERNIÈRE CONFIRMATION\n\nToute la base sera supprimée définitivement.\nCela ne peut pas être annulé.\n\nCliquez OK pour confirmer.')) return;
+  // Suppression effective
+  _dbReady.then(db => {
+    const tx = db.transaction('articles', 'readwrite');
+    tx.objectStore('articles').clear();
+    tx.oncomplete = () => {
+      _dbArticles = [];
+      renderBase();
+      updateCounters();
+      toast('🗑 Base de données vidée', 'ok');
+    };
+    tx.onerror = () => toast('Erreur lors de la suppression', 'err');
+  }).catch(() => {
+    // Fallback localStorage
+    try {
+      localStorage.removeItem('marjane_articles');
+      localStorage.removeItem('marjane_base');
+      _dbArticles = [];
+      renderBase();
+      updateCounters();
+      toast('🗑 Base de données vidée', 'ok');
+    } catch(e) {
+      toast('Erreur : ' + e.message, 'err');
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -5684,6 +5837,31 @@ function a4Sync() {
   a4St.desAR = (document.getElementById('a4DesAR') || {value:''}).value.trim();
   a4SaveForm();
   a4DrawPreview();
+}
+
+// ── Effacer tous les champs du formulaire A4 ──
+function a4ClearDesig() {
+  const ids = ['a4Code','a4DesFR','a4DesAR','a4Barre','a4Promo','a4Fidelite'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; delete el.dataset.manual; }
+  });
+  // Réinitialiser l'état
+  a4St.code = ''; a4St.desFR = ''; a4St.desAR = '';
+  a4St.barre = 0; a4St.promo = 0; a4St.fidelite = 0;
+  a4St.diff = 0; a4St.showDiff = false;
+  // Badge diff
+  const badge = document.getElementById('a4DiffBadge');
+  if (badge) { badge.className = 'diff-badge diff-hidden'; badge.innerHTML = '<i class="ri-subtract-fill"></i> ÉCONOMIE: — DH'; }
+  // FidVal
+  const fidVal = document.getElementById('a4FidVal');
+  if (fidVal) fidVal.textContent = '';
+  // Badge article
+  const artBadge = document.getElementById('a4ArticleBadge');
+  if (artBadge) artBadge.style.display = 'none';
+  a4SaveForm();
+  a4DrawPreview();
+  toast('🗑 Formulaire A4 effacé', 'ok');
 }
 
 function a4CalcDiff() {
