@@ -826,8 +826,8 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
         <div style="background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:10px">
           <div style="font-size:10px;color:var(--text4);margin-bottom:6px">SAUVEGARDE DONNÉES — <span id="autoSaveStatus" style="color:var(--amber)">Inactif</span></div>
           <div style="display:flex;gap:6px;margin-bottom:4px">
-            <button class="btn btn-blue" style="flex:1;font-size:10px;padding:5px" onclick="exportAllData()"><i class="ri-save-3-line"></i> Sauvegarder</button>
-            <label class="btn btn-ghost" style="flex:1;font-size:10px;padding:5px;cursor:pointer"><i class="ri-upload-cloud-2-line"></i> Restaurer<input type="file" accept=".json" style="display:none" onchange="importAllData(this)"></label>
+            <button class="btn btn-blue" style="flex:1;font-size:10px;padding:5px" onclick="exportAllData()"><i class="ri-save-3-line"></i> Sauvegarder tout</button>
+            <label class="btn btn-ghost" style="flex:1;font-size:10px;padding:5px;cursor:pointer"><i class="ri-upload-cloud-2-line"></i> Restaurer tout<input type="file" accept=".json" style="display:none" onchange="importAllData(this)"></label>
           </div>
           <button class="btn" style="width:100%;font-size:10px;padding:5px" onclick="enableAutoSave()"><i class="ri-folder-open-line"></i> Auto-restauration</button>
         </div>
@@ -2865,13 +2865,8 @@ async function autoSaveNow(){
     if(!dir) return;
     const perm = await dir.queryPermission({mode:'readwrite'});
     if(perm!=='granted') return;
-    const data = {
-      base: state.base, queue: state.queue, templates: state.templates,
-      mapping: state.mapping, productTpl: state.productTpl, history: state.history,
-      tplLayout: state.tplLayout, textColors: state.textColors,
-      exportDate: new Date().toISOString(), version:'A7-v5-auto'
-    };
-    const fh = await dir.getFileHandle('A7_auto_backup.json',{create:true});
+    const data = { ..._collectAllData(), version:'MARJANE-ALL-v1-auto' };
+    const fh = await dir.getFileHandle('Marjane_auto_backup.json',{create:true});
     const w = await fh.createWritable();
     await w.write(JSON.stringify(data,null,2));
     await w.close();
@@ -2886,43 +2881,93 @@ async function autoRestore(){
     if(!dir) return;
     const perm = await dir.queryPermission({mode:'read'});
     if(perm!=='granted'){ await dir.requestPermission({mode:'read'}); }
-    const fh = await dir.getFileHandle('A7_auto_backup.json');
+    // Chercher d'abord le nouveau nom, puis l'ancien
+    let fh;
+    try { fh = await dir.getFileHandle('Marjane_auto_backup.json'); }
+    catch(e) { fh = await dir.getFileHandle('A7_auto_backup.json'); }
     const file = await fh.getFile();
     const data = JSON.parse(await file.text());
-    if(data.base){ 
-      state.base = data.base; state.queue=data.queue||[]; state.templates=data.templates||{};
-      state.mapping=data.mapping||state.mapping; state.productTpl=data.productTpl||{};
-      state.history=data.history||[]; state.tplLayout=data.tplLayout||{}; state.textColors=data.textColors||state.textColors;
+
+    // ── A7 ──
+    const a7 = data.a7 || data;
+    if(a7.base){
+      state.base = a7.base; state.queue=a7.queue||[]; state.templates=a7.templates||{};
+      state.mapping=a7.mapping||state.mapping; state.productTpl=a7.productTpl||{};
+      state.history=a7.history||[]; state.tplLayout=a7.tplLayout||{}; state.textColors=a7.textColors||state.textColors;
       saveBaseSafe();
       ['queue','mapping','productTpl','tplLayout','textColors'].forEach(k=>save(k));
       save('templates'); save('history');
-      toast('Restauration automatique réussie ✓ — Rechargez si nécessaire','ok');
-      // Ne pas recharger automatiquement pour éviter les boucles
     }
+    // ── A4 ──
+    if(data.a4){
+      if(data.a4.file   != null) localStorage.setItem('a4_file',   JSON.stringify(data.a4.file));
+      if(data.a4.tpls   != null) localStorage.setItem('a4_tpls',   JSON.stringify(data.a4.tpls));
+      if(data.a4.pictos != null) localStorage.setItem('a4_pictos', JSON.stringify(data.a4.pictos));
+      if(data.a4.form   != null) localStorage.setItem('a4_form',   JSON.stringify(data.a4.form));
+    }
+    // ── Balisage ──
+    if(data.balisage){
+      if(data.balisage.file       != null) localStorage.setItem('balisage_file',        JSON.stringify(data.balisage.file));
+      if(data.balisage.templates  != null) localStorage.setItem('balisage_templates',   JSON.stringify(data.balisage.templates));
+      if(data.balisage.textColors != null) localStorage.setItem('balisage_text_colors', JSON.stringify(data.balisage.textColors));
+      if(data.balisage.axes       != null) localStorage.setItem('balisage_axes',        JSON.stringify(data.balisage.axes));
+    }
+    // ── Config ──
+    if(data.config){
+      if(data.config.groqKey)   localStorage.setItem('marjane_groq_key', data.config.groqKey);
+      if(data.config.lastUnite) localStorage.setItem('a7_last_unite',    data.config.lastUnite);
+    }
+    toast('✅ Restauration automatique réussie (A7 + A4 + Balisage)','ok');
   }catch(e){ console.log('Pas de backup auto',e); }
 }
 
-function exportAllData(){
-  const data = {
-    base: state.base,
-    queue: state.queue,
-    templates: state.templates,
-    mapping: state.mapping,
+function _collectAllData(){
+  // ── A7 ──────────────────────────────────────────────────────
+  const a7 = {
+    base:       state.base,
+    queue:      state.queue,
+    templates:  state.templates,
+    mapping:    state.mapping,
     productTpl: state.productTpl,
-    history: state.history,
-    tplLayout: state.tplLayout,
+    history:    state.history,
+    tplLayout:  state.tplLayout,
     textColors: state.textColors,
-    exportDate: new Date().toISOString(),
-    version: 'A7-v5'
   };
+  // ── A4 ──────────────────────────────────────────────────────
+  const a4 = {
+    file:    JSON.parse(localStorage.getItem('a4_file')   || '[]'),
+    tpls:    JSON.parse(localStorage.getItem('a4_tpls')   || '[]'),
+    pictos:  JSON.parse(localStorage.getItem('a4_pictos') || '[]'),
+    form:    JSON.parse(localStorage.getItem('a4_form')   || '{}'),
+  };
+  // ── BALISAGE ─────────────────────────────────────────────────
+  const balisage = {
+    file:       JSON.parse(localStorage.getItem('balisage_file')        || '[]'),
+    templates:  JSON.parse(localStorage.getItem('balisage_templates')   || '[]'),
+    textColors: JSON.parse(localStorage.getItem('balisage_text_colors') || '{}'),
+    axes:       JSON.parse(localStorage.getItem('balisage_axes')        || 'null'),
+  };
+  // ── CONFIG GLOBALE ────────────────────────────────────────────
+  const config = {
+    groqKey:    localStorage.getItem('marjane_groq_key') || '',
+    lastUnite:  localStorage.getItem('a7_last_unite')    || '',
+  };
+  return { a7, a4, balisage, config,
+    exportDate: new Date().toISOString(),
+    version: 'MARJANE-ALL-v1'
+  };
+}
+
+function exportAllData(){
+  const data = _collectAllData();
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
   a.href = url;
-  a.download = `A7_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `Marjane_backup_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  toast('Sauvegarde complète téléchargée ✓','ok');
+  toast('✅ Sauvegarde complète A7 + A4 + Balisage téléchargée','ok');
 }
 
 function importAllData(input){
@@ -2932,22 +2977,46 @@ function importAllData(input){
   reader.onload = e => {
     try{
       const data = JSON.parse(e.target.result);
-      if(confirm('Restaurer cette sauvegarde ? Cela remplacera toutes les données actuelles.')){
-        state.base = data.base||[];
-        state.queue = data.queue||[];
-        state.templates = data.templates||{};
-        state.mapping = data.mapping||state.mapping;
-        state.productTpl = data.productTpl||{};
-        state.history = data.history||[];
-        state.tplLayout = data.tplLayout||{};
-        state.textColors = data.textColors||state.textColors;
-        // Sauvegarder tout dans IDB et localStorage
-        saveBaseSafe();
-        ['queue','mapping','productTpl','tplLayout','textColors'].forEach(k=>save(k));
-        save('templates'); save('history');
-        toast('Données restaurées ✓ Rechargez la page','ok');
-        setTimeout(()=>location.reload(), 1200);
+      if(!confirm('Restaurer cette sauvegarde ?\nCela remplacera toutes les données A7, A4 et Balisage.')) return;
+
+      // ── Restaurer A7 ──────────────────────────────────────────
+      const a7 = data.a7 || data; // compatibilité ancien format (A7-v5)
+      state.base       = a7.base       || [];
+      state.queue      = a7.queue      || [];
+      state.templates  = a7.templates  || {};
+      state.mapping    = a7.mapping    || state.mapping;
+      state.productTpl = a7.productTpl || {};
+      state.history    = a7.history    || [];
+      state.tplLayout  = a7.tplLayout  || {};
+      state.textColors = a7.textColors || state.textColors;
+      saveBaseSafe();
+      ['queue','mapping','productTpl','tplLayout','textColors'].forEach(k=>save(k));
+      save('templates'); save('history');
+
+      // ── Restaurer A4 ──────────────────────────────────────────
+      if(data.a4){
+        if(data.a4.file   != null) localStorage.setItem('a4_file',   JSON.stringify(data.a4.file));
+        if(data.a4.tpls   != null) localStorage.setItem('a4_tpls',   JSON.stringify(data.a4.tpls));
+        if(data.a4.pictos != null) localStorage.setItem('a4_pictos', JSON.stringify(data.a4.pictos));
+        if(data.a4.form   != null) localStorage.setItem('a4_form',   JSON.stringify(data.a4.form));
       }
+
+      // ── Restaurer Balisage ────────────────────────────────────
+      if(data.balisage){
+        if(data.balisage.file       != null) localStorage.setItem('balisage_file',        JSON.stringify(data.balisage.file));
+        if(data.balisage.templates  != null) localStorage.setItem('balisage_templates',   JSON.stringify(data.balisage.templates));
+        if(data.balisage.textColors != null) localStorage.setItem('balisage_text_colors', JSON.stringify(data.balisage.textColors));
+        if(data.balisage.axes       != null) localStorage.setItem('balisage_axes',        JSON.stringify(data.balisage.axes));
+      }
+
+      // ── Config globale ────────────────────────────────────────
+      if(data.config){
+        if(data.config.groqKey)   localStorage.setItem('marjane_groq_key', data.config.groqKey);
+        if(data.config.lastUnite) localStorage.setItem('a7_last_unite',    data.config.lastUnite);
+      }
+
+      toast('✅ Données restaurées (A7 + A4 + Balisage) — Rechargement…','ok');
+      setTimeout(()=>location.reload(), 1200);
     }catch(err){ toast('Fichier invalide: '+err.message,'err'); }
   };
   reader.readAsText(file);
