@@ -4578,20 +4578,112 @@ function deleteArticle(code){
 // Import Base from Excel
 function importBaseExcel(input){
   const file = input.files[0]; if(!file) return;
-  toast('⏳ Lecture du fichier Excel…', 'ok');
+  input.value = '';
 
+  // ── Modale de choix : avec ou sans traduction ──────────────────
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:#0d1f3c;border:1px solid rgba(255,222,0,.3);border-radius:18px;
+                padding:28px 28px 22px;width:100%;max-width:440px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <i class="ri-file-excel-2-line" style="font-size:26px;color:#22c55e"></i>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;
+                    color:#ffde00;letter-spacing:1px">IMPORT BASE EXCEL</div>
+      </div>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:22px" id="_impFileName"></div>
+
+      <div style="font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">
+        Mode d'import
+      </div>
+
+      <!-- Option 1 : Sans traduction -->
+      <div id="_impOptA" onclick="_impSelect('A')" style="cursor:pointer;border:2px solid rgba(255,222,0,.6);
+           border-radius:12px;padding:14px 16px;margin-bottom:10px;background:rgba(255,222,0,.08);transition:all .15s">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,222,0,.15);
+               display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">⚡</div>
+          <div>
+            <div style="font-weight:700;color:#ffde00;font-size:13px">Import direct — Sans traduction</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:2px">
+              Rapide · Conserve la colonne AR du fichier Excel si elle existe · Pas de clé API requise
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option 2 : Avec traduction IA -->
+      <div id="_impOptB" onclick="_impSelect('B')" style="cursor:pointer;border:2px solid rgba(255,255,255,.1);
+           border-radius:12px;padding:14px 16px;margin-bottom:20px;background:rgba(255,255,255,.03);transition:all .15s">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:rgba(11,61,145,.3);
+               display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌐</div>
+          <div>
+            <div style="font-weight:700;color:#e2e8f0;font-size:13px">Import + Traduction IA — Groq LLaMA</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:2px">
+              Génère la désignation arabe pour chaque article sans traduction · Clé API Groq requise
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="this.closest('div[style*=fixed]').remove()"
+          style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+                 border-radius:8px;padding:8px 18px;color:#94a3b8;cursor:pointer;font-size:13px">
+          Annuler
+        </button>
+        <button id="_impGoBtn" onclick="_impLaunch()"
+          style="background:#ffde00;color:#0b3d91;border:none;border-radius:8px;
+                 padding:8px 22px;font-weight:800;font-size:13px;cursor:pointer;
+                 font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">
+          IMPORTER
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // Nom du fichier
+  overlay.querySelector('#_impFileName').textContent = `📄 ${file.name}`;
+
+  // Sélection active par défaut : A
+  let _impChoice = 'A';
+  window._impSelect = function(opt){
+    _impChoice = opt;
+    const a = overlay.querySelector('#_impOptA');
+    const b = overlay.querySelector('#_impOptB');
+    if(opt === 'A'){
+      a.style.border = '2px solid rgba(255,222,0,.6)';
+      a.style.background = 'rgba(255,222,0,.08)';
+      b.style.border = '2px solid rgba(255,255,255,.1)';
+      b.style.background = 'rgba(255,255,255,.03)';
+    } else {
+      b.style.border = '2px solid rgba(11,61,145,.8)';
+      b.style.background = 'rgba(11,61,145,.2)';
+      a.style.border = '2px solid rgba(255,255,255,.1)';
+      a.style.background = 'rgba(255,255,255,.03)';
+    }
+  };
+
+  window._impLaunch = function(){
+    overlay.remove();
+    _doImportBaseExcel(file, _impChoice === 'B');
+  };
+}
+
+function _doImportBaseExcel(file, withTranslation){
+  toast('⏳ Lecture du fichier Excel…', 'ok');
   const reader = new FileReader();
   reader.onload = e => {
     try{
-      // arraybuffer : plus fiable pour les gros fichiers (pas de limite binaire)
-      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
+      const wb   = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const ws   = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
 
       let added=0, updated=0, skipped=0;
 
       for(let i=1; i<rows.length; i++){
-        const r = rows[i];
+        const r    = rows[i];
         const code = String(r[0]||'').trim();
         if(!code){ skipped++; continue; }
         const art = {
@@ -4614,27 +4706,40 @@ function importBaseExcel(input){
       const msg = `✅ Import : ${added} ajoutés, ${updated} mis à jour${skipped ? ', '+skipped+' ignorés' : ''} — Base totale : ${state.base.length} articles`;
       toast(msg, 'ok');
 
-      // Proposer la traduction en lot pour les articles sans désignation arabe
-      const noAR = state.base.filter(a => a.designation_fr && !a.designation_ar);
-      if(noAR.length > 0){
-        const go = confirm(
-          `${noAR.length} article(s) n'ont pas de désignation arabe.\n\nLancer la traduction automatique IA (terminologie commerciale Marjane) ?\n\nDurée estimée : ~${Math.ceil(noAR.length * 0.5)} secondes`
-        );
-        if(go){
-          translateBatch(
-            state.base,
-            (i, ar) => { state.base[i].designation_ar = ar; },
-            350
-          ).then(n => {
-            if(n > 0){ saveBaseSafe(); renderBase(); toast(`✅ ${n} désignation(s) arabe(s) générée(s)`, 'ok'); }
-          });
+      if(withTranslation){
+        // Traduction IA : tous les articles sans désignation arabe
+        const noAR = state.base.filter(a => a.designation_fr && !a.designation_ar);
+        if(noAR.length === 0){
+          toast('ℹ️ Tous les articles ont déjà une désignation arabe', 'ok');
+          return;
         }
+        const apiKey = _getAnthropicKey();
+        if(!apiKey){
+          openApiKeyModal(function(key){
+            if(key) translateBatch(
+              state.base,
+              (i, ar) => { state.base[i].designation_ar = ar; },
+              350
+            ).then(n => {
+              if(n > 0){ saveBaseSafe(); renderBase(); toast(`✅ ${n} traduction(s) générée(s)`, 'ok'); }
+            });
+            else toast('🔑 Traduction annulée — clé API requise', 'err');
+          });
+          return;
+        }
+        toast(`🌐 Lancement traduction IA pour ${noAR.length} article(s)…`, 'ok');
+        translateBatch(
+          state.base,
+          (i, ar) => { state.base[i].designation_ar = ar; },
+          350
+        ).then(n => {
+          if(n > 0){ saveBaseSafe(); renderBase(); toast(`✅ ${n} désignation(s) arabe(s) générée(s)`, 'ok'); }
+        });
       }
     }catch(err){
       console.error('[importBaseExcel]', err);
       toast('❌ Erreur Excel : '+err.message, 'err');
     }
-    input.value = '';
   };
   reader.readAsArrayBuffer(file);
 }
