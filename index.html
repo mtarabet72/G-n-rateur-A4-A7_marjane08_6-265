@@ -2970,16 +2970,20 @@ function exportAllData(){
   toast('✅ Sauvegarde complète A7 + A4 + Balisage téléchargée','ok');
 }
 
-function importAllData(input){
+async function importAllData(input){
   const file = input.files[0];
   if(!file) return;
+  input.value = '';
+
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try{
       const data = JSON.parse(e.target.result);
       if(!confirm('Restaurer cette sauvegarde ?\nCela remplacera toutes les données A7, A4 et Balisage.')) return;
 
-      // ── Restaurer A7 ──────────────────────────────────────────
+      toast('⏳ Restauration en cours…', 'ok');
+
+      // ── Restaurer A7 (IDB — attendre la fin) ─────────────────
       const a7 = data.a7 || data; // compatibilité ancien format (A7-v5)
       state.base       = a7.base       || [];
       state.queue      = a7.queue      || [];
@@ -2989,9 +2993,19 @@ function importAllData(input){
       state.history    = a7.history    || [];
       state.tplLayout  = a7.tplLayout  || {};
       state.textColors = a7.textColors || state.textColors;
-      saveBaseSafe();
-      ['queue','mapping','productTpl','tplLayout','textColors'].forEach(k=>save(k));
-      save('templates'); save('history');
+
+      // Attendre toutes les écritures IDB
+      const idbWrites = [
+        idbPutAll('base',      state.base),
+        idbPutAll('history',   state.history),
+        idbPutAll('templates', Object.entries(state.templates).map(([name,d])=>({name,data:d}))),
+      ];
+      await Promise.all(idbWrites);
+
+      // Clés légères → localStorage
+      ['queue','mapping','productTpl','tplLayout','textColors'].forEach(k => {
+        try { localStorage.setItem('a7_'+k, JSON.stringify(state[k])); } catch(e){}
+      });
 
       // ── Restaurer A4 ──────────────────────────────────────────
       if(data.a4){
@@ -3015,12 +3029,16 @@ function importAllData(input){
         if(data.config.lastUnite) localStorage.setItem('a7_last_unite',    data.config.lastUnite);
       }
 
-      toast('✅ Données restaurées (A7 + A4 + Balisage) — Rechargement…','ok');
-      setTimeout(()=>location.reload(), 1200);
-    }catch(err){ toast('Fichier invalide: '+err.message,'err'); }
+      // Tout est écrit → rechargement
+      toast(`✅ Restauration terminée — ${state.base.length} articles — Rechargement…`, 'ok');
+      setTimeout(() => location.reload(), 800);
+
+    }catch(err){
+      console.error('[importAllData]', err);
+      toast('❌ Fichier invalide : ' + err.message, 'err');
+    }
   };
   reader.readAsText(file);
-  input.value='';
 }
 
 // ═══════════════════════════════════════════════════════════════
