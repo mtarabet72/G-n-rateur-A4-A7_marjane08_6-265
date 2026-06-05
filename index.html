@@ -1030,7 +1030,11 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <!-- Mapping préfixes -->
       <div class="card">
         <div class="card-title"><i class="ri-flow-chart"></i> Mapping Préfixes → Template</div>
-        <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Le préfixe le plus long est prioritaire</p>
+        <p style="font-size:12px;color:var(--text3);margin-bottom:4px">
+          Priorité : <strong style="color:#ffde00">1.</strong> Colonne H Excel &nbsp;·&nbsp;
+          <strong style="color:#ffde00">2.</strong> Préfixe code (plus long en premier) &nbsp;·&nbsp;
+          <strong style="color:#ffde00">3.</strong> Inférence désignation FR
+        </p>
         <div id="mappingList" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:10px"></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" onclick="addMapping()"><i class="ri-add-line"></i> Ajouter</button>
@@ -1092,7 +1096,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <div class="field"><label class="lbl">Origine</label><input id="m_origine" placeholder="France, Maroc…"></div>
       <div class="field"><label class="lbl">Col J (Rectangle 41)</label><input id="m_colJ" placeholder="Valeur Col J"></div>
     </div>
-    <div class="field"><label class="lbl">Col K (Rectangle 31)</label><input id="m_colK" placeholder="Valeur Col K"></div>
+    <div class="field"><label class="lbl">Col H → Mapping template</label><input id="m_colH" placeholder="Valeur Col K"></div>
     <div class="sep"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeArticleModal()">Annuler</button>
@@ -2318,14 +2322,14 @@ const TPL_COLORS = {
 
 // Allergens (from VBA SetShapeTextWithAllergens)
 const ALLERGEN_GROUPS = [
-  ['GLUTEN','BLE','BLÉ','ORGE','AVOINE','Farine de blé','MALTE','malte'],
+  ['GLUTEN','BLE','ORGE','AVOINE'],
   ['CRUSTACE','CREVETTE','CRABE'],
   ['POISSON','SAUMON','THON'],
-  ['OEUF','OEUFS','ŒUFS'],
+  ['OEUF','OEUFS'],
   ['LAIT','LAITIER','FROMAGE'],
   ['ARACHIDE','CACAHUETE'],
   ['SOJA'],
-  ['AMANDE','NOIX','NOISETTE','CAJOU','GRAINE DE TOURNESOL'],
+  ['AMANDE','NOIX','NOISETTE','CAJOU'],
   ['CELERI'],
   ['MOUTARDE'],
   ['SESAME'],
@@ -2337,13 +2341,13 @@ const ALLERGEN_FLAT = ALLERGEN_GROUPS.flat();
 
 // Arabic allergen keywords (14 EU allergen groups)
 const ALLERGEN_FLAT_AR = [
-  'الغلوتين','قمح','القمح','شعير','شوفان','جاودار',
+  'الغلوتين','قمح','شعير','شوفان','جاودار',
   'قشريات','جمبري','كراب','سلطعون',
   'سمك','سلمون','تونة','تونا','أنشوجة',
-  'بيض','البيض',
+  'بيض','بيضة',
   'حليب','لبن','جبن','جبنة','كريمة','زبدة','لاكتوز',
-  'فول سوداني','فستق سوداني','نوار الشمس',
-  'صويا','فول الصويا','سويا','الصوجا','صوجا',
+  'فول سوداني','فستق سوداني',
+  'صويا','فول الصويا','سويا',
   'مكسرات','لوز','جوز','بندق','كاجو','فستق',
   'كرفس','خردل','سمسم','طحينة','طحينية',
   'كبريتيت','سلفيت','ترمس','لوبيا',
@@ -3539,10 +3543,13 @@ function isAllergen(word){
 
 function findTemplate(code, product){
   if(state.productTpl[code]) return state.productTpl[code];
-  // Try prefix matching (longest first)
+  // ── PRIORITÉ 1 : Colonne H du fichier Excel ────────────────────
+  const colH = (product?.col_h||'').trim().toUpperCase();
+  if(colH && TEMPLATES_ALL.includes(colH)) return colH;
+  // ── PRIORITÉ 2 : Mapping par préfixe de code ──────────────────
   const sorted = [...state.mapping].sort((a,b)=>b.prefix.length-a.prefix.length);
   for(const m of sorted){ if(code.startsWith(m.prefix)) return m.template; }
-  // Infer from designation
+  // ── PRIORITÉ 3 : Inférence par désignation FR ─────────────────
   const d = (product?.designation_fr||'').toUpperCase();
   if(/FROMAGE|BRIE|CAMEMBERT|CHEVRE|ROULE|EMMENTAL|GOUDA|RACLETTE|FETA|EDAM/.test(d)) return 'FROM';
   if(/BAGUETTE|PAIN|CIABATTA|BOULANG/.test(d)) return 'BOUL';
@@ -4130,7 +4137,7 @@ function buildCurrentItem(){
     ingredients_ar: currentProduct?.ingredients_ar||'',
     origine: currentProduct?.origine||'',
     col_j: currentProduct?.col_j||'',
-    col_k: currentProduct?.col_k||''
+    col_h: currentProduct?.col_h||''
   };
 }
 
@@ -4419,7 +4426,7 @@ function importExcelToQueue(input){
           code, designation_fr:prod.designation_fr, designation_ar:prod.designation_ar,
           prix, unite, template, grammage, fidelite,
           ingredients_fr:prod.ingredients_fr, ingredients_ar:prod.ingredients_ar, origine:prod.origine,
-          col_j:prod.col_j, col_k:prod.col_k
+          col_j:prod.col_j, col_h:prod.col_h
         };
         state.queue.push(item);
         const hi = {...item, savedAt:new Date().toISOString()};
@@ -4521,7 +4528,7 @@ function renderBase(page){
       <td class="ar" style="font-size:12px;direction:rtl">${(p.ingredients_ar||'').substring(0,40)}</td>
       <td style="font-size:12px">${p.origine||''}</td>
       <td style="font-size:11px">${p.col_j||''}</td>
-      <td style="font-size:11px">${p.col_k||''}</td>
+      <td style="font-size:11px">${p.col_h||''}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-ghost btn-sm" style="margin-right:4px" onclick="openArticleModal('${p.code}')"><i class="ri-edit-line"></i></button>
         <button class="btn btn-red btn-sm" onclick="deleteArticle('${p.code}')"><i class="ri-delete-bin-line"></i></button>
@@ -4554,10 +4561,10 @@ function openArticleModal(code=null){
     if(!p) return;
     $('#m_code').value=p.code; $('#m_desFR').value=p.designation_fr;
     $('#m_desAR').value=p.designation_ar||''; $('#m_ing').value=p.ingredients_fr||''; $('#m_ing_ar').value=p.ingredients_ar||'';
-    $('#m_origine').value=p.origine||''; $('#m_colJ').value=p.col_j||''; $('#m_colK').value=p.col_k||'';
+    $('#m_origine').value=p.origine||''; $('#m_colJ').value=p.col_j||''; $('#m_colH').value=p.col_h||'';
     $('#m_code').readOnly=true;
   } else {
-    ['m_code','m_desFR','m_desAR','m_ing','m_ing_ar','m_origine','m_colJ','m_colK'].forEach(id=>$(('#'+id)).value='');
+    ['m_code','m_desFR','m_desAR','m_ing','m_ing_ar','m_origine','m_colJ','m_colH'].forEach(id=>$(('#'+id)).value='');
     $('#m_code').readOnly=false;
   }
   $('#articleModal').classList.add('open');
@@ -4574,7 +4581,7 @@ function saveArticle(){
     ingredients_ar:$('#m_ing_ar').value.trim(),
     origine:$('#m_origine').value.trim(),
     col_j:$('#m_colJ').value.trim(),
-    col_k:$('#m_colK').value.trim()
+    col_h:$('#m_colH').value.trim()
   };
   if(editingCode){
     const i=state.base.findIndex(x=>x.code===editingCode);
@@ -4712,7 +4719,7 @@ function _doImportBaseExcel(file, withTranslation){
           ingredients_ar:  String(r[4]||'').trim(),
           origine:         String(r[5]||'').trim(),
           col_j:           String(r[6]||'').trim(),
-          col_k:           String(r[7]||'').trim()
+          col_h:           String(r[7]||'').trim()   // Colonne H → mapping template
         };
         const idx = state.base.findIndex(x => x.code === code);
         if(idx >= 0){ state.base[idx] = art; updated++; }
@@ -4779,7 +4786,7 @@ function saveBaseSafe(){
 function exportBaseExcel(){
   if(!state.base.length){ toast('Base vide','err'); return; }
   const rows=[['Code','Désignation FR','Désignation AR','Ingrédients FR','Ingrédients AR','Origine','Col J','Col K']];
-  state.base.forEach(p=>rows.push([p.code,p.designation_fr,p.designation_ar,p.ingredients_fr,p.ingredients_ar||'',p.origine,p.col_j,p.col_k]));
+  state.base.forEach(p=>rows.push([p.code,p.designation_fr,p.designation_ar,p.ingredients_fr,p.ingredients_ar||'',p.origine,p.col_j,p.col_h]));
   const ws=XLSX.utils.aoa_to_sheet(rows);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Base_Donnees_A7');
@@ -7004,10 +7011,12 @@ function a4RenderEls(ctx, W, H, data, els) {
     const e = els.desAR;
     ctx.fillStyle = e.color || '#FFF';
     ctx.font = '900 ' + (e.fs * sc) + 'px "BFMarjane","IBM Plex Sans Arabic",sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.direction = 'rtl';
     ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 4 * sc;
-    a4WrapText(ctx, data.desAR, W*0.5, e.y * H, W * 0.92, e.fs * sc * 1.3, 2);
+    a4WrapTextRTL(ctx, data.desAR, W*0.5, e.y * H, W * 0.92, e.fs * sc * 1.3, 2);
     ctx.shadowBlur = 0;
+    ctx.direction = 'ltr';
   }
 
   // ── Prix barré — format identique A7 (mesure groupe, baseline alphabetic) ─
@@ -7239,6 +7248,25 @@ function a4WrapText(ctx, text, x, y, maxW, lineH, maxLines) {
   }
   if (line && lines.length < maxLines) lines.push(line);
   lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
+}
+
+// Variante RTL pour l'arabe — direction droite vers gauche, ancrage centre-x
+function a4WrapTextRTL(ctx, text, cx, y, maxW, lineH, maxLines) {
+  if (!text) return;
+  // Séparer sur espace, reconstruire de droite à gauche
+  const words = text.split(' '); let line = '', lines = [];
+  for (const w of words) {
+    const t = line ? w + ' ' + line : w;
+    if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; if (lines.length >= maxLines) break; }
+    else line = t;
+  }
+  if (line && lines.length < maxLines) lines.push(line);
+  // Centrer : textAlign = 'right', on mesure la ligne et on ancre à cx + moitié
+  const savedAlign = ctx.textAlign;
+  ctx.textAlign = 'center';
+  ctx.direction = 'rtl';
+  lines.forEach((l, i) => ctx.fillText(l, cx, y + i * lineH));
+  ctx.textAlign = savedAlign;
 }
 
 // ─── ID-39 (Code 39) — Implémentation native canvas ─────────────
