@@ -3846,7 +3846,7 @@ function drawLabelText(ctx, item){
       }
 
       // Label arabe «ربح» (gagner) — en haut à droite du rectangle fidélité
-      const fidLabelAr = 'رْبح';
+      const fidLabelAr = '';
       ctx.save();
       ctx.font = 'bold ' + (fzDec + 2) + 'px sans-serif';
       ctx.fillStyle = hasBg ? '#ffffff' : '#004497';
@@ -3880,7 +3880,7 @@ function drawLabelText(ctx, item){
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       const labelArabicY = hasBg ? (L.fidLabelArabicY ?? 0.72) * CH : fY + fH * 0.72;
-      ctx.fillText('على بطاقتكم', fX + fW / 2, labelArabicY);
+      ctx.fillText('', fX + fW / 2, labelArabicY);
       ctx.restore();
 
       // Indicateur % dans le coin (petit)
