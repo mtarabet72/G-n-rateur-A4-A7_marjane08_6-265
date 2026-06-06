@@ -503,7 +503,8 @@ body{overflow-x:hidden}
 ::-webkit-scrollbar-track{background:var(--surf)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 /* Arabic */
-.ar{font-family:'IBM Plex Sans Arabic',sans-serif;direction:rtl;text-align:right}
+.ar{font-family:'IBM Plex Sans Arabic',sans-serif;direction:rtl;text-align:right;unicode-bidi:plaintext}
+input.ar,textarea.ar{font-family:'IBM Plex Sans Arabic',sans-serif!important;direction:rtl!important;text-align:right!important;unicode-bidi:plaintext!important}
 .mono{font-family:'IBM Plex Mono',monospace}
 /* Layout */
 #app{max-width:1440px;margin:0 auto;padding:12px 16px}
@@ -1097,11 +1098,11 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
             <i class="ri-translate-2" style="font-size:14px"></i> Traduire IA
           </button>
         </div>
-        <input id="m_desAR" class="ar" placeholder="الاسم بالعربية">
+        <input id="m_desAR" class="ar" dir="rtl" lang="ar" style="direction:rtl;text-align:right;unicode-bidi:plaintext;font-family:'IBM Plex Sans Arabic',sans-serif" placeholder="الاسم بالعربية">
       </div>
     </div>
     <div class="field"><label class="lbl">Ingrédients (FR)</label><textarea id="m_ing" placeholder="Lait, sucre, farine… (allergènes en majuscules)"></textarea></div>
-    <div class="field"><label class="lbl">Ingrédients (AR)</label><textarea id="m_ing_ar" class="ar" placeholder="المكونات بالعربية…" style="direction:rtl;text-align:right"></textarea></div>
+    <div class="field"><label class="lbl">Ingrédients (AR)</label><textarea id="m_ing_ar" class="ar" dir="rtl" lang="ar" placeholder="المكونات بالعربية…" style="direction:rtl;text-align:right;unicode-bidi:plaintext;font-family:'IBM Plex Sans Arabic',sans-serif"></textarea></div>
     <div class="g2">
       <div class="field"><label class="lbl">Origine</label><input id="m_origine" placeholder="France, Maroc…"></div>
       <div class="field"><label class="lbl">Col J (Rectangle 41)</label><input id="m_colJ" placeholder="Valeur Col J"></div>
@@ -1170,7 +1171,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
                   <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
                 </button>
               </div>
-              <input id="a4DesAR" placeholder="الاسم بالعربية" class="ar" style="direction:rtl;text-align:right" oninput="this.dataset.manual=this.value?'1':'';a4Sync()">
+              <input id="a4DesAR" placeholder="الاسم بالعربية" class="ar" dir="rtl" lang="ar" style="direction:rtl;text-align:right;unicode-bidi:plaintext;font-family:'IBM Plex Sans Arabic',sans-serif" oninput="this.dataset.manual=this.value?'1':'';a4Sync()">
             </div>
           </div>
           <div class="a4-form-section">
@@ -1351,24 +1352,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
                        color:var(--amber);letter-spacing:3px;text-align:center;height:58px"
                 oninput="bLookup()" autofocus>
               <button class="btn btn-amber" title="Scanner code-barres"
-                onclick="startBarcodeScan(function(c){
-                  var inp = document.getElementById('bCodeInput');
-                  if(!inp) return;
-                  inp.value = c;
-                  inp.dispatchEvent(new Event('input', {bubbles:true}));
-                  bLookup();
-                  // Focus sur le bouton Ajouter si produit trouvé, sinon sur désignation FR
-                  setTimeout(function(){
-                    if(_bCurrentProduct){
-                      toast('✓ ' + (_bCurrentProduct.designation_fr || c) + ' — prêt à ajouter', 'ok');
-                      var btn = document.getElementById('bAddToFileBtn');
-                      if(btn) btn.focus();
-                    } else {
-                      var desFR = document.getElementById('bDesFR');
-                      if(desFR){ desFR.focus(); desFR.select(); }
-                    }
-                  }, 150);
-                })"
+                onclick="startBarcodeScan(function(c){ document.getElementById('bCodeInput').value=c; bLookup(); bLookupEnter(); })"
                 style="padding:12px 14px;min-width:48px;height:58px"><i class="ri-qr-scan-2-line" style="font-size:20px"></i></button>
             </div>
             <div id="bStatusBar" style="margin-top:8px;height:28px;font-size:13px;line-height:28px;
@@ -1421,8 +1405,8 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
                   <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
                 </button>
               </div>
-              <input id="bDesAR" class="ar" placeholder="الاسم يُملأ تلقائياً من القاعدة…"
-                style="direction:rtl;text-align:right" oninput="bSyncPreview()">
+              <input id="bDesAR" class="ar" dir="rtl" lang="ar" placeholder="الاسم يُملأ تلقائياً من القاعدة…"
+                style="direction:rtl;text-align:right;unicode-bidi:plaintext;font-family:'IBM Plex Sans Arabic',sans-serif" oninput="bSyncPreview()">
             </div>
           </div>
 
@@ -1459,7 +1443,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           </div>
 
           <!-- ── Boutons action ── -->
-          <button id="bAddToFileBtn" class="btn btn-amber btn-full" onclick="bAddToFile()">
+          <button class="btn btn-amber btn-full" onclick="bAddToFile()">
             <i class="ri-add-circle-line"></i> AJOUTER À LA FILE — ENTRÉE
           </button>
           <div style="display:flex;gap:8px">
