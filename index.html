@@ -895,8 +895,12 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <div style="display:flex;flex-direction:column;gap:14px">
       <!-- Actions bar -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <input id="baseSearch" placeholder="Rechercher code ou désignation…" style="flex:1;min-width:180px;max-width:340px" oninput="_basePage=0;renderBase()">
+        <div style="display:flex;gap:4px;align-items:center;flex:1;min-width:240px">
+          <input id="baseSearch" placeholder="Rechercher code ou désignation…" style="flex:1;min-width:180px" oninput="_basePage=0;renderBase()">
+          <button class="btn btn-amber" style="padding:10px 12px;min-width:44px;height:44px" title="Scanner code article" onclick="startBaseSearchScan()"><i class="ri-qr-scan-2-line"></i></button>
+        </div>
         <button class="btn btn-amber btn-sm" onclick="openArticleModal()"><i class="ri-add-line"></i> Nouvel article</button>
+        <button class="btn btn-amber btn-sm" onclick="startNewArticleScan()" title="Scanner code pour nouvel article"><i class="ri-qr-scan-2-line"></i> Scanner</button>
         <button class="btn btn-blue btn-sm" onclick="exportBaseExcel()"><i class="ri-download-2-line"></i> Exporter Excel</button>
         <label class="btn btn-ghost btn-sm" style="cursor:pointer">
           <i class="ri-upload-2-line"></i> Importer Excel
@@ -1074,7 +1078,10 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
   <div class="modal">
     <div class="modal-title" id="modalTitle">Nouvel Article</div>
     <button class="modal-close" onclick="closeArticleModal()"><i class="ri-close-line"></i></button>
-    <div class="field"><label class="lbl">Code Article *</label><input id="m_code" placeholder="Ex: 2658179"></div>
+    <div class="field"><label class="lbl">Code Article *</label><div style="display:flex;gap:4px">
+      <input id="m_code" placeholder="Ex: 2658179" style="flex:1">
+      <button type="button" class="btn btn-amber" style="padding:10px 12px;min-width:44px" title="Scanner code-barres" onclick="startArticleCodeScan()"><i class="ri-qr-scan-2-line"></i></button>
+    </div></div>
     <div class="g2">
       <div class="field">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -1352,7 +1359,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
                        color:var(--amber);letter-spacing:3px;text-align:center;height:58px"
                 oninput="bLookup()" autofocus>
               <button class="btn btn-amber" title="Scanner code-barres"
-                onclick="startBarcodeScan(function(c){ document.getElementById('bCodeInput').value=c; bLookup(); bLookupEnter(); })"
+                onclick="startBarcodeScan(function(c){ document.getElementById('bCodeInput').value=c; bLookup(); bAfterScanConfirm(); })"
                 style="padding:12px 14px;min-width:48px;height:58px"><i class="ri-qr-scan-2-line" style="font-size:20px"></i></button>
             </div>
             <div id="bStatusBar" style="margin-top:8px;height:28px;font-size:13px;line-height:28px;
@@ -3818,10 +3825,11 @@ function drawLabelText(ctx, item){
     const lineHDesAR = fzDesAR * 1.2;
     ctx.font = `500 ${fzDesAR}px 'BFMarjane', 'IBM Plex Sans Arabic', sans-serif`;
     ctx.textBaseline = 'top';
-    // Pour l'arabe : on utilise wrapDesCenter avec direction RTL
-    // Les mots arabes se coupent normalement gauche→droite en canvas
+    // RTL : activer direction rtl pour que canvas order les glyphes correctement
+    ctx.direction = 'rtl';
     wrapDesCenter(ctx, desAR, CW / 2, yDesAR, maxDesW, lineHDesAR, 10,
       fz => `500 ${fz}px 'BFMarjane', 'IBM Plex Sans Arabic', sans-serif`, fzDesAR);
+    ctx.direction = 'ltr';
     ctx.textAlign = 'left';
   }
 
@@ -4662,6 +4670,52 @@ function deleteArticle(code){
   if(!confirm(`Supprimer l'article ${code} ?`)) return;
   state.base = state.base.filter(p=>p.code!==code);
   saveBaseSafe(); renderBase(); toast('Article supprimé');
+}
+
+// ─── Scan pour recherche BASE ──────────────────────────────────────
+function startBaseSearchScan(){
+  startBarcodeScan(function(code){
+    document.getElementById('baseSearch').value = code;
+    _basePage = 0;
+    renderBase();
+    toast(`✓ Code scanné : ${code}`, 'ok');
+  });
+}
+
+// ─── Scan pour créer nouvel article ─────────────────────────────────
+function startNewArticleScan(){
+  // Ouvrir le modal d'abord
+  openArticleModal();
+  // Puis lancer le scan (qui va remplir m_code et focus desFR)
+  setTimeout(() => {
+    startBarcodeScan(function(code){
+      document.getElementById('m_code').value = code;
+      // Focus sur la désignation FR pour saisie manuelle
+      setTimeout(() => {
+        const desFR = document.getElementById('m_desFR');
+        if(desFR) { desFR.focus(); desFR.select(); }
+      }, 100);
+      toast(`✓ Code scanné : ${code}`, 'ok');
+    });
+  }, 300);
+}
+
+// ─── Scan du code dans le modal article (pour nouvelle création) ────
+function startArticleCodeScan(){
+  startBarcodeScan(function(code){
+    const input = document.getElementById('m_code');
+    if(input && !input.readOnly){
+      input.value = code;
+      // Focus sur la désignation FR après le scan
+      setTimeout(() => {
+        const desFR = document.getElementById('m_desFR');
+        if(desFR) { desFR.focus(); desFR.select(); }
+      }, 100);
+      toast(`✓ Code scanné : ${code}`, 'ok');
+    } else {
+      toast('⚠️ Code article verrouillé (modification)', 'warn');
+    }
+  });
 }
 
 // Import Base from Excel
@@ -7356,22 +7410,29 @@ function a4WrapText(ctx, text, x, y, maxW, lineH, maxLines) {
 }
 
 // Variante RTL pour l'arabe — direction droite vers gauche, ancrage centre-x
+// Canvas gère l'ordre des glyphes nativement via ctx.direction='rtl'
 function a4WrapTextRTL(ctx, text, cx, y, maxW, lineH, maxLines) {
   if (!text) return;
-  // Séparer sur espace, reconstruire de droite à gauche
-  const words = text.split(' '); let line = '', lines = [];
+  // Découpe normale (gauche→droite) : canvas + direction:rtl réordonne les glyphes
+  const words = text.split(' ');
+  let line = '', lines = [];
   for (const w of words) {
-    const t = line ? w + ' ' + line : w;
-    if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; if (lines.length >= maxLines) break; }
-    else line = t;
+    const t = line ? line + ' ' + w : w;
+    if (ctx.measureText(t).width > maxW && line) {
+      lines.push(line);
+      line = w;
+      if (lines.length >= maxLines) break;
+    } else { line = t; }
   }
   if (line && lines.length < maxLines) lines.push(line);
-  // Centrer : textAlign = 'right', on mesure la ligne et on ancre à cx + moitié
+  // Ancrage centre-x, direction rtl déjà activée par l'appelant
   const savedAlign = ctx.textAlign;
-  ctx.textAlign = 'center';
-  ctx.direction = 'rtl';
+  const savedDir   = ctx.direction;
+  ctx.textAlign  = 'center';
+  ctx.direction  = 'rtl';
   lines.forEach((l, i) => ctx.fillText(l, cx, y + i * lineH));
-  ctx.textAlign = savedAlign;
+  ctx.textAlign  = savedAlign;
+  ctx.direction  = savedDir;
 }
 
 // ─── ID-39 (Code 39) — Implémentation native canvas ─────────────
@@ -8014,17 +8075,74 @@ function bLookup() {
 }
 
 function bLookupEnter() {
-  // Si produit trouvé → focus sur bDesFR pour ajustement manuel, sinon rien
+  // Produit trouvé → focus sur bDesFR pour vérification manuelle avant ajout
   const code = (document.getElementById('bCodeInput')?.value || '').trim();
   if (!code) return;
   if (_bCurrentProduct) {
-    // Direct → ajouter à la file
-    bAddToFile();
+    // Produit trouvé : montrer confirmation toast + scroll vers le bouton Ajouter
+    bShowScanConfirm();
   } else {
     // Code inconnu : focus désignation pour saisie manuelle
     const desFR = document.getElementById('bDesFR');
     if (desFR) { desFR.focus(); desFR.select(); }
   }
+}
+
+// Affiche une confirmation après scan avant d'ajouter à la file
+function bAfterScanConfirm() {
+  // Laisser bLookup() se terminer (async lookup), puis appeler confirm
+  setTimeout(() => {
+    if (_bCurrentProduct) {
+      bShowScanConfirm();
+    } else {
+      // Code non trouvé — focus désignation FR pour saisie manuelle
+      const desFR = document.getElementById('bDesFR');
+      if (desFR) { desFR.focus(); desFR.select(); }
+    }
+  }, 350);
+}
+
+// Affiche le modal de confirmation scan
+function bShowScanConfirm() {
+  const prod = _bCurrentProduct;
+  const desFR = document.getElementById('bDesFR')?.value || prod?.designation_fr || '—';
+  const desAR = document.getElementById('bDesAR')?.value || prod?.designation_ar || '';
+  const prix  = document.getElementById('bPrix')?.value || '';
+  const gab   = document.getElementById('bGabarit')?.value || _bGabarit || 'BOUL';
+
+  // Supprimer ancien modal si présent
+  document.getElementById('bScanConfirmModal')?.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'bScanConfirmModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `
+    <div style="width:100%;max-width:420px;background:#12100c;border:1.5px solid var(--amber);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800;color:var(--amber);font-size:15px"><i class="ri-check-double-line"></i> Confirmer l'ajout</div>
+        <button onclick="document.getElementById('bScanConfirmModal').remove()"
+          style="background:transparent;border:none;color:var(--text3);font-size:22px;cursor:pointer;line-height:1"><i class="ri-close-line"></i></button>
+      </div>
+      <div style="background:var(--surf2);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:13px;font-weight:700;color:#fff">${desFR}</div>
+        ${desAR ? `<div style="font-family:'IBM Plex Sans Arabic',sans-serif;direction:rtl;text-align:right;font-size:13px;color:var(--text2)">${desAR}</div>` : ''}
+        <div style="display:flex;gap:10px;margin-top:4px">
+          ${prix ? `<span style="font-size:12px;color:var(--amber);font-weight:700">${prix} DH</span>` : ''}
+          <span style="font-size:11px;color:var(--text4);background:var(--surf3);padding:2px 8px;border-radius:12px">${gab}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('bScanConfirmModal').remove()"
+          style="flex:1;padding:12px;background:var(--surf2);border:1px solid var(--border2);border-radius:10px;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer">
+          <i class="ri-arrow-left-line"></i> Modifier
+        </button>
+        <button onclick="document.getElementById('bScanConfirmModal').remove(); bAddToFile();"
+          style="flex:2;padding:12px;background:var(--amber);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer">
+          <i class="ri-add-line"></i> Ajouter à la file
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
 // Détecte les allergènes majuscules dans une chaîne d'ingrédients
@@ -8465,7 +8583,11 @@ function _bDrawArabesquePattern(ctx, x, y, w, h, color) {
 // Helper: wrap texte sur plusieurs lignes centré
 function _bWrapText(ctx, text, cx, cy, maxW, lineH) {
   if (!text) return;
-  const words = text.split(' ');
+  // Découpe selon la direction active du contexte
+  const isRTL = ctx.direction === 'rtl';
+  const rawWords = text.split(/\s+/).filter(Boolean);
+  // Pour RTL : on laisse canvas gérer l'ordre des glyphes, on assemble mot par mot normalement
+  const words = isRTL ? rawWords : rawWords;
   let line = '';
   const lines = [];
   for (const w of words) {
@@ -8478,10 +8600,13 @@ function _bWrapText(ctx, text, cx, cy, maxW, lineH) {
   if (line) lines.push(line);
   const totalH = lines.length * lineH;
   let startY = cy - totalH / 2 + lineH / 2;
+  const savedAlign = ctx.textAlign;
+  ctx.textAlign = 'center';
   for (const l of lines) {
     ctx.fillText(l, cx, startY);
     startY += lineH;
   }
+  ctx.textAlign = savedAlign;
 }
 
 // Helper: wrap texte multi-lignes (non-centré, depuis x/y)
