@@ -952,7 +952,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
   <div id="tab-dashboard" class="tab">
     <div style="display:flex;flex-direction:column;gap:14px">
       <!-- KPIs row -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
         <div class="card" style="text-align:center;padding:14px 8px">
           <div id="dashToday" style="font-size:32px;font-weight:900;color:var(--amber)">—</div>
           <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">AUJOURD'HUI</div>
@@ -966,6 +966,11 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">TOTAL GÉNÉRATIONS</div>
         </div>
         <div class="card" style="text-align:center;padding:14px 8px">
+          <div id="dashBalisageTotal" style="font-size:32px;font-weight:900;color:#22c55e">—</div>
+          <div style="font-size:10px;color:#22c55e;margin-top:2px;letter-spacing:.5px;opacity:.8">BALISAGES</div>
+          <div id="dashBalisageWeek" style="font-size:11px;color:var(--text3);margin-top:2px">— cette semaine</div>
+        </div>
+        <div class="card" style="text-align:center;padding:14px 8px">
           <div id="dashUser" style="font-size:16px;font-weight:800;color:#60a5fa;margin-top:4px">—</div>
           <div id="dashUserCount" style="font-size:11px;color:var(--amber);margin-top:2px">—</div>
           <div style="font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.5px">OPÉRATEUR ACTUEL</div>
@@ -974,12 +979,17 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <!-- Chart + Templates row -->
       <div style="display:grid;grid-template-columns:1fr 280px;gap:14px">
         <div class="card" id="dashBox">
-          <div class="card-title"><i class="ri-bar-chart-2-line"></i> Activité 7 jours — A7 <span style="color:#ef4444">■</span>A4</div>
+          <div class="card-title"><i class="ri-bar-chart-2-line"></i> Activité 7 jours — <span style="color:#f59e0b">■</span> A7 &nbsp;<span style="color:#ef4444">■</span> A4 &nbsp;<span style="color:#22c55e">■</span> Balisage</div>
           <canvas id="dashChart" style="width:100%;height:160px;border-radius:8px"></canvas>
         </div>
         <div class="card">
-          <div class="card-title"><i class="ri-pie-chart-2-line"></i> Top Templates A7</div>
+          <div class="card-title"><i class="ri-pie-chart-2-line"></i> Top Templates</div>
+          <div style="font-size:10px;font-weight:700;color:var(--amber);letter-spacing:.5px;margin-bottom:6px">🏷 A7</div>
           <div id="dashTemplates" style="display:flex;flex-direction:column;gap:6px"></div>
+          <div style="font-size:10px;font-weight:700;color:#22c55e;letter-spacing:.5px;margin:10px 0 6px;padding-top:10px;border-top:1px solid var(--border)">🏷️ BALISAGE</div>
+          <div id="dashBalisageTemplates" style="display:flex;flex-direction:column;gap:6px">
+            <div style="font-size:11px;color:var(--text4)">Aucune donnée</div>
+          </div>
         </div>
       </div>
       <!-- Storage bar (will be injected by JS) -->
@@ -1001,7 +1011,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       </div>
       <!-- Recent activity -->
       <div class="card">
-        <div class="card-title"><i class="ri-time-line"></i> Activité Récente — 20 dernières générations (A7 + A4)</div>
+        <div class="card-title"><i class="ri-time-line"></i> Activité Récente — 20 dernières générations (A7 + A4 + Balisage)</div>
         <div class="tbl-wrap" style="max-height:400px">
           <table>
             <thead><tr><th>Format</th><th>Heure</th><th>Code</th><th>Désignation</th><th>Template</th><th>Prix</th></tr></thead>
@@ -1749,24 +1759,32 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       <button class="help-role-btn" onclick="showHelpRole('admin',this)" style="flex:1;padding:10px 6px;font-size:11px;font-weight:700;border:none;background:transparent;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.5px">🔑 ADMIN</button>
       <button class="help-role-btn" onclick="showHelpRole('pwa',this)" style="flex:1;padding:10px 6px;font-size:11px;font-weight:700;border:none;background:transparent;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.5px">📱 APPLI</button>
       <button class="help-role-btn" onclick="showHelpRole('a4',this)" style="flex:1;padding:10px 6px;font-size:11px;font-weight:700;border:none;background:transparent;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.5px">🖨️ FORMAT A4</button>
+      <button class="help-role-btn" onclick="showHelpRole('balisage',this)" style="flex:1;padding:10px 6px;font-size:11px;font-weight:700;border:none;background:transparent;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.5px">🏷️ BALISAGE</button>
       <button class="help-role-btn" onclick="showHelpRole('apropos',this)" style="flex:1;padding:10px 6px;font-size:11px;font-weight:700;border:none;background:transparent;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.5px">ℹ️ À PROPOS</button>
     </div>
 
     <!-- Contenu rôle : Opérateur -->
     <div id="help-operateur" class="help-role-content" style="padding:16px;display:block">
-      <div style="color:var(--amber);font-weight:700;font-size:13px;margin-bottom:12px">🚀 Créer une affichette rapidement</div>
+      <div style="color:var(--amber);font-weight:700;font-size:13px;margin-bottom:12px">🚀 Créer une affichette A7 rapidement</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="help-step"><span class="help-num">1</span><div><strong>Scanner ou saisir le code produit</strong><br><span style="color:var(--text3);font-size:12px">Utilisez le bouton 📷 pour scanner le code-barres ou tapez manuellement. Le produit est chargé automatiquement si la BASE est renseignée.</span></div></div>
-        <div class="help-step"><span class="help-num">2</span><div><strong>Vérifier les informations</strong><br><span style="color:var(--text3);font-size:12px">Désignation FR/AR, prix, promotion, grammage. Corrigez si nécessaire. La prévisualisation A7 se met à jour en temps réel.</span></div></div>
-        <div class="help-step"><span class="help-num">3</span><div><strong>Choisir le template</strong><br><span style="color:var(--text3);font-size:12px">Sélectionnez le gabarit adapté (prix choc, promo, nouveauté…). L'aperçu reflète immédiatement votre choix.</span></div></div>
-        <div class="help-step"><span class="help-num">4</span><div><strong>Ajouter à la file d'impression</strong><br><span style="color:var(--text3);font-size:12px">Cliquez <em>Ajouter à la file</em>. Accumulez plusieurs affichettes, puis imprimez-les toutes en PDF depuis l'onglet FILE.</span></div></div>
+        <div class="help-step"><span class="help-num">1</span><div><strong>Scanner ou saisir le code produit</strong><br><span style="color:var(--text3);font-size:12px">Utilisez le bouton <i class="ri-qr-scan-2-line"></i> pour scanner le code-barres EAN, ou tapez manuellement. La désignation FR/AR, ingrédients et allergènes sont chargés automatiquement depuis la BASE.</span></div></div>
+        <div class="help-step"><span class="help-num">2</span><div><strong>Saisir le prix et l'unité</strong><br><span style="color:var(--text3);font-size:12px">Prix en DH (ex: 12,90). Unité : pièce, kg, 100g, L, pack, barquette, tranche. La prévisualisation A7 se met à jour en temps réel.</span></div></div>
+        <div class="help-step"><span class="help-num">3</span><div><strong>Fidélité (optionnel)</strong><br><span style="color:var(--text3);font-size:12px">Saisissez le taux en % (ex: 5 → 5%). Le montant en DH est calculé automatiquement et s'affiche sur le template si celui-ci possède un <em>Rectangle 11</em> (templates B_FIL, B_FIL_MN, FROM_CAN).</span></div></div>
+        <div class="help-step"><span class="help-num">4</span><div><strong>Choisir le template</strong><br><span style="color:var(--text3);font-size:12px">Sélectionnez le gabarit adapté au rayon. L'attribution automatique lit la <em>colonne H</em> du fichier Excel, puis le préfixe du code, puis la désignation. Vous pouvez forcer un template via CONFIG → Forcer Template.</span></div></div>
+        <div class="help-step"><span class="help-num">5</span><div><strong>Grammage (templates spéciaux)</strong><br><span style="color:var(--text3);font-size:12px">Pour les templates B_FIL, B_FIL_MN, FROM_CAN : saisissez le grammage en kg (ex: 0,250). Le prix total est calculé automatiquement (Prix × Grammage).</span></div></div>
+        <div class="help-step"><span class="help-num">6</span><div><strong>Ajouter à la file d'impression</strong><br><span style="color:var(--text3);font-size:12px">Cliquez <em>Ajouter à la file</em> ou appuyez <kbd style="background:var(--surf3);padding:1px 5px;border-radius:3px;font-size:10px">Entrée</kbd>. Accumulez plusieurs affichettes, puis imprimez-les toutes en PDF depuis l'onglet FILE (4 étiquettes A7 par page A4).</span></div></div>
       </div>
       <div style="margin-top:14px;background:var(--surf2);border-radius:8px;padding:12px;font-size:12px">
         <div style="color:var(--amber);font-weight:700;margin-bottom:6px">⌨️ Raccourcis clavier</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;color:var(--text2)">
-          <span><kbd style="background:var(--surf3);padding:1px 5px;border-radius:3px;font-size:10px">Entrée</kbd> Valider le code</span>
+          <span><kbd style="background:var(--surf3);padding:1px 5px;border-radius:3px;font-size:10px">Entrée</kbd> Valider le code / ajouter</span>
           <span><kbd style="background:var(--surf3);padding:1px 5px;border-radius:3px;font-size:10px">F5</kbd> Rafraîchir l'aperçu</span>
+          <span><kbd style="background:var(--surf3);padding:1px 5px;border-radius:3px;font-size:10px">Tab</kbd> Passer au champ suivant</span>
+          <span><kbd style="background:var(--surf3);padding:1px 5px;border-radius:3px;font-size:10px">Échap</kbd> Fermer les modales</span>
         </div>
+      </div>
+      <div style="margin-top:10px;background:#1a2e1a;border:1px solid #2d4a2d;border-radius:8px;padding:10px;font-size:12px;color:#7dc47d">
+        <strong>💡 Conseil :</strong> Les allergènes sont détectés automatiquement en FR et AR et s'affichent en <span style="color:#FF0000;font-weight:700">rouge</span> dans les ingrédients sur l'étiquette. Mettez les allergènes en MAJUSCULES dans la base.
       </div>
     </div>
 
@@ -1774,13 +1792,16 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <div id="help-chef" class="help-role-content" style="padding:16px;display:none">
       <div style="color:var(--amber);font-weight:700;font-size:13px;margin-bottom:12px">📦 Gérer la base produits & templates</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet BASE</strong><br><span style="color:var(--text3);font-size:12px">Consultez, ajoutez, modifiez et supprimez des produits. Importez depuis un fichier CSV ou Excel. Exportez la base complète.</span></div></div>
-        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet TEMPLATES</strong><br><span style="color:var(--text3);font-size:12px">Créez et personnalisez vos gabarits d'affichettes : couleurs, polices, zones, logos rayon. Chaque template peut être dupliqué et renommé.</span></div></div>
-        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet HISTORIQUE</strong><br><span style="color:var(--text3);font-size:12px">Retrouvez toutes les affichettes générées, filtrez par date, opérateur, code produit. Régénérez rapidement une affichette passée.</span></div></div>
-        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet CONFIG → Mapping</strong><br><span style="color:var(--text3);font-size:12px">Associez les colonnes de votre fichier d'import aux champs de l'application (code, prix, désignation…).</span></div></div>
+        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet BASE — Gestion articles</strong><br><span style="color:var(--text3);font-size:12px">Consultez, ajoutez, modifiez et supprimez des produits. Import Excel (colonnes : A=Code · B=Désig.FR · C=Désig.AR · D=Ingrédients FR · E=Ingrédients AR · F=Origine · G=Col J · H=Template). Export Excel disponible.</span></div></div>
+        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet BASE — Import avec traduction IA</strong><br><span style="color:var(--text3);font-size:12px">Lors de l'import Excel, choisissez <em>Import + Traduction IA (Groq LLaMA)</em> pour générer automatiquement les désignations arabes manquantes. Clé API Groq requise (gratuite sur console.groq.com).</span></div></div>
+        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet TEMPLATES A7 — Gabarits étiquettes</strong><br><span style="color:var(--text3);font-size:12px">13 templates disponibles (PAT, PAT_M, BOUL, B_AGN, B_FIL, B_FIL_MN, B_BCK, B_VOL, B_VOL-MN, FROM, TRAIT, FROM_CAN, GLACE). Uploadez vos images POTX exportées en PNG/JPG. Ajustez les positions de texte, tailles de police et couleurs par template.</span></div></div>
+        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet TEMPLATES A4 — Gabarits grand format</strong><br><span style="color:var(--text3);font-size:12px">Créez vos gabarits A4 (210×297mm). Chaque template A4 dispose d'un canvas dessiné par code avec zones de texte, prix, fidélité et picto. Export/import JSON pour sauvegarder.</span></div></div>
+        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet HISTORIQUE</strong><br><span style="color:var(--text3);font-size:12px">Retrouvez toutes les affichettes générées (A7 + A4), filtrées par type. Recherche par code, désignation ou template. Pagination 100 entrées par page.</span></div></div>
+        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet CONFIG → Mapping préfixes</strong><br><span style="color:var(--text3);font-size:12px">Associez les préfixes de codes EAN à des templates (ex: 269 → BOUL). Priorité : colonne H Excel › préfixe code › inférence désignation.</span></div></div>
+        <div class="help-step"><span class="help-num">▶</span><div><strong>Onglet CONFIG → Forcer template par code</strong><br><span style="color:var(--text3);font-size:12px">Forcez un template spécifique pour un code produit particulier, indépendamment du préfixe.</span></div></div>
       </div>
       <div style="margin-top:14px;background:#1a2e1a;border:1px solid #2d4a2d;border-radius:8px;padding:10px;font-size:12px;color:#7dc47d">
-        <strong>💡 Conseil :</strong> Préparez un fichier CSV avec les colonnes : <code>code, designation_fr, designation_ar, prix, promo</code>. L'import batch est le moyen le plus rapide de peupler la base.
+        <strong>💡 Conseil import :</strong> Format Excel attendu — A=Code · B=Désig.FR · C=Désig.AR · D=Ingrédients FR · E=Ingrédients AR · F=Origine · G=Col J · H=Nom Template. Les allergènes doivent être en MAJUSCULES (ex: BLÉ, LAIT, OEUF).
       </div>
     </div>
 
@@ -1843,15 +1864,53 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       </div>
     </div>
 
+    <!-- Contenu : BALISAGE -->
+    <div id="help-balisage" class="help-role-content" style="padding:16px;display:none">
+      <div style="color:var(--amber);font-weight:700;font-size:13px;margin-bottom:12px">🏷️ Module Balisage — Étiquettes Boulangerie / Pâtisserie</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="help-step"><span class="help-num">1</span><div><strong>Accéder au module Balisage</strong><br><span style="color:var(--text3);font-size:12px">Cliquez sur le bouton <em>BALISAGE</em> dans le sélecteur de format en haut de l'écran. Le module s'ouvre avec ses 3 onglets : SAISIE · FILE · TEMPLATES.</span></div></div>
+        <div class="help-step"><span class="help-num">2</span><div><strong>Choisir le gabarit</strong><br><span style="color:var(--text3);font-size:12px">Sélectionnez le gabarit dans la liste déroulante ou via les boutons rapides : <span style="color:var(--amber);font-weight:700">🍞 BOULANGERIE</span> (150×40mm · 7/page A4) ou <span style="color:var(--amber);font-weight:700">🎂 PÂTISSERIE</span>. Les gabarits sont configurables dans l'onglet TEMPLATES BALISAGE.</span></div></div>
+        <div class="help-step"><span class="help-num">3</span><div><strong>Scanner ou saisir le code produit</strong><br><span style="color:var(--text3);font-size:12px">Scannez le code EAN ou saisissez-le manuellement. La désignation FR/AR et les ingrédients sont chargés automatiquement depuis la base partagée. La prévisualisation se met à jour en temps réel sur le canvas balisage.</span></div></div>
+        <div class="help-step"><span class="help-num">4</span><div><strong>Traduction IA arabe</strong><br><span style="color:var(--text3);font-size:12px">Le bouton <span style="color:#ffde00">ترجمة IA</span> traduit la désignation FR en arabe commercial via Groq LLaMA-3.3. La clé API Groq (gratuite) est requise — configurez-la via le bouton <em>Clé API</em> dans le header.</span></div></div>
+        <div class="help-step"><span class="help-num">5</span><div><strong>Saisie manuelle des ingrédients</strong><br><span style="color:var(--text3);font-size:12px">Si le produit n'est pas en base, saisissez manuellement : désignation FR, désignation AR, ingrédients FR et ingrédients AR. Les allergènes (BLÉ, LAIT, OEUF, ARACHIDE…) sont automatiquement détectés et mis en <span style="color:#FF0000;font-weight:700">rouge</span> sur le balisage.</span></div></div>
+        <div class="help-step"><span class="help-num">6</span><div><strong>Ajouter à la file et imprimer</strong><br><span style="color:var(--text3);font-size:12px">Cliquez <em>Ajouter au balisage</em>. Accumulez plusieurs articles, puis imprimez en PDF depuis l'onglet FILE. Format : 7 balisages de 150×40mm par page A4.</span></div></div>
+      </div>
+
+      <!-- Détection allergènes -->
+      <div style="margin-top:14px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:8px;padding:12px;font-size:12px">
+        <div style="color:#f87171;font-weight:700;margin-bottom:6px">⚠️ Détection automatique des 14 allergènes EU</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${['BLÉ / Gluten','Crustacés','Poisson','Œufs','Lait','Arachides','Soja','Fruits à coque','Céleri','Moutarde','Sésame','Sulfites','Lupin','Mollusques'].map(a=>`<span style="background:rgba(220,38,38,.2);border:1px solid rgba(220,38,38,.4);border-radius:10px;padding:2px 7px;font-size:10px;color:#fca5a5">${a}</span>`).join('')}
+        </div>
+        <div style="margin-top:6px;color:var(--text3)">Fonctionne en FR et AR — normalisation Unicode automatique (accents, majuscules).</div>
+      </div>
+
+      <!-- Templates balisage -->
+      <div style="margin-top:10px;background:rgba(11,61,145,.2);border:1px solid rgba(255,222,0,.2);border-radius:8px;padding:12px;font-size:12px">
+        <div style="color:var(--amber);font-weight:700;margin-bottom:8px">🖼️ Onglet TEMPLATES BALISAGE</div>
+        <div style="color:var(--text2);line-height:1.7">
+          • Uploadez vos images de fond (PNG/JPG) pour chaque gabarit balisage<br>
+          • Ajustez les axes de texte (X, Y, largeur, hauteur, taille police) par gabarit via l'éditeur visuel<br>
+          • Les zones de texte s'affichent en surimpression colorée (jaune=desFR · orange=desAR · vert=ingAR · bleu=ingFR)<br>
+          • Personnalisez les couleurs des textes (désig. FR, désig. AR, ingr. FR, ingr. AR) par gabarit<br>
+          • Sauvegarde dans localStorage — export/import JSON disponible
+        </div>
+      </div>
+
+      <div style="margin-top:10px;background:#1a2e1a;border:1px solid #2d4a2d;border-radius:8px;padding:10px;font-size:12px;color:#7dc47d">
+        <strong>💡 Conseil :</strong> La base de données est partagée entre les modules A7, A4 et Balisage. Un scan dans Balisage charge les mêmes données que dans A7. Pour ajouter/modifier des articles, utilisez l'onglet BASE du module A7.
+      </div>
+    </div>
+
     <!-- Contenu : À PROPOS -->
     <div id="help-apropos" class="help-role-content" style="padding:20px;display:none">
       <!-- Badge identité -->
       <div style="text-align:center;margin-bottom:20px">
         <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:18px;background:linear-gradient(135deg,#004497 0%,#0066cc 60%,#e8002a 100%);box-shadow:0 6px 24px rgba(0,68,151,0.45);margin-bottom:12px">
-          <span style="font-size:30px;font-weight:900;color:#fff;letter-spacing:-2px;font-family:monospace">A7</span>
+          <span style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-2px;font-family:monospace">MÉ</span>
         </div>
-        <div style="font-size:22px;font-weight:900;color:var(--amber);letter-spacing:1px;font-family:monospace">A7_A4 <span style="color:#fff">v3.0</span></div>
-        <div style="font-size:12px;color:var(--text3);margin-top:4px;letter-spacing:2px;text-transform:uppercase">Génération Affichettes A7 &amp; A4 · PWA</div>
+        <div style="font-size:22px;font-weight:900;color:var(--amber);letter-spacing:1px;font-family:monospace">MARJANE ÉTIQUETTES <span style="color:#fff">v3.1</span></div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;letter-spacing:2px;text-transform:uppercase">A7 · A4 · Balisage · PWA · Marjane Tanger Madina</div>
       </div>
 
       <!-- Carte développeur -->
@@ -1870,7 +1929,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           </div>
           <div style="display:flex;align-items:center;gap:8px;font-size:12px">
             <span style="color:rgba(0,137,255,0.6);font-size:14px">📅</span>
-            <span style="color:var(--text2)">Mai <strong style="color:#fff">2026</strong></span>
+            <span style="color:var(--text2)">Juin <strong style="color:#fff">2026</strong></span>
           </div>
         </div>
         <!-- Signature -->
@@ -1882,16 +1941,20 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
         <div style="font-size:11px;font-weight:700;color:var(--amber);letter-spacing:1px;margin-bottom:10px">📋 CHANGELOG</div>
         <div style="display:flex;flex-direction:column;gap:7px">
           <div style="display:flex;gap:10px;align-items:flex-start">
-            <span style="background:#ffde00;color:#0b3d91;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0">v3.0 🆕</span>
-            <span style="font-size:12px;color:var(--text2)">Nouveau format A4 — affichettes grand format, export PDF A4, thème Marjane Tanger Madina</span>
+            <span style="background:#22c55e;color:#052e16;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0">v3.1 🆕</span>
+            <span style="font-size:12px;color:var(--text2)">Module Balisage intégré (150×40mm FR/AR, canvas bilingue, allergènes RTL arabe, éditeur axes, couleurs par gabarit) — Dashboard 3 formats — Aide complète</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="background:#ffde00;color:#0b3d91;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0">v3.0</span>
+            <span style="font-size:12px;color:var(--text3)">Format A4 — affichettes grand format, export PDF A4, thème Marjane Tanger Madina, import Excel batch, pictos 5×3cm</span>
           </div>
           <div style="display:flex;gap:10px;align-items:flex-start">
             <span style="background:var(--surf3);color:var(--text3);font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0">v2.1</span>
-            <span style="font-size:12px;color:var(--text3)">Fidélité % — calcul auto, Rectangle 11, coordonnées POTX exactes</span>
+            <span style="font-size:12px;color:var(--text3)">Fidélité % — calcul auto, Rectangle 11, coordonnées POTX exactes, traduction IA Groq LLaMA</span>
           </div>
           <div style="display:flex;gap:10px;align-items:flex-start">
             <span style="background:var(--surf3);color:var(--text3);font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0">v2.0</span>
-            <span style="font-size:12px;color:var(--text3)">PWA multi-utilisateur, scan code-barres, templates POTX A7_AVRIL2026</span>
+            <span style="font-size:12px;color:var(--text3)">PWA multi-utilisateur, scan code-barres, templates POTX A7_AVRIL2026, IndexedDB</span>
           </div>
           <div style="display:flex;gap:10px;align-items:flex-start">
             <span style="background:var(--surf3);color:var(--text3);font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0">v1.0</span>
@@ -5545,22 +5608,36 @@ function updateDashboard(){
   const a7hist = state.history||[];
   const a4hist = getA4History();
 
-  const todayA7 = a7hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
-  const todayA4 = a4hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
-  const weekA7  = a7hist.filter(h=>new Date(h.savedAt)>=weekStart).length;
-  const weekA4  = a4hist.filter(h=>new Date(h.savedAt)>=weekStart).length;
-  const totalA7 = a7hist.length;
-  const totalA4 = a4hist.length;
-  const total   = totalA7 + totalA4;
+  // ── Historique Balisage depuis localStorage ────────────────────
+  let balisageHist = [];
+  try { balisageHist = JSON.parse(localStorage.getItem('balisage_file')||'[]'); } catch(e){ balisageHist=[]; }
+  // Normaliser : chaque entrée doit avoir savedAt
+  balisageHist = balisageHist.filter(h=>h && (h.savedAt||h.addedAt||h.date));
+  balisageHist.forEach(h=>{ if(!h.savedAt) h.savedAt = h.addedAt||h.date||new Date().toISOString(); });
 
-  if($('#dashToday'))    $('#dashToday').textContent = todayA7+todayA4;
-  if($('#dashWeek'))     $('#dashWeek').textContent  = weekA7+weekA4;
+  const todayA7  = a7hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
+  const todayA4  = a4hist.filter(h=>new Date(h.savedAt)>=todayStart).length;
+  const todayBAL = balisageHist.filter(h=>new Date(h.savedAt)>=todayStart).length;
+  const weekA7   = a7hist.filter(h=>new Date(h.savedAt)>=weekStart).length;
+  const weekA4   = a4hist.filter(h=>new Date(h.savedAt)>=weekStart).length;
+  const weekBAL  = balisageHist.filter(h=>new Date(h.savedAt)>=weekStart).length;
+  const totalA7  = a7hist.length;
+  const totalA4  = a4hist.length;
+  const totalBAL = balisageHist.length;
+  const total    = totalA7 + totalA4 + totalBAL;
+
+  if($('#dashToday'))    $('#dashToday').textContent = todayA7+todayA4+todayBAL;
+  if($('#dashWeek'))     $('#dashWeek').textContent  = weekA7+weekA4+weekBAL;
   if($('#dashTotal'))    $('#dashTotal').textContent  = total;
+
+  // KPI Balisage
+  if($('#dashBalisageTotal')) $('#dashBalisageTotal').textContent = totalBAL;
+  if($('#dashBalisageWeek'))  $('#dashBalisageWeek').textContent  = weekBAL + ' cette semaine';
 
   const session = typeof getCurrentSession==='function' ? getCurrentSession() : null;
   const user = session?.user||'—';
   if($('#dashUser'))      $('#dashUser').textContent = user;
-  const userCount = [...a7hist,...a4hist].filter(h=>h.user===user).length;
+  const userCount = [...a7hist,...a4hist,...balisageHist].filter(h=>h.user===user).length;
   if($('#dashUserCount')) $('#dashUserCount').textContent = userCount + ' générations';
 
   // Top templates A7
@@ -5573,6 +5650,18 @@ function updateDashboard(){
       const pct = totalA7? Math.round(c/totalA7*100):0;
       return `<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>${t}</span><span style="color:var(--text3)">${c}</span></div><div style="height:6px;background:var(--surf3);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--amber)"></div></div></div>`;
     }).join('') || '<div style="color:var(--text4);font-size:12px">Aucune donnée A7</div>';
+  }
+
+  // Top templates Balisage
+  const tplBal = {};
+  balisageHist.forEach(h=>{ const t=h.gabarit||h.tplId||h.template||'—'; tplBal[t]=(tplBal[t]||0)+1; });
+  const topBal = Object.entries(tplBal).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const balDiv = $('#dashBalisageTemplates');
+  if(balDiv){
+    balDiv.innerHTML = topBal.map(([t,c])=>{
+      const pct = totalBAL? Math.round(c/totalBAL*100):0;
+      return `<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>${t}</span><span style="color:#22c55e">${c}</span></div><div style="height:6px;background:var(--surf3);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:#22c55e"></div></div></div>`;
+    }).join('') || '<div style="font-size:11px;color:var(--text4)">Aucun balisage généré</div>';
   }
 
   // ── Panneau A4 stats ──────────────────────────────────────────
@@ -5609,7 +5698,7 @@ function updateDashboard(){
       }).join(''):'<div style="font-size:11px;color:var(--text4)">Aucune affichette A4 générée</div>'}`;
   }
 
-  // ── Graphique 7 jours (A7 + A4 empilés) ────────────────────
+  // ── Graphique 7 jours (A7 + A4 + Balisage empilés) ────────────────────
   const canvas = $('#dashChart');
   if(canvas){
     const ctx = canvas.getContext('2d');
@@ -5621,7 +5710,8 @@ function updateDashboard(){
       const d = new Date(todayStart - i*24*60*60*1000);
       const cntA7 = a7hist.filter(x=>{ const dt=new Date(x.savedAt); return dt.getFullYear()===d.getFullYear()&&dt.getMonth()===d.getMonth()&&dt.getDate()===d.getDate(); }).length;
       const cntA4 = a4hist.filter(x=>{ const dt=new Date(x.savedAt); return dt.getFullYear()===d.getFullYear()&&dt.getMonth()===d.getMonth()&&dt.getDate()===d.getDate(); }).length;
-      days.push({label:d.toLocaleDateString('fr-FR',{weekday:'short'}),cntA7,cntA4,total:cntA7+cntA4});
+      const cntBAL = balisageHist.filter(x=>{ const dt=new Date(x.savedAt); return dt.getFullYear()===d.getFullYear()&&dt.getMonth()===d.getMonth()&&dt.getDate()===d.getDate(); }).length;
+      days.push({label:d.toLocaleDateString('fr-FR',{weekday:'short'}),cntA7,cntA4,cntBAL,total:cntA7+cntA4+cntBAL});
     }
     const max = Math.max(1, ...days.map(d=>d.total));
     const pad=40; const gw=w-pad*2; const gh=h-60;
@@ -5630,35 +5720,49 @@ function updateDashboard(){
     days.forEach((d,i)=>{
       const x = pad + (i+0.5)*gw/7;
       const bW=36;
-      const hA7 = (d.cntA7/max)*gh;
-      const hA4 = (d.cntA4/max)*gh;
-      // A4 (rouge, dessus)
-      if(hA4>0){ ctx.fillStyle='#ef4444'; ctx.fillRect(x-bW/2, h-30-hA7-hA4, bW, hA4); }
-      // A7 (amber, dessous)
-      if(hA7>0){ ctx.fillStyle='#f59e0b'; ctx.fillRect(x-bW/2, h-30-hA7, bW, hA7); }
+      const hA7  = (d.cntA7/max)*gh;
+      const hA4  = (d.cntA4/max)*gh;
+      const hBAL = (d.cntBAL/max)*gh;
+      // Balisage (vert, en bas)
+      if(hBAL>0){ ctx.fillStyle='#22c55e'; ctx.fillRect(x-bW/2, h-30-hBAL, bW, hBAL); }
+      // A7 (amber, au-dessus balisage)
+      if(hA7>0){ ctx.fillStyle='#f59e0b'; ctx.fillRect(x-bW/2, h-30-hBAL-hA7, bW, hA7); }
+      // A4 (rouge, au sommet)
+      if(hA4>0){ ctx.fillStyle='#ef4444'; ctx.fillRect(x-bW/2, h-30-hBAL-hA7-hA4, bW, hA4); }
       // Label jour
       ctx.fillStyle='#9a7a50'; ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.fillText(d.label, x, h-8);
       if(d.total>0){ ctx.fillStyle='#fef3c7'; ctx.fillText(d.total, x, h-37-d.total/max*gh); }
     });
     // Légende
-    ctx.fillStyle='#f59e0b'; ctx.fillRect(pad,12,24,14);
-    ctx.fillStyle='#fef3c7'; ctx.font='20px sans-serif'; ctx.textAlign='left'; ctx.fillText('A7',pad+28,24);
-    ctx.fillStyle='#ef4444'; ctx.fillRect(pad+70,12,24,14);
-    ctx.fillStyle='#fef3c7'; ctx.fillText('A4',pad+98,24);
+    ctx.fillStyle='#f59e0b'; ctx.fillRect(pad,12,20,14);
+    ctx.fillStyle='#fef3c7'; ctx.font='20px sans-serif'; ctx.textAlign='left'; ctx.fillText('A7',pad+24,24);
+    ctx.fillStyle='#ef4444'; ctx.fillRect(pad+58,12,20,14);
+    ctx.fillStyle='#fef3c7'; ctx.fillText('A4',pad+82,24);
+    ctx.fillStyle='#22c55e'; ctx.fillRect(pad+116,12,20,14);
+    ctx.fillStyle='#fef3c7'; ctx.fillText('Balisage',pad+140,24);
   }
 
-  // ── Activité récente (A7 + A4) ──────────────────────────────
+  // ── Activité récente (A7 + A4 + Balisage) ──────────────────────────────
   const recent = $('#dashRecent');
   if(recent){
-    const all = [...a7hist.map(h=>({...h,_type:'A7'})),...a4hist.map(h=>({...h,_type:'A4'}))]
-      .sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt)).slice(0,20);
+    const all = [
+      ...a7hist.map(h=>({...h,_type:'A7'})),
+      ...a4hist.map(h=>({...h,_type:'A4'})),
+      ...balisageHist.map(h=>({...h,_type:'BAL'}))
+    ].sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt)).slice(0,20);
     recent.innerHTML = all.map(h=>{
       const d=new Date(h.savedAt);
       const time=d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-      const badge=h._type==='A4'?'<span style="background:#7f1d1d;color:#fca5a5;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px">A4</span>':'<span style="background:#1e3a8a;color:#93c5fd;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px">A7</span>';
+      const badge = h._type==='A4'
+        ? '<span style="background:#7f1d1d;color:#fca5a5;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px">A4</span>'
+        : h._type==='BAL'
+          ? '<span style="background:#14532d;color:#86efac;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px">BAL</span>'
+          : '<span style="background:#1e3a8a;color:#93c5fd;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px">A7</span>';
       const des=(h.designation_fr||h.desFR||'').substring(0,22);
-      const tpl=h.template||h.tplId||'—';
-      const prix=h._type==='A4'?(h.promo?h.promo.toFixed(2)+' DH':'—'):(h.prix||'')+(h.prix?' DH':'—');
+      const tpl=h.template||h.tplId||h.gabarit||'—';
+      const prix=h._type==='A4'?(h.promo?h.promo.toFixed(2)+' DH':'—')
+               : h._type==='BAL'?'—'
+               : (h.prix||'')+(h.prix?' DH':'—');
       return `<tr><td>${badge}</td><td style="font-size:11px">${time}</td><td class="mono">${h.code||'—'}</td><td style="font-size:11px">${des}</td><td style="font-size:11px">${tpl}</td><td style="font-size:11px;color:var(--amber)">${prix}</td></tr>`;
     }).join('');
   }
