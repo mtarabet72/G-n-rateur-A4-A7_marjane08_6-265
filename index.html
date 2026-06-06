@@ -894,7 +894,12 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <div style="display:flex;flex-direction:column;gap:14px">
       <!-- Actions bar -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <input id="baseSearch" placeholder="Rechercher code ou désignation…" style="flex:1;min-width:180px;max-width:340px" oninput="_basePage=0;renderBase()">
+        <div style="display:flex;gap:6px;align-items:center;flex:1;min-width:180px;max-width:380px">
+          <input id="baseSearch" placeholder="Rechercher code ou désignation…" style="flex:1" oninput="_basePage=0;renderBase()">
+          <button class="btn btn-amber btn-sm" title="Scanner un code-barres pour rechercher"
+            onclick="startBarcodeScan(function(c){ document.getElementById('baseSearch').value=c; _basePage=0; renderBase(); })"
+            style="padding:6px 10px;min-width:36px;flex-shrink:0"><i class="ri-qr-scan-2-line"></i></button>
+        </div>
         <button class="btn btn-amber btn-sm" onclick="openArticleModal()"><i class="ri-add-line"></i> Nouvel article</button>
         <button class="btn btn-blue btn-sm" onclick="exportBaseExcel()"><i class="ri-download-2-line"></i> Exporter Excel</button>
         <label class="btn btn-ghost btn-sm" style="cursor:pointer">
@@ -1073,7 +1078,15 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
   <div class="modal">
     <div class="modal-title" id="modalTitle">Nouvel Article</div>
     <button class="modal-close" onclick="closeArticleModal()"><i class="ri-close-line"></i></button>
-    <div class="field"><label class="lbl">Code Article *</label><input id="m_code" placeholder="Ex: 2658179"></div>
+    <div class="field">
+      <label class="lbl">Code Article *</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="m_code" placeholder="Ex: 2658179" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:var(--amber);letter-spacing:2px">
+        <button type="button" class="btn btn-amber" title="Scanner le code-barres"
+          onclick="startBarcodeScan(function(c){ document.getElementById('m_code').value=c; document.getElementById('m_code').dispatchEvent(new Event('input')); })"
+          style="padding:10px 14px;min-width:46px;height:46px;flex-shrink:0"><i class="ri-qr-scan-2-line" style="font-size:18px"></i></button>
+      </div>
+    </div>
     <div class="g2">
       <div class="field">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
