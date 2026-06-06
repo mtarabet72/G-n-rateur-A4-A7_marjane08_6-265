@@ -894,12 +894,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
     <div style="display:flex;flex-direction:column;gap:14px">
       <!-- Actions bar -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <div style="display:flex;gap:6px;align-items:center;flex:1;min-width:180px;max-width:380px">
-          <input id="baseSearch" placeholder="Rechercher code ou désignation…" style="flex:1" oninput="_basePage=0;renderBase()">
-          <button class="btn btn-amber btn-sm" title="Scanner un code-barres pour rechercher"
-            onclick="startBarcodeScan(function(c){ document.getElementById('baseSearch').value=c; _basePage=0; renderBase(); })"
-            style="padding:6px 10px;min-width:36px;flex-shrink:0"><i class="ri-qr-scan-2-line"></i></button>
-        </div>
+        <input id="baseSearch" placeholder="Rechercher code ou désignation…" style="flex:1;min-width:180px;max-width:340px" oninput="_basePage=0;renderBase()">
         <button class="btn btn-amber btn-sm" onclick="openArticleModal()"><i class="ri-add-line"></i> Nouvel article</button>
         <button class="btn btn-blue btn-sm" onclick="exportBaseExcel()"><i class="ri-download-2-line"></i> Exporter Excel</button>
         <label class="btn btn-ghost btn-sm" style="cursor:pointer">
@@ -1078,15 +1073,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
   <div class="modal">
     <div class="modal-title" id="modalTitle">Nouvel Article</div>
     <button class="modal-close" onclick="closeArticleModal()"><i class="ri-close-line"></i></button>
-    <div class="field">
-      <label class="lbl">Code Article *</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="m_code" placeholder="Ex: 2658179" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:var(--amber);letter-spacing:2px">
-        <button type="button" class="btn btn-amber" title="Scanner le code-barres"
-          onclick="startBarcodeScan(function(c){ document.getElementById('m_code').value=c; document.getElementById('m_code').dispatchEvent(new Event('input')); })"
-          style="padding:10px 14px;min-width:46px;height:46px;flex-shrink:0"><i class="ri-qr-scan-2-line" style="font-size:18px"></i></button>
-      </div>
-    </div>
+    <div class="field"><label class="lbl">Code Article *</label><input id="m_code" placeholder="Ex: 2658179"></div>
     <div class="g2">
       <div class="field">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -1364,7 +1351,24 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
                        color:var(--amber);letter-spacing:3px;text-align:center;height:58px"
                 oninput="bLookup()" autofocus>
               <button class="btn btn-amber" title="Scanner code-barres"
-                onclick="startBarcodeScan(function(c){ document.getElementById('bCodeInput').value=c; bLookup(); bLookupEnter(); })"
+                onclick="startBarcodeScan(function(c){
+                  var inp = document.getElementById('bCodeInput');
+                  if(!inp) return;
+                  inp.value = c;
+                  inp.dispatchEvent(new Event('input', {bubbles:true}));
+                  bLookup();
+                  // Focus sur le bouton Ajouter si produit trouvé, sinon sur désignation FR
+                  setTimeout(function(){
+                    if(_bCurrentProduct){
+                      toast('✓ ' + (_bCurrentProduct.designation_fr || c) + ' — prêt à ajouter', 'ok');
+                      var btn = document.getElementById('bAddToFileBtn');
+                      if(btn) btn.focus();
+                    } else {
+                      var desFR = document.getElementById('bDesFR');
+                      if(desFR){ desFR.focus(); desFR.select(); }
+                    }
+                  }, 150);
+                })"
                 style="padding:12px 14px;min-width:48px;height:58px"><i class="ri-qr-scan-2-line" style="font-size:20px"></i></button>
             </div>
             <div id="bStatusBar" style="margin-top:8px;height:28px;font-size:13px;line-height:28px;
@@ -1455,7 +1459,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
           </div>
 
           <!-- ── Boutons action ── -->
-          <button class="btn btn-amber btn-full" onclick="bAddToFile()">
+          <button id="bAddToFileBtn" class="btn btn-amber btn-full" onclick="bAddToFile()">
             <i class="ri-add-circle-line"></i> AJOUTER À LA FILE — ENTRÉE
           </button>
           <div style="display:flex;gap:8px">
