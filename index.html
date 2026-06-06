@@ -503,7 +503,7 @@ body{overflow-x:hidden}
 ::-webkit-scrollbar-track{background:var(--surf)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 /* Arabic */
-.ar{font-family:'IBM Plex Sans Arabic',sans-serif;direction:rtl;text-align:right;unicode-bidi:plaintext}
+.ar{font-family:'IBM Plex Sans Arabic',sans-serif!important;direction:rtl!important;text-align:right!important;unicode-bidi:plaintext!important}
 input.ar,textarea.ar{font-family:'IBM Plex Sans Arabic',sans-serif!important;direction:rtl!important;text-align:right!important;unicode-bidi:plaintext!important}
 .mono{font-family:'IBM Plex Mono',monospace}
 /* Layout */
@@ -1102,7 +1102,7 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
       </div>
     </div>
     <div class="field"><label class="lbl">Ingrédients (FR)</label><textarea id="m_ing" placeholder="Lait, sucre, farine… (allergènes en majuscules)"></textarea></div>
-    <div class="field"><label class="lbl">Ingrédients (AR)</label><textarea id="m_ing_ar" class="ar" dir="rtl" lang="ar" placeholder="المكونات بالعربية…" style="direction:rtl;text-align:right;unicode-bidi:plaintext;font-family:'IBM Plex Sans Arabic',sans-serif"></textarea></div>
+    <div class="field"><label class="lbl">Ingrédients (AR)</label><textarea id="m_ing_ar" class="ar" placeholder="المكونات بالعربية…" style="direction:rtl;text-align:right"></textarea></div>
     <div class="g2">
       <div class="field"><label class="lbl">Origine</label><input id="m_origine" placeholder="France, Maroc…"></div>
       <div class="field"><label class="lbl">Col J (Rectangle 41)</label><input id="m_colJ" placeholder="Valeur Col J"></div>
@@ -1405,8 +1405,8 @@ h1 .text-amber-400, .text-amber-400{ color: var(--marjane-yellow) !important; }
                   <i class="ri-translate-2" style="font-size:14px"></i> ترجمة IA
                 </button>
               </div>
-              <input id="bDesAR" class="ar" dir="rtl" lang="ar" placeholder="الاسم يُملأ تلقائياً من القاعدة…"
-                style="direction:rtl;text-align:right;unicode-bidi:plaintext;font-family:'IBM Plex Sans Arabic',sans-serif" oninput="bSyncPreview()">
+              <input id="bDesAR" class="ar" placeholder="الاسم يُملأ تلقائياً من القاعدة…"
+                style="direction:rtl;text-align:right" oninput="bSyncPreview()">
             </div>
           </div>
 
@@ -4624,7 +4624,7 @@ function openArticleModal(code=null){
     const p = state.base.find(x=>x.code===code);
     if(!p) return;
     $('#m_code').value=p.code; $('#m_desFR').value=p.designation_fr;
-    $('#m_desAR').value=p.designation_ar||''; $('#m_ing').value=p.ingredients_fr||''; $('#m_ing_ar').value=p.ingredients_ar||'';
+    (function(){ var _el=$('#m_desAR'); _el.value=p.designation_ar||''; _el.setAttribute('dir','rtl'); _el.setAttribute('lang','ar'); })(); $('#m_ing').value=p.ingredients_fr||''; $('#m_ing_ar').value=p.ingredients_ar||'';
     $('#m_origine').value=p.origine||''; $('#m_colJ').value=p.col_j||''; $('#m_colH').value=p.col_h||'';
     $('#m_code').readOnly=true;
   } else {
@@ -6084,7 +6084,11 @@ function a4LookupArticle() {
     const frEl = document.getElementById('a4DesFR');
     const arEl = document.getElementById('a4DesAR');
     if (frEl && !frEl.dataset.manual) frEl.value = art.designation_fr || '';
-    if (arEl && !arEl.dataset.manual) arEl.value = art.designation_ar || '';
+    if (arEl && !arEl.dataset.manual) {
+      arEl.value = art.designation_ar || '';
+      arEl.setAttribute('dir','rtl'); arEl.setAttribute('lang','ar');
+      arEl.dispatchEvent(new Event('input',{bubbles:true}));
+    }
     a4St.desFR = art.designation_fr || '';
     a4St.desAR = art.designation_ar || '';
 
@@ -9231,5 +9235,41 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 </script>
 
+
+<script>
+// ── Force RTL sur tous les champs arabes au chargement et à chaque focus ──
+(function enforceRTL(){
+  function applyRTL(el){
+    el.setAttribute('dir','rtl');
+    el.setAttribute('lang','ar');
+    el.style.direction = 'rtl';
+    el.style.textAlign = 'right';
+    el.style.unicodeBidi = 'plaintext';
+    el.style.fontFamily = "'IBM Plex Sans Arabic', sans-serif";
+  }
+  function fixAll(){
+    document.querySelectorAll('input.ar, textarea.ar').forEach(applyRTL);
+  }
+  document.addEventListener('DOMContentLoaded', fixAll);
+  // Aussi après chaque fois qu'un onglet/modal s'ouvre (MutationObserver)
+  const obs = new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if(n.nodeType===1){
+          if(n.matches && n.matches('input.ar,textarea.ar')) applyRTL(n);
+          n.querySelectorAll && n.querySelectorAll('input.ar,textarea.ar').forEach(applyRTL);
+        }
+      });
+    });
+  });
+  document.addEventListener('DOMContentLoaded', function(){
+    obs.observe(document.body, {childList:true, subtree:true});
+    // Re-appliquer à chaque focus sur un champ .ar
+    document.addEventListener('focus', function(e){
+      if(e.target && e.target.classList && e.target.classList.contains('ar')) applyRTL(e.target);
+    }, true);
+  });
+})();
+</script>
 </body>
 </html>
