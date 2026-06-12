@@ -2393,21 +2393,63 @@ const TPL_COLORS = {
 
 // Allergens (from VBA SetShapeTextWithAllergens)
 const ALLERGEN_GROUPS = [
-  ['GLUTEN','BLE','ORGE','AVOINE','gluten','BLÉ','blé','avoine','orge'],
-  ['CRUSTACE','CREVETTE','CRABE','crustate','crevettes', 'crevette','carbe'],
-  ['POISSON','SAUMON','THON','poisson','saumon','thon'],
-  ['OEUF','OEUFS','oeuf',',oeufs','oeufs,',',oeufs,','oeufs','ŒUF','ŒUFS','œuf','œufs'],
-  ['LAIT','LAITIER','FROMAGE','lait','fromage','fromages'],
-  ['ARACHIDE','CACAHUETE','cacahoettes','cacahoette','CACAHOETTE','CACAHOETTE'],
-  ['SOJA','soja'],
-  ['AMANDE','NOIX','NOISETTE','CAJOU','amande','noix','noisettes','noisette'],
-  ['CELERI','celeri'],
-  ['MOUTARDE',"moutarde"],
-  ['SESAME','sésame','sésames','sesame','sesames'],
-  ['SULFITE','SULFITES','suflit','suflites'],
-  ['LUPIN'],
-  ['MOLLUSQUE']
+  // Gluten
+  ['GLUTEN', 'BLÉ', 'BLE', 'ORGE', 'AVOINE', 'SEIGLE', 'ÉPEAUTRE', 'KAMUT',
+   'gluten', 'blé', 'ble', 'orge', 'avoine', 'seigle', 'épeautre', 'kamut'],
+
+  // Crustacés
+  ['CRUSTACÉ', 'CRUSTACÉS', 'CRUSTACE', 'CRUSTACES',
+   'CREVETTE', 'CREVETTES', 'CRABE', 'CRABES', 'HOMARD', 'LANGOUSTE',
+   'crustacé', 'crustacés', 'crevette', 'crevettes', 'crabe', 'crabes', 'homard', 'langouste'],
+
+  // Poissons
+  ['POISSON', 'POISSONS', 'SAUMON', 'THON', 'TRUITE',
+   'poisson', 'poissons', 'saumon', 'thon', 'truite'],
+
+  // Œufs
+  ['ŒUF', 'ŒUFS', 'OEUF', 'OEUFS',
+   'œuf', 'œufs', 'oeuf', 'oeufs'],
+
+  // Lait
+  ['LAIT', 'LAITIER', 'LAITIERS', 'FROMAGE', 'FROMAGES',
+   'BEURRE', 'CRÈME', 'CREME',
+   'lait', 'laitier', 'laitiers', 'fromage', 'fromages', 'beurre', 'crème', 'creme'],
+
+  // Arachides
+  ['ARACHIDE', 'ARACHIDES', 'CACAHUÈTE', 'CACAHUÈTES', 'CACAHUETE', 'CACAHUETES',
+   'arachide', 'arachides', 'cacahuète', 'cacahuètes', 'cacahuete', 'cacahuetes'],
+
+  // Soja
+  ['SOJA', 'soja'],
+
+  // Fruits à coque
+  ['AMANDE', 'AMANDES', 'NOIX', 'NOISETTE', 'NOISETTES',
+   'CAJOU', 'CAJOU', 'PISTACHE', 'PISTACHES',
+   'NOIX DE PÉCAN', 'NOIX DE PECAN', 'MACADAMIA',
+   'amande', 'amandes', 'noix', 'noisette', 'noisettes',
+   'cajou', 'pistache', 'pistaches', 'noix de pécan', 'noix de pecan', 'macadamia'],
+
+  // Céleri
+  ['CÉLERI', 'CELERI', 'céleri', 'celeri'],
+
+  // Moutarde
+  ['MOUTARDE', 'moutarde'],
+
+  // Sésame
+  ['SÉSAME', 'SESAME', 'SÉSAMES', 'SESAMES',
+   'sésame', 'sesame', 'sésames', 'sesames'],
+
+  // Sulfites
+  ['SULFITE', 'SULFITES', 'SULFITES',
+   'sulfite', 'sulfites'],
+
+  // Lupin
+  ['LUPIN', 'LUPINS', 'lupin', 'lupins'],
+
+  // Mollusques
+  ['MOLLUSQUE', 'MOLLUSQUES', 'mollusque', 'mollusques']
 ];
+
 const ALLERGEN_FLAT = ALLERGEN_GROUPS.flat();
 
 // Arabic allergen keywords (14 EU allergen groups)
